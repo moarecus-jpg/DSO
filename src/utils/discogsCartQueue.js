@@ -17,30 +17,21 @@ function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function openHelperWindow() {
-  return window.open(
-    "about:blank",
-    HELPER_NAME,
-    "width=1,height=1,left=-2400,top=-2400"
-  );
+function openHelperTab() {
+  return window.open("about:blank", HELPER_NAME);
 }
 
-function revealCartWindow(helper) {
+function focusHelperTab(helper) {
   try {
-    helper.resizeTo(Math.min(1200, screen.availWidth - 80), Math.min(860, screen.availHeight - 80));
-    helper.moveTo(
-      Math.max(0, Math.round((screen.availWidth - 1200) / 2)),
-      Math.max(0, Math.round((screen.availHeight - 860) / 2))
-    );
     helper.focus();
   } catch {
-    helper.focus();
+    /* ignore */
   }
 }
 
 /**
- * Navigates a single off-screen helper window through each Discogs add-to-cart URL,
- * then opens the cart in that same window when finished.
+ * Navigates a single helper tab through each Discogs add-to-cart URL,
+ * then opens the cart in that same tab when finished.
  */
 export async function addAllListingsToDiscogsCart(
   links,
@@ -51,7 +42,7 @@ export async function addAllListingsToDiscogsCart(
     return { ok: false, reason: "empty" };
   }
 
-  const helper = openHelperWindow();
+  const helper = openHelperTab();
   if (!helper) {
     return { ok: false, reason: "popup_blocked" };
   }
@@ -64,7 +55,7 @@ export async function addAllListingsToDiscogsCart(
     }
 
     helper.location.replace(discogsCartUrl());
-    revealCartWindow(helper);
+    focusHelperTab(helper);
     return { ok: true, count: ids.length };
   } catch {
     try {
