@@ -267,6 +267,7 @@ export default {
     noLinksAdded: "No links were added.",
     enterAtLeastOneLink: "Enter at least one Discogs link.",
     invalidDiscogsLink: "Invalid Discogs link.",
+    duplicateListing: "You already added this listing to this order.",
     sessionNotFound: "Order not found",
     urlRequired: "URL is required",
     addRecordFailed: "Failed to add item",

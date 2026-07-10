@@ -3,6 +3,7 @@ import {
   addSessionLink,
   closeGroupSession,
   deleteGroupSession,
+  findDuplicateSessionLink,
   updateSessionShipping,
   updateSessionSellerAvatar,
   updateMemberDisplayName,
@@ -618,6 +619,16 @@ async function createSessionLink(req, sessionId, trimmedUrl, note) {
       throw new Error("Session not found");
     }
 
+    const existing = (mockSessions[idx].links ?? []).find(
+      (item) =>
+        item.user_id === req.session.userId &&
+        ((meta.listingId != null && item.listing_id === meta.listingId) ||
+          item.url?.trim().toLowerCase() === trimmedUrl.toLowerCase())
+    );
+    if (existing) {
+      throw new Error("Ta listing si že dodal v tem naročilu.");
+    }
+
     const links = [...(mockSessions[idx].links ?? []), link];
     mockSessions[idx] = {
       ...mockSessions[idx],
@@ -631,6 +642,14 @@ async function createSessionLink(req, sessionId, trimmedUrl, note) {
   const session = getGroupSession(sessionId);
   if (!session) {
     throw new Error("Session not found");
+  }
+
+  const duplicate = findDuplicateSessionLink(sessionId, req.session.userId, {
+    listingId: meta.listingId,
+    url: trimmedUrl,
+  });
+  if (duplicate) {
+    throw new Error("Ta listing si že dodal v tem naročilu.");
   }
 
   return addSessionLink({

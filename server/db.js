@@ -480,6 +480,27 @@ export function joinSession(sessionId, userId) {
   return getGroupSession(sessionId);
 }
 
+export function findDuplicateSessionLink(sessionId, userId, { listingId, url }) {
+  if (listingId != null) {
+    return db
+      .prepare(
+        `SELECT id FROM session_links
+         WHERE session_id = ? AND user_id = ? AND listing_id = ?`
+      )
+      .get(sessionId, userId, listingId);
+  }
+
+  const normalized = url?.trim().toLowerCase();
+  if (!normalized) return null;
+
+  return db
+    .prepare(
+      `SELECT id FROM session_links
+       WHERE session_id = ? AND user_id = ? AND lower(url) = ?`
+    )
+    .get(sessionId, userId, normalized);
+}
+
 export function addSessionLink({
   sessionId,
   userId,

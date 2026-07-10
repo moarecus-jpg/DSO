@@ -35,6 +35,7 @@ const SERVER_ERROR_MAP = {
   "Imena ni bilo mogoče shraniti.": "errors.saveNameFailed",
   "Poštnine ni bilo mogoče shraniti.": "errors.saveShippingFailed",
   "Neveljavna Discogs povezava.": "errors.invalidDiscogsLink",
+  "Ta listing si že dodal v tem naročilu.": "errors.duplicateListing",
   "Session not found": "errors.sessionNotFound",
   "URL is required": "errors.urlRequired",
   "Failed to add record": "errors.addRecordFailed",

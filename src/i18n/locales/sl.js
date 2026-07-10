@@ -272,6 +272,7 @@ export default {
     noLinksAdded: "Nobena povezava ni bila dodana.",
     enterAtLeastOneLink: "Vnesi vsaj eno Discogs povezavo.",
     invalidDiscogsLink: "Neveljavna Discogs povezava.",
+    duplicateListing: "Ta listing si že dodal v tem naročilu.",
     sessionNotFound: "Session not found",
     urlRequired: "URL is required",
     addRecordFailed: "Failed to add record",
