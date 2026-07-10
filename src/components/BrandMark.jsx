@@ -9,12 +9,22 @@ export function BrandMark({ variant = "nav" }) {
       title="DSO — Discogs Slovenia Orders"
     >
       <span className="brand-mark-icon" aria-hidden>
-        <Disc3 size={isLogin ? 30 : 20} strokeWidth={isLogin ? 1.75 : 2} />
+        {isLogin ? (
+          <Disc3 size={34} strokeWidth={1.5} />
+        ) : (
+          <img
+            src="/dso-icon.png"
+            alt=""
+            className="brand-mark-img brand-mark-img--nav"
+          />
+        )}
       </span>
       <span className="brand-mark-text">
         <span className="brand-mark-name">DSO</span>
         {isLogin && (
-          <span className="brand-mark-tagline">Discogs Slovenia Orders</span>
+          <span className="brand-mark-tagline">
+            Discogs <span className="brand-mark-highlight">Slovenia</span> Orders
+          </span>
         )}
       </span>
     </span>

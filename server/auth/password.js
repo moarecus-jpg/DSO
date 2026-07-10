@@ -9,11 +9,17 @@ export function hashPassword(password) {
 }
 
 export function verifyPassword(password, stored) {
-  if (!stored?.includes(":")) return false;
-  const [saltHex, hashHex] = stored.split(":");
-  const salt = Buffer.from(saltHex, "hex");
-  const expected = Buffer.from(hashHex, "hex");
-  const attempt = scryptSync(password, salt, KEY_LEN);
-  if (expected.length !== attempt.length) return false;
-  return timingSafeEqual(expected, attempt);
+  try {
+    if (!stored?.includes(":")) return false;
+    const [saltHex, hashHex] = stored.split(":");
+    if (!saltHex || !hashHex) return false;
+    const salt = Buffer.from(saltHex, "hex");
+    const expected = Buffer.from(hashHex, "hex");
+    if (!expected.length) return false;
+    const attempt = scryptSync(password, salt, KEY_LEN);
+    if (expected.length !== attempt.length) return false;
+    return timingSafeEqual(expected, attempt);
+  } catch {
+    return false;
+  }
 }

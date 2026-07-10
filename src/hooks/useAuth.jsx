@@ -46,7 +46,14 @@ export function AuthProvider({ children }) {
 
 
 
-  const register = async ({ firstName, lastName, username, password, passwordConfirm }) => {
+  const register = async ({
+    firstName,
+    lastName,
+    username,
+    password,
+    passwordConfirm,
+    rememberMe = true,
+  }) => {
     const data = await api("/auth/register", {
       method: "POST",
       body: JSON.stringify({
@@ -55,6 +62,7 @@ export function AuthProvider({ children }) {
         username,
         password,
         passwordConfirm,
+        rememberMe: Boolean(rememberMe),
       }),
     });
     setUser(data.user);

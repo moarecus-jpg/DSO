@@ -8,6 +8,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.js";
 import sessionRoutes from "./routes/sessions.js";
+import { sessionStore } from "./sessionStore.js";
 import { discogsCallbackUrl } from "./appUrl.js";
 import { googleCallbackUrl, googleConfigured } from "./auth/google.js";
 
@@ -39,6 +40,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   session({
+    store: sessionStore,
     secret: process.env.SESSION_SECRET || "dev-secret-change-me",
     resave: false,
     saveUninitialized: false,

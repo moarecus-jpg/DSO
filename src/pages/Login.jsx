@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import {
   AtSign,
   Eye,
   EyeOff,
+  Info,
   Lock,
   LogIn,
   Shield,
@@ -14,9 +15,11 @@ import { useAuth } from "../hooks/useAuth.jsx";
 import { BrandMark } from "../components/BrandMark.jsx";
 
 const REMEMBER_USERNAME_KEY = "dso_remember_username";
+const REMEMBER_ME_KEY = "dso_remember_me";
 const LEGACY_REMEMBER_USERNAME_KEY = "dsp_remember_username";
 
 function AuthField({
+  label,
   icon: Icon,
   type = "text",
   value,
@@ -30,27 +33,31 @@ function AuthField({
   pattern,
 }) {
   return (
-    <label className="auth-field">
-      <span className="auth-field-icon" aria-hidden>
-        <Icon size={18} />
-      </span>
-      <input
-        type={type}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        required={required}
-        autoComplete={autoComplete}
-        autoFocus={autoFocus}
-        minLength={minLength}
-        maxLength={maxLength}
-        pattern={pattern}
-      />
-    </label>
+    <div className="auth-field-group">
+      <span className="auth-field-label">{label}</span>
+      <label className="auth-field">
+        <span className="auth-field-icon" aria-hidden>
+          <Icon size={18} />
+        </span>
+        <input
+          type={type}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          required={required}
+          autoComplete={autoComplete}
+          autoFocus={autoFocus}
+          minLength={minLength}
+          maxLength={maxLength}
+          pattern={pattern}
+        />
+      </label>
+    </div>
   );
 }
 
 function AuthPasswordField({
+  label,
   value,
   onChange,
   placeholder,
@@ -61,34 +68,37 @@ function AuthPasswordField({
   const [visible, setVisible] = useState(false);
 
   return (
-    <label className="auth-field">
-      <span className="auth-field-icon" aria-hidden>
-        <Lock size={18} />
-      </span>
-      <input
-        type={visible ? "text" : "password"}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        required={required}
-        autoComplete={autoComplete}
-        minLength={minLength}
-      />
-      <button
-        type="button"
-        className="auth-field-toggle"
-        onClick={() => setVisible((v) => !v)}
-        aria-label={visible ? "Skrij geslo" : "Prikaži geslo"}
-      >
-        {visible ? <EyeOff size={18} /> : <Eye size={18} />}
-      </button>
-    </label>
+    <div className="auth-field-group">
+      <span className="auth-field-label">{label}</span>
+      <label className="auth-field">
+        <span className="auth-field-icon" aria-hidden>
+          <Lock size={18} />
+        </span>
+        <input
+          type={visible ? "text" : "password"}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          required={required}
+          autoComplete={autoComplete}
+          minLength={minLength}
+        />
+        <button
+          type="button"
+          className="auth-field-toggle"
+          onClick={() => setVisible((v) => !v)}
+          aria-label={visible ? "Skrij geslo" : "Prikaži geslo"}
+        >
+          {visible ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      </label>
+    </div>
   );
 }
 
 export function Login() {
   const navigate = useNavigate();
-  const { user, login, register } = useAuth();
+  const { user, loading, login, register } = useAuth();
   const [mode, setMode] = useState("register");
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -103,23 +113,36 @@ export function Login() {
   });
 
   useEffect(() => {
-    if (user) navigate("/", { replace: true });
-  }, [user, navigate]);
-
-  useEffect(() => {
     try {
+      const savedRemember =
+        localStorage.getItem(REMEMBER_ME_KEY) ??
+        localStorage.getItem("dso_remember_me");
+      if (savedRemember === "false") {
+        setRememberMe(false);
+      }
       const saved =
         localStorage.getItem(REMEMBER_USERNAME_KEY) ??
         localStorage.getItem(LEGACY_REMEMBER_USERNAME_KEY) ??
         localStorage.getItem("iglarnica_remember_username");
       if (saved) {
         setLoginForm((f) => ({ ...f, username: saved }));
-        setRememberMe(true);
       }
     } catch {
       /* localStorage unavailable */
     }
   }, []);
+
+  if (loading) {
+    return (
+      <div className="login-page login-page-v2">
+        <p className="muted center page">Nalagam…</p>
+      </div>
+    );
+  }
+
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -128,6 +151,7 @@ export function Login() {
     try {
       await login({ ...loginForm, rememberMe });
       try {
+        localStorage.setItem(REMEMBER_ME_KEY, rememberMe ? "true" : "false");
         if (rememberMe) {
           localStorage.setItem(REMEMBER_USERNAME_KEY, loginForm.username.trim());
         } else {
@@ -149,7 +173,7 @@ export function Login() {
     setError(null);
     setSubmitting(true);
     try {
-      await register(registerForm);
+      await register({ ...registerForm, rememberMe: true });
       navigate("/", { replace: true });
     } catch (err) {
       setError(err.message ?? "Registracija ni uspela");
@@ -176,7 +200,7 @@ export function Login() {
           <h2>{isRegister ? "Ustvari račun" : "Prijava"}</h2>
           <p>
             {isRegister
-              ? "Ustvari svoj račun in začni naročati."
+              ? "Ustvari svoj račun in začni naročati pri Discogs."
               : "Prijavi se v svoj DSO račun."}
           </p>
         </div>
@@ -186,27 +210,30 @@ export function Login() {
         {isRegister ? (
           <form className="login-form login-form-v2" onSubmit={handleRegister}>
             <AuthField
+              label="Ime"
               icon={User}
               value={registerForm.firstName}
               onChange={(e) =>
                 setRegisterForm((f) => ({ ...f, firstName: e.target.value }))
               }
-              placeholder="Ime"
+              placeholder="Tvoje ime"
               required
               autoComplete="given-name"
               autoFocus
             />
             <AuthField
+              label="Priimek"
               icon={User}
               value={registerForm.lastName}
               onChange={(e) =>
                 setRegisterForm((f) => ({ ...f, lastName: e.target.value }))
               }
-              placeholder="Priimek"
+              placeholder="Tvoj priimek"
               required
               autoComplete="family-name"
             />
             <AuthField
+              label="Uporabniško ime (za prijavo)"
               icon={AtSign}
               value={registerForm.username}
               onChange={(e) =>
@@ -215,7 +242,7 @@ export function Login() {
                   username: e.target.value.toLowerCase(),
                 }))
               }
-              placeholder="marko.novak"
+              placeholder="npr. marko.novak"
               required
               minLength={3}
               maxLength={32}
@@ -223,16 +250,18 @@ export function Login() {
               pattern="[a-z0-9._-]+"
             />
             <AuthPasswordField
+              label="Geslo"
               value={registerForm.password}
               onChange={(e) =>
                 setRegisterForm((f) => ({ ...f, password: e.target.value }))
               }
-              placeholder="Geslo"
+              placeholder="Ustvari močno geslo"
               required
               minLength={6}
               autoComplete="new-password"
             />
             <AuthPasswordField
+              label="Ponovi geslo"
               value={registerForm.passwordConfirm}
               onChange={(e) =>
                 setRegisterForm((f) => ({ ...f, passwordConfirm: e.target.value }))
@@ -244,8 +273,8 @@ export function Login() {
             />
 
             <p className="login-hint">
-              <Shield size={16} aria-hidden />
-              Uporabniško ime se uporablja samo za prijavo.
+              <Info size={16} aria-hidden />
+              Uporabniško ime uporabiš samo pri prijavi v aplikacijo.
             </p>
 
             <button type="submit" className="login-btn-primary" disabled={submitting}>
@@ -263,10 +292,16 @@ export function Login() {
             >
               Že imaš račun? <span className="login-link-accent">Prijavi se</span>
             </button>
+
+            <p className="login-footer-hint">
+              <Shield size={16} aria-hidden />
+              Po prijavi lahko v nastavitvah povežeš Discogs profil.
+            </p>
           </form>
         ) : (
           <form className="login-form login-form-v2" onSubmit={handleLogin}>
             <AuthField
+              label="Uporabniško ime"
               icon={AtSign}
               value={loginForm.username}
               onChange={(e) =>
@@ -275,17 +310,18 @@ export function Login() {
                   username: e.target.value.toLowerCase(),
                 }))
               }
-              placeholder="marko.novak"
+              placeholder="npr. marko.novak"
               required
               autoComplete="username"
               autoFocus
             />
             <AuthPasswordField
+              label="Geslo"
               value={loginForm.password}
               onChange={(e) =>
                 setLoginForm((f) => ({ ...f, password: e.target.value }))
               }
-              placeholder="Geslo"
+              placeholder="Tvoje geslo"
               required
               autoComplete="current-password"
             />

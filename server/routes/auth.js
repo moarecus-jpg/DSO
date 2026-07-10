@@ -24,7 +24,7 @@ import { appBaseUrl, discogsCallbackUrl as buildDiscogsCallbackUrl } from "../ap
 import { getDiscogsUserProfile, getIdentity } from "../discogs/client.js";
 import { discogsAppConfigured } from "../discogs/auth.js";
 import { MOCK_USER } from "../mock.js";
-import { applySessionPersistence } from "../auth/sessionCookie.js";
+import { applySessionPersistence, saveSession } from "../auth/sessionCookie.js";
 
 const router = Router();
 
@@ -34,12 +34,6 @@ function useMockAuth() {
 
 function clientUrl(req) {
   return appBaseUrl(req);
-}
-
-function saveSession(req) {
-  return new Promise((resolve, reject) => {
-    req.session.save((err) => (err ? reject(err) : resolve()));
-  });
 }
 
 function discogsErrorRedirect(req, res, reason = "unknown") {
@@ -110,6 +104,7 @@ router.get("/google/callback", async (req, res) => {
     const user = upsertGoogleUser(profile);
     req.session.userId = user.id;
     applySessionPersistence(req, true);
+    await saveSession(req);
     res.redirect(`${clientUrl(req)}/`);
   } catch (err) {
     console.error(err);
@@ -117,7 +112,7 @@ router.get("/google/callback", async (req, res) => {
   }
 });
 
-router.post("/register", (req, res) => {
+router.post("/register", async (req, res) => {
   try {
     const { firstName, lastName, password, passwordConfirm, username } = req.body ?? {};
     if (password !== passwordConfirm) {
@@ -125,7 +120,9 @@ router.post("/register", (req, res) => {
     }
     const user = createLocalUser({ firstName, lastName, password, username });
     req.session.userId = user.id;
-    applySessionPersistence(req, Boolean(req.body?.rememberMe));
+    const rememberMe = req.body?.rememberMe !== false;
+    applySessionPersistence(req, rememberMe);
+    await saveSession(req);
     res.status(201).json({
       user: publicUser(user),
       username: user.username,
@@ -143,18 +140,24 @@ router.post("/register", (req, res) => {
   }
 });
 
-router.post("/login", (req, res) => {
-  const { username, password, rememberMe } = req.body ?? {};
-  if (!username?.trim() || !password) {
-    return res.status(400).json({ error: "Vnesi uporabniško ime in geslo." });
+router.post("/login", async (req, res) => {
+  try {
+    const { username, password, rememberMe } = req.body ?? {};
+    if (!username?.trim() || !password) {
+      return res.status(400).json({ error: "Vnesi uporabniško ime in geslo." });
+    }
+    const user = verifyLocalUser(username.trim(), password);
+    if (!user) {
+      return res.status(401).json({ error: "Napačno uporabniško ime ali geslo." });
+    }
+    req.session.userId = user.id;
+    applySessionPersistence(req, Boolean(rememberMe));
+    await saveSession(req);
+    res.json({ user: publicUser(user) });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ error: "Prijava ni uspela. Poskusi znova." });
   }
-  const user = verifyLocalUser(username.trim(), password);
-  if (!user) {
-    return res.status(401).json({ error: "Napačno uporabniško ime ali geslo." });
-  }
-  req.session.userId = user.id;
-  applySessionPersistence(req, Boolean(rememberMe));
-  res.json({ user: publicUser(user) });
 });
 
 router.post("/mock-login", (req, res) => {
