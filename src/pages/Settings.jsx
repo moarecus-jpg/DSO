@@ -66,19 +66,38 @@ export function Settings() {
       refresh();
 
     } else if (discogs === "error") {
-
       setMessageType("warn");
+      const reason = params.get("reason");
+      const callback = health?.discogsCallbackUrl ?? discogsCallbackFallback();
 
-      setMessage(
-        <>
-          Povezava z Discogs ni uspela. V Discogs Developer pri aplikaciji DSO dodaj
-          Callback URL:{" "}
-          <code>
-            {health?.discogsCallbackUrl ?? discogsCallbackFallback()}
-          </code>
-          . Nato znova klikni Poveži Discogs.
-        </>
-      );
+      if (reason === "session") {
+        setMessage(
+          "Povezava je prekinjena — seja se ni shranila med preusmeritvijo na Discogs. " +
+            "Poskusi znova (priporočeno: ob prijavi označi Zapomni si me)."
+        );
+      } else if (reason === "start") {
+        setMessage(
+          <>
+            Discogs OAuth se ni zagnal. Preveri <code>DISCOGS_CONSUMER_KEY</code> in{" "}
+            <code>DISCOGS_CONSUMER_SECRET</code> v Railway Variables (brez presledkov).
+            Callback URL: <code>{callback}</code>
+          </>
+        );
+      } else if (reason === "callback") {
+        setMessage(
+          <>
+            Discogs je vrnil napako ob potrditvi. Preveri, da je Callback URL v Developer
+            nastavitvah točno: <code>{callback}</code>
+          </>
+        );
+      } else {
+        setMessage(
+          <>
+            Povezava z Discogs ni uspela. V Discogs Developer pri aplikaciji DSO dodaj
+            Callback URL: <code>{callback}</code>. Nato znova klikni Poveži Discogs.
+          </>
+        );
+      }
 
     } else if (discogs === "nokeys") {
 

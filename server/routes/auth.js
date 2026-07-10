@@ -36,6 +36,18 @@ function clientUrl(req) {
   return appBaseUrl(req);
 }
 
+function saveSession(req) {
+  return new Promise((resolve, reject) => {
+    req.session.save((err) => (err ? reject(err) : resolve()));
+  });
+}
+
+function discogsErrorRedirect(req, res, reason = "unknown") {
+  return res.redirect(
+    `${clientUrl(req)}/settings?discogs=error&reason=${encodeURIComponent(reason)}`
+  );
+}
+
 async function ensureUserDiscogsAvatar(user) {
   if (!user?.discogs_username || user.discogs_avatar_url || !discogsAppConfigured()) {
     return user;
@@ -171,15 +183,19 @@ router.get("/discogs", async (req, res) => {
 
   if (discogsOAuthConfigured()) {
     try {
+      const base = clientUrl(req);
       const callbackUrl = buildDiscogsCallbackUrl(req);
-      const { url, requestToken, requestTokenSecret } =
-        await getDiscogsAuthUrl(callbackUrl);
+      const { url, requestToken, requestTokenSecret } = await getDiscogsAuthUrl(
+        callbackUrl,
+        base
+      );
       req.session.discogsRequestToken = requestToken;
       req.session.discogsRequestTokenSecret = requestTokenSecret;
+      await saveSession(req);
       return res.redirect(url);
     } catch (err) {
       console.error("Discogs OAuth start:", err);
-      return res.redirect(`${clientUrl(req)}/settings?discogs=error`);
+      return discogsErrorRedirect(req, res, "start");
     }
   }
 
@@ -204,12 +220,19 @@ router.get("/discogs/callback", async (req, res) => {
     return res.redirect(`${clientUrl(req)}/settings?discogs=nokeys`);
   }
 
+  if (!req.session.discogsRequestToken || !req.session.discogsRequestTokenSecret) {
+    console.error("Discogs OAuth callback: manjkata request tokena v seji");
+    return discogsErrorRedirect(req, res, "session");
+  }
+
   try {
+    const base = clientUrl(req);
     const verifier = req.query.oauth_verifier;
     const { token, tokenSecret } = await getDiscogsAccessToken(
       req.session.discogsRequestToken,
       req.session.discogsRequestTokenSecret,
-      verifier
+      verifier,
+      base
     );
     const identity = await getIdentity(token, tokenSecret);
     let avatarUrl = null;
@@ -227,7 +250,7 @@ router.get("/discogs/callback", async (req, res) => {
     res.redirect(`${clientUrl(req)}/settings?discogs=connected`);
   } catch (err) {
     console.error("Discogs OAuth callback:", err);
-    res.redirect(`${clientUrl(req)}/settings?discogs=error`);
+    return discogsErrorRedirect(req, res, "callback");
   }
 });
 

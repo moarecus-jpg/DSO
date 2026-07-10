@@ -6,7 +6,13 @@ dotenv.config();
 const REQUEST_URL = "https://api.discogs.com/oauth/request_token";
 const ACCESS_URL = "https://api.discogs.com/oauth/access_token";
 const AUTHORIZE_URL = "https://www.discogs.com/oauth/authorize";
-const UA = "DSO/2.0 +http://localhost:5173";
+
+function discogsUserAgent(contactUrl) {
+  const base = (contactUrl || process.env.CLIENT_URL || "http://localhost:5173")
+    .trim()
+    .replace(/\/$/, "");
+  return `DSO/2.0 +${base}`;
+}
 
 export function discogsOAuthConfigured() {
   return Boolean(
@@ -20,9 +26,9 @@ export function discogsCallbackUrl() {
   return `${base}/auth/discogs/callback`;
 }
 
-function getOAuth() {
-  const key = process.env.DISCOGS_CONSUMER_KEY;
-  const secret = process.env.DISCOGS_CONSUMER_SECRET;
+function getOAuth(contactUrl) {
+  const key = process.env.DISCOGS_CONSUMER_KEY?.trim();
+  const secret = process.env.DISCOGS_CONSUMER_SECRET?.trim();
   if (!key || !secret) {
     throw new Error("DISCOGS_CONSUMER_KEY in DISCOGS_CONSUMER_SECRET nista nastavljena.");
   }
@@ -37,7 +43,7 @@ function getOAuth() {
     "HMAC-SHA1",
     null,
     {
-      "User-Agent": UA,
+      "User-Agent": discogsUserAgent(contactUrl),
       Accept: "*/*",
       Connection: "close",
     }
@@ -50,8 +56,8 @@ function parseOAuthError(err) {
   return new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
 }
 
-export function getDiscogsAuthUrl(callbackUrl) {
-  const oauth = getOAuth();
+export function getDiscogsAuthUrl(callbackUrl, contactUrl) {
+  const oauth = getOAuth(contactUrl);
 
   return new Promise((resolve, reject) => {
     oauth.getOAuthRequestToken(
@@ -68,8 +74,13 @@ export function getDiscogsAuthUrl(callbackUrl) {
   });
 }
 
-export function getDiscogsAccessToken(requestToken, requestTokenSecret, verifier) {
-  const oauth = getOAuth();
+export function getDiscogsAccessToken(
+  requestToken,
+  requestTokenSecret,
+  verifier,
+  contactUrl
+) {
+  const oauth = getOAuth(contactUrl);
 
   return new Promise((resolve, reject) => {
     oauth.getOAuthAccessToken(
@@ -85,8 +96,8 @@ export function getDiscogsAccessToken(requestToken, requestTokenSecret, verifier
 }
 
 /** Signed GET for OAuth-authenticated Discogs API resources. */
-export function oauthGetJson(url, token, tokenSecret) {
-  const oauth = getOAuth();
+export function oauthGetJson(url, token, tokenSecret, contactUrl) {
+  const oauth = getOAuth(contactUrl);
 
   return new Promise((resolve, reject) => {
     oauth.get(url, token, tokenSecret, (err, body) => {

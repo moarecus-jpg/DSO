@@ -44,7 +44,7 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: isProduction,
+      secure: isProduction ? "auto" : false,
       sameSite: "lax",
       /* maxAge set on login when "Zapomni si me" is checked; otherwise session cookie */
     },
