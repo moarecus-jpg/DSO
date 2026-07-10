@@ -1,30 +1,37 @@
 import { Disc3 } from "lucide-react";
 
-/** Brand lockup — icon + DSO wordmark. */
+/** Brand lockup — icon + wordmark. */
 export function BrandMark({ variant = "nav" }) {
   const isLogin = variant === "login";
+  const isSidebar = variant === "sidebar";
+
   return (
     <span
       className={`brand-mark brand-mark--${variant}`}
       title="DSO — Discogs Slovenia Orders"
     >
       <span className="brand-mark-icon" aria-hidden>
-        {isLogin ? (
-          <Disc3 size={34} strokeWidth={1.5} />
-        ) : (
-          <img
-            src="/dso-icon.png"
-            alt=""
-            className="brand-mark-img brand-mark-img--nav"
-          />
-        )}
+        <Disc3
+          size={isLogin ? 34 : isSidebar ? 32 : 18}
+          strokeWidth={isLogin ? 1.5 : 2}
+        />
       </span>
       <span className="brand-mark-text">
-        <span className="brand-mark-name">DSO</span>
-        {isLogin && (
-          <span className="brand-mark-tagline">
-            Discogs <span className="brand-mark-highlight">Slovenia</span> Orders
+        {isSidebar ? (
+          <span className="brand-mark-wordmark">
+            <span className="brand-mark-line">Discogs</span>
+            <span className="brand-mark-line brand-mark-line--accent">Slovenia</span>
+            <span className="brand-mark-line">Orders</span>
           </span>
+        ) : (
+          <>
+            <span className="brand-mark-name">DSO</span>
+            {isLogin && (
+              <span className="brand-mark-tagline">
+                Discogs <span className="brand-mark-highlight">Slovenia</span> Orders
+              </span>
+            )}
+          </>
         )}
       </span>
     </span>

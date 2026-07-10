@@ -81,11 +81,11 @@ export function NewOrderForm({ onSubmit, creating, error }) {
       {error && <p className="form-error">{error}</p>}
 
       <p className="muted fine">
-        Naslov: <code>Naročilo#····</code>
+        Naslov: <code>seller#····</code>
         {parsedSeller?.username && (
           <>
             {" "}
-            · <code>@{parsedSeller.username}</code>
+            npr. <code>{parsedSeller.username}#0007</code>
           </>
         )}
       </p>

@@ -1,18 +1,29 @@
 import { Link, NavLink, useSearchParams } from "react-router-dom";
-import { Folder, Lock, LogOut, Package, Plus, Settings } from "lucide-react";
+import {
+  ChevronDown,
+  Folder,
+  Lock,
+  LogOut,
+  Moon,
+  Package,
+  Plus,
+} from "lucide-react";
 import { useAuth } from "../hooks/useAuth.jsx";
+import { useTheme } from "../hooks/useTheme.jsx";
+import { BrandMark } from "./BrandMark.jsx";
 import { UserAvatar } from "./UserAvatar.jsx";
 
 export function Sidebar() {
   const [searchParams] = useSearchParams();
   const { user, logout } = useAuth();
+  const { darkMode, setDarkMode } = useTheme();
   const newOrderOpen = searchParams.get("new") === "1";
 
   return (
     <aside className="sidebar sidebar-v2">
       <div className="sidebar-top">
         <Link to="/" className="sidebar-brand" title="DSO — Discogs Slovenia Orders">
-          DSO
+          <BrandMark variant="sidebar" />
         </Link>
 
         <NavLink
@@ -69,8 +80,23 @@ export function Sidebar() {
               {user?.discogsUsername ? `@${user.discogsUsername}` : user?.username ?? ""}
             </p>
           </div>
-          <Settings size={16} className="sidebar-user-settings" aria-hidden />
+          <ChevronDown size={18} className="sidebar-user-chevron" aria-hidden />
         </Link>
+
+        <label className="sidebar-theme-toggle">
+          <span className="sidebar-theme-toggle-label">
+            <Moon size={16} aria-hidden />
+            Temni način
+          </span>
+          <input
+            type="checkbox"
+            className="sidebar-theme-toggle-input"
+            checked={darkMode}
+            onChange={(e) => setDarkMode(e.target.checked)}
+          />
+          <span className="sidebar-theme-toggle-track" aria-hidden />
+        </label>
+
         <button type="button" className="sidebar-logout" onClick={logout}>
           <LogOut size={16} />
           Odjava

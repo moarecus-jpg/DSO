@@ -153,7 +153,7 @@ function withOrderTitle(session) {
     1;
   return {
     ...session,
-    title: formatOrderTitle(orderNumber),
+    title: formatOrderTitle(orderNumber, session.seller_username),
   };
 }
 

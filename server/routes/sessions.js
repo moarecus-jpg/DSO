@@ -252,7 +252,7 @@ function serializeOrderedItem(row) {
     sellerUsername: row.seller_username,
     sessionStatus: row.session_status,
     orderNumber: row.order_number,
-    orderTitle: formatOrderTitle(row.order_number ?? 1),
+    orderTitle: formatOrderTitle(row.order_number ?? 1, row.seller_username),
   };
 }
 
@@ -303,7 +303,7 @@ router.post("/", requireUser, async (req, res) => {
         ...MOCK_SESSION,
         id: `mock-${Date.now()}`,
         order_number: mockOrderSeq,
-        title: formatOrderTitle(mockOrderSeq),
+        title: formatOrderTitle(mockOrderSeq, cleanSeller),
         seller_username: cleanSeller,
         status: "open",
         member_count: 1,

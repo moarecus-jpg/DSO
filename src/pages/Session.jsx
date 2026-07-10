@@ -201,7 +201,7 @@ export function Session() {
     ) : null;
 
   return (
-    <div className="page">
+    <div className="page page-detail">
       <Link to={isClosed ? "/closed" : "/"} className="back-link">
         <ArrowLeft size={16} /> {isClosed ? "Zaključena naročila" : "Odprta naročila"}
       </Link>

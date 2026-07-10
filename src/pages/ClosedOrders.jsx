@@ -21,7 +21,9 @@ export function ClosedOrders() {
     if (!q) return sessions;
     return sessions.filter((s) => {
       const title =
-        s.order_number != null ? formatOrderTitle(s.order_number) : s.title ?? "";
+        s.order_number != null
+          ? formatOrderTitle(s.order_number, s.seller_username)
+          : s.title ?? "";
       return (
         title.toLowerCase().includes(q) ||
         s.seller_username?.toLowerCase().includes(q)

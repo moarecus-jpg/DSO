@@ -22,7 +22,7 @@ export const MOCK_USER_2 = {
 
 export const MOCK_SESSION = {
   id: "mock-session-1",
-  title: "Naročilo#0001",
+  title: "vinyl_japan_tokyo#0001",
   order_number: 1,
   seller_username: "vinyl_japan_tokyo",
   created_by: MOCK_USER.id,

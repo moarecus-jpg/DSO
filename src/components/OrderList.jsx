@@ -33,7 +33,9 @@ export function OrderList({ sessions, loading, emptyMessage }) {
       {sessions.map((s) => {
         const isClosed = s.status === "closed";
         const title =
-          s.order_number != null ? formatOrderTitle(s.order_number) : s.title;
+          s.order_number != null
+            ? formatOrderTitle(s.order_number, s.seller_username)
+            : s.title;
         const dateLabel = formatOrderDate(s.created_at);
 
         return (
@@ -46,7 +48,6 @@ export function OrderList({ sessions, loading, emptyMessage }) {
             />
             <div className="order-card-v2-body">
               <h3 className="order-card-v2-title">{title}</h3>
-              <p className="order-card-v2-seller">@{s.seller_username}</p>
               {dateLabel && (
                 <p className="order-card-v2-date">
                   <Calendar size={14} aria-hidden />
