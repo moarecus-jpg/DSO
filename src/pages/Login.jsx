@@ -11,25 +11,10 @@ import {
   UserPlus,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth.jsx";
+import { BrandMark } from "../components/BrandMark.jsx";
 
 const REMEMBER_USERNAME_KEY = "dso_remember_username";
 const LEGACY_REMEMBER_USERNAME_KEY = "dsp_remember_username";
-
-function LoginLogo() {
-  return (
-    <div className="login-logo">
-      <div className="login-logo-badge" aria-hidden>
-        <div className="login-logo-vinyl">
-          <div className="login-logo-hole" />
-        </div>
-      </div>
-      <h1 className="login-logo-title">DSO</h1>
-      <p className="login-logo-tagline">
-        Discogs <span className="login-logo-accent">Slovenia</span> Orders
-      </p>
-    </div>
-  );
-}
 
 function AuthField({
   icon: Icon,
@@ -183,7 +168,9 @@ export function Login() {
       </div>
 
       <div className="login-card login-card-v2">
-        <LoginLogo />
+        <div className="login-brand">
+          <BrandMark variant="login" />
+        </div>
 
         <div className="login-heading">
           <h2>{isRegister ? "Ustvari račun" : "Prijava"}</h2>

@@ -643,58 +643,28 @@ code {
   text-align: center;
 }
 
-.login-logo {
+.login-page-v2 .login-brand {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  justify-content: center;
 }
 
-.login-logo-badge {
-  width: 5rem;
-  height: 5rem;
-  border-radius: 1.5rem;
-  background: linear-gradient(135deg, #7c3aed, #6366f1);
-  display: grid;
-  place-items: center;
-  box-shadow: 0 12px 32px rgba(124, 58, 237, 0.4);
+.login-page-v2 .brand-mark {
+  justify-content: center;
 }
 
-.login-logo-vinyl {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  border: 3px solid #fff;
-  position: relative;
+.login-page-v2 .brand-mark-icon {
+  border-color: rgba(167, 139, 250, 0.45);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.35), rgba(99, 102, 241, 0.2));
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.2);
 }
 
-.login-logo-hole {
-  position: absolute;
-  width: 0.75rem;
-  height: 0.75rem;
-  border-radius: 50%;
-  background: #fff;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.login-logo-title {
-  margin: 1.5rem 0 0;
-  font-size: 3rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  line-height: 1;
+.login-page-v2 .brand-mark-name {
+  text-shadow: none;
   color: #fff;
 }
 
-.login-logo-tagline {
-  margin: 0.5rem 0 0;
-  color: #a1a1aa;
-  font-size: 1rem;
-}
-
-.login-logo-accent {
-  color: #a78bfa;
+.login-page-v2 .brand-mark-tagline {
+  color: rgba(255, 255, 255, 0.48);
 }
 
 .login-heading {
@@ -882,10 +852,6 @@ code {
   .login-card-v2 {
     padding: 1.5rem;
     border-radius: 1.35rem;
-  }
-
-  .login-logo-title {
-    font-size: 2.35rem;
   }
 
   .login-heading h2 {
