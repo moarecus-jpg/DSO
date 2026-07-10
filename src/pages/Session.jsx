@@ -10,6 +10,7 @@ import { api } from "../api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { sellerMywantsUrl } from "../../shared/discogsUrls.js";
+import { displayOrderTitle } from "../../shared/orderTitle.js";
 
 export function Session() {
   const { id } = useParams();
@@ -209,7 +210,7 @@ export function Session() {
 
       <header className="page-header">
         <div>
-          <h1>{session.title}</h1>
+          <h1>{displayOrderTitle(session)}</h1>
           <div className="session-seller-row">
             <SellerAvatar
               username={session.seller_username}

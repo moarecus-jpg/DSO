@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar.jsx";
 import { MobileNav } from "./MobileNav.jsx";
 import { MobileTopBar } from "./MobileTopBar.jsx";
+import { PersistenceBanner } from "./PersistenceBanner.jsx";
 
 export function Layout() {
   return (
@@ -11,6 +12,7 @@ export function Layout() {
         <div className="layout-glow-orb layout-glow-orb--indigo" />
       </div>
       <MobileTopBar />
+      <PersistenceBanner />
       <div className="app-shell app-shell-v2">
         <Sidebar />
         <main className="app-main app-main-v2">

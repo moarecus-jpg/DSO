@@ -1,12 +1,9 @@
-import { formatOrderTitle } from "./orderTitle.js";
+import { displayOrderTitle } from "./orderTitle.js";
 
 export const ORDER_SEARCH_MODES = ["creator", "seller"];
 
 export function orderSearchTitle(session) {
-  if (session.order_number != null) {
-    return formatOrderTitle(session.order_number, session.seller_username);
-  }
-  return session.title ?? "";
+  return displayOrderTitle(session);
 }
 
 export function filterSessions(sessions, { query = "", searchMode = "creator" } = {}) {

@@ -212,6 +212,9 @@ export default {
       "Discogs connection failed. In Discogs Developer for the DSO app add Callback URL:",
     genericErrorRetry: "Then click Connect Discogs again.",
     noKeys: "DISCOGS_CONSUMER_KEY and DISCOGS_CONSUMER_SECRET are missing from .env.",
+    persistenceTitle: "Accounts are wiped on every redeploy",
+    persistenceBody:
+      "On Railway add a Volume with mount path {{path}} (Service → Volumes → Add Volume), then redeploy. Accounts will persist after that.",
   },
   errors: {
     passwordsMismatch: "Passwords do not match.",

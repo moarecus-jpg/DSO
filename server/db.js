@@ -7,16 +7,44 @@ import { formatOrderTitle } from "../shared/orderTitle.js";
 import { hashPassword, verifyPassword } from "./auth/password.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dataDir =
-  process.env.DATA_DIR?.trim() || path.join(__dirname, "..", "data");
+
+function resolveDataDir() {
+  const explicit = process.env.DATA_DIR?.trim();
+  if (explicit) return explicit;
+
+  const databasePath = process.env.DATABASE_PATH?.trim();
+  if (databasePath) return path.dirname(databasePath);
+
+  const railwayVolume = process.env.RAILWAY_VOLUME_MOUNT_PATH?.trim();
+  if (railwayVolume) return railwayVolume;
+
+  return path.join(__dirname, "..", "data");
+}
+
+function isPersistentDataDir(dir) {
+  if (process.env.DATA_DIR?.trim() || process.env.DATABASE_PATH?.trim()) {
+    return true;
+  }
+  if (process.env.RAILWAY_VOLUME_MOUNT_PATH?.trim()) {
+    return true;
+  }
+  if (process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === "production") {
+    return false;
+  }
+  return true;
+}
+
+const dataDir = resolveDataDir();
 const dbPath =
   process.env.DATABASE_PATH?.trim() || path.join(dataDir, "app.db");
+const persistentStorage = isPersistentDataDir(dataDir);
 
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 
 let db;
 try {
   db = new Database(dbPath);
+  db.pragma("journal_mode = WAL");
 } catch (err) {
   if (err?.code === "ERR_DLOPEN_FAILED") {
     console.error(
@@ -573,8 +601,10 @@ export function getDatabaseInfo() {
   return {
     path: dbPath,
     dataDir,
-    persistent: Boolean(process.env.DATA_DIR?.trim() || process.env.DATABASE_PATH?.trim()),
+    persistent: persistentStorage,
     userCount: db.prepare("SELECT COUNT(*) AS c FROM users").get()?.c ?? 0,
+    railwayVolumeMountPath: process.env.RAILWAY_VOLUME_MOUNT_PATH?.trim() || null,
+    recommendedVolumeMount: "/app/data",
   };
 }
 

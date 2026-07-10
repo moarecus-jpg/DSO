@@ -216,6 +216,9 @@ export default {
     genericErrorRetry: "Nato znova klikni Poveži Discogs.",
     noKeys:
       "Manjkata DISCOGS_CONSUMER_KEY in DISCOGS_CONSUMER_SECRET v .env datoteki.",
+    persistenceTitle: "Računi se po redeployu brišejo",
+    persistenceBody:
+      "Na Railwayu dodaj Volume z mount path {{path}} (Service → Volumes → Add Volume), nato redeploy. Potem se računi ohranijo.",
   },
   errors: {
     passwordsMismatch: "Gesli se ne ujemata.",

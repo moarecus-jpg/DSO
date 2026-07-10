@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Calendar, ChevronRight, Disc3, UserRound, Users } from "lucide-react";
-import { formatOrderTitle } from "../../shared/orderTitle.js";
+import { displayOrderTitle } from "../../shared/orderTitle.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { SellerAvatar } from "./SellerAvatar.jsx";
 
@@ -35,10 +35,7 @@ export function OrderList({ sessions, loading, emptyMessage }) {
     <div className="order-list order-list-v2">
       {sessions.map((s) => {
         const isClosed = s.status === "closed";
-        const title =
-          s.order_number != null
-            ? formatOrderTitle(s.order_number, s.seller_username)
-            : s.title;
+        const title = displayOrderTitle(s);
         const dateLabel = formatOrderDate(s.created_at, localeTag);
         const creatorLabel =
           s.creator_name ??

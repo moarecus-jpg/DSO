@@ -4,6 +4,7 @@ import { Disc3, ExternalLink, Unplug } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
+import { useTheme } from "../hooks/useTheme.jsx";
 import { LanguageToggle } from "../components/LanguageToggle.jsx";
 
 function discogsCallbackFallback() {
@@ -16,6 +17,7 @@ function discogsCallbackFallback() {
 export function Settings() {
   const { user, refresh } = useAuth();
   const { t } = useLocale();
+  const { darkMode, setDarkMode } = useTheme();
   const [params] = useSearchParams();
   const [message, setMessage] = useState(null);
   const [messageType, setMessageType] = useState("ok");
@@ -94,6 +96,20 @@ export function Settings() {
       <div className="card settings-card">
         <h2>{t("language.label")}</h2>
         <LanguageToggle />
+      </div>
+
+      <div className="card settings-card">
+        <h2>{t("nav.darkMode")}</h2>
+        <label className="settings-theme-toggle">
+          <span>{t("nav.darkMode")}</span>
+          <input
+            type="checkbox"
+            className="sidebar-theme-toggle-input"
+            checked={darkMode}
+            onChange={(e) => setDarkMode(e.target.checked)}
+          />
+          <span className="sidebar-theme-toggle-track" aria-hidden />
+        </label>
       </div>
 
       <div className="card settings-card">

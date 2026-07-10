@@ -20,6 +20,10 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     document.documentElement.dataset.theme = darkMode ? "dark" : "light";
+    const themeColor = document.querySelector('meta[name="theme-color"]');
+    if (themeColor) {
+      themeColor.setAttribute("content", darkMode ? "#09090b" : "#f4f4f5");
+    }
     try {
       localStorage.setItem(STORAGE_KEY, darkMode ? "true" : "false");
     } catch {

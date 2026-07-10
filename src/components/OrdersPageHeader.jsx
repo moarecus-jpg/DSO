@@ -1,5 +1,6 @@
 import { Search } from "lucide-react";
 import { ORDER_SEARCH_MODES } from "../../shared/filterOrders.js";
+import { AppSelect } from "./AppSelect.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
 
 const SEARCH_MODE_LABELS = {
@@ -26,6 +27,11 @@ export function OrdersPageHeader({
   const resolvedPlaceholder =
     placeholder ?? t(SEARCH_PLACEHOLDERS[mode] ?? "orders.searchOrders");
 
+  const filterOptions = ORDER_SEARCH_MODES.map((value) => ({
+    value,
+    label: t(SEARCH_MODE_LABELS[value]),
+  }));
+
   return (
     <div className="orders-page-header">
       <div>
@@ -44,18 +50,13 @@ export function OrdersPageHeader({
           />
         </div>
         {onSearchModeChange && (
-          <select
-            className="orders-search-mode"
+          <AppSelect
+            className="orders-search-filter"
             value={mode}
-            onChange={(e) => onSearchModeChange(e.target.value)}
-            aria-label={t("orders.searchOrders")}
-          >
-            {ORDER_SEARCH_MODES.map((value) => (
-              <option key={value} value={value}>
-                {t(SEARCH_MODE_LABELS[value])}
-              </option>
-            ))}
-          </select>
+            onChange={onSearchModeChange}
+            options={filterOptions}
+            ariaLabel={t("orders.searchOrders")}
+          />
         )}
       </div>
     </div>

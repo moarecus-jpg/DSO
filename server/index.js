@@ -93,8 +93,11 @@ const server = app.listen(PORT, () => {
   console.log(`Baza: ${database.path} (${database.userCount} računov)`);
   if (isProduction && !database.persistent) {
     console.warn(
-      "OPOZORILO: DATA_DIR ni nastavljen — SQLite se ob vsakem redeployu na Railwayu pobriše. " +
-        "Dodaj Volume (npr. /data) in nastavi DATA_DIR=/data."
+      "OPOZORILO: Baza NI trajna — računi in naročila se ob redeployu izbrišejo.\n" +
+        "Railway: Service → Volumes → Add Volume → mount path: " +
+        database.recommendedVolumeMount +
+        "\n" +
+        "(Ko je volume pripet, Railway nastavi RAILWAY_VOLUME_MOUNT_PATH samodejno.)"
     );
   }
   console.log(
