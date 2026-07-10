@@ -143,6 +143,11 @@ export default {
     targetDateHint: "Kdaj skupina načrtuje oddati naročilo.",
     targetDateAria: "Ciljni datum naročila",
     targetDateUnset: "Še ni nastavljen",
+    targetDatePlaceholder: "Izberi datum…",
+    targetDateClear: "Počisti",
+    targetDateToday: "Danes",
+    targetDatePrevMonth: "Prejšnji mesec",
+    targetDateNextMonth: "Naslednji mesec",
     renameFailed: "Imena ni bilo mogoče shraniti.",
     addFailed: "Napaka pri dodajanju.",
     addPartial:

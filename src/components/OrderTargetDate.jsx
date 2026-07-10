@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
 import { Calendar } from "lucide-react";
+import { AppDatePicker } from "./AppDatePicker.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
 
 function formatTargetDate(value, localeTag) {
@@ -21,17 +21,11 @@ export function OrderTargetDate({
   onSave,
 }) {
   const { t, localeTag } = useLocale();
-  const [draft, setDraft] = useState(targetDate ?? "");
 
-  useEffect(() => {
-    setDraft(targetDate ?? "");
-  }, [targetDate]);
-
-  async function commit() {
+  async function handleChange(next) {
     if (!onSave || readOnly) return;
-    const next = draft.trim() === "" ? null : draft;
     const current = targetDate ?? null;
-    if (next === current) return;
+    if ((next ?? null) === current) return;
     await onSave(next);
   }
 
@@ -48,26 +42,13 @@ export function OrderTargetDate({
           {formatted ?? <span className="muted fine">{t("session.targetDateUnset")}</span>}
         </p>
       ) : (
-        <div className="order-target-date-edit">
-          <input
-            type="date"
-            className="order-target-date-input"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={() => commit()}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                e.target.blur();
-              }
-            }}
-            disabled={saving}
-            aria-label={t("session.targetDateAria")}
-          />
-          {formatted && (
-            <span className="order-target-date-preview muted fine">{formatted}</span>
-          )}
-        </div>
+        <AppDatePicker
+          value={targetDate ?? ""}
+          onChange={handleChange}
+          disabled={saving}
+          ariaLabel={t("session.targetDateAria")}
+          placeholder={t("session.targetDatePlaceholder")}
+        />
       )}
       {!readOnly && (
         <p className="order-target-date-hint muted fine">{t("session.targetDateHint")}</p>
