@@ -1,8 +1,14 @@
 [phases.setup]
 nixPkgs = ["nodejs_22"]
 
+# Install devDependencies too (vite is required for `npm run build`).
+# Railway's default production install omits them and triggers the deprecated
+# `npm warn config production` message on stderr.
+[phases.install]
+cmds = ["npm ci --include=dev"]
+
 [phases.build]
-cmds = ["npm run build"]
+cmds = ["npm run build", "npm prune --omit=dev"]
 
 [start]
 cmd = "npm start"
