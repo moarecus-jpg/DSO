@@ -16,11 +16,11 @@ import {
   googleConfigured,
 } from "../auth/google.js";
 import {
-  discogsCallbackUrl,
   discogsOAuthConfigured,
   getDiscogsAccessToken,
   getDiscogsAuthUrl,
 } from "../discogs/oauth.js";
+import { appBaseUrl, discogsCallbackUrl as buildDiscogsCallbackUrl } from "../appUrl.js";
 import { getDiscogsUserProfile, getIdentity } from "../discogs/client.js";
 import { discogsAppConfigured } from "../discogs/auth.js";
 import { MOCK_USER } from "../mock.js";
@@ -33,7 +33,7 @@ function useMockAuth() {
 }
 
 function clientUrl(req) {
-  return process.env.CLIENT_URL || "http://localhost:5173";
+  return appBaseUrl(req);
 }
 
 async function ensureUserDiscogsAvatar(user) {
@@ -171,7 +171,7 @@ router.get("/discogs", async (req, res) => {
 
   if (discogsOAuthConfigured()) {
     try {
-      const callbackUrl = discogsCallbackUrl();
+      const callbackUrl = buildDiscogsCallbackUrl(req);
       const { url, requestToken, requestTokenSecret } =
         await getDiscogsAuthUrl(callbackUrl);
       req.session.discogsRequestToken = requestToken;

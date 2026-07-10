@@ -8,6 +8,13 @@ import { api } from "../api.js";
 
 import { useAuth } from "../hooks/useAuth.jsx";
 
+function discogsCallbackFallback() {
+  if (typeof window !== "undefined") {
+    return `${window.location.origin}/auth/discogs/callback`;
+  }
+  return "http://localhost:5173/auth/discogs/callback";
+}
+
 
 
 export function Settings() {
@@ -67,8 +74,7 @@ export function Settings() {
           Povezava z Discogs ni uspela. V Discogs Developer pri aplikaciji DSO dodaj
           Callback URL:{" "}
           <code>
-            {health?.discogsCallbackUrl ??
-              "http://localhost:5173/auth/discogs/callback"}
+            {health?.discogsCallbackUrl ?? discogsCallbackFallback()}
           </code>
           . Nato znova klikni Poveži Discogs.
         </>
@@ -86,7 +92,7 @@ export function Settings() {
 
     }
 
-  }, [params, refresh]);
+  }, [params, refresh, health]);
 
 
 
@@ -225,39 +231,19 @@ export function Settings() {
                 </button>
 
                 <p className="fine-print muted">
-
-                  Za pravo povezavo v <code>.env</code> dodaj{" "}
-
+                  Za pravo povezavo nastavi{" "}
                   <code>DISCOGS_CONSUMER_KEY</code> in <code>DISCOGS_CONSUMER_SECRET</code>{" "}
-
-                  iz{" "}
-
+                  v Railway Variables ali lokalno v <code>.env</code>, iz{" "}
                   <a
-
                     href="https://www.discogs.com/settings/developers"
-
                     target="_blank"
-
                     rel="noreferrer"
-
                   >
-
                     Discogs Developer
-
                     <ExternalLink size={12} style={{ marginLeft: 4 }} />
-
                   </a>
-
                   . Callback URL:{" "}
-
-                  <code>
-
-                    {health?.discogsCallbackUrl ??
-
-                      "http://localhost:5173/auth/discogs/callback"}
-
-                  </code>
-
+                  <code>{health?.discogsCallbackUrl ?? discogsCallbackFallback()}</code>
                 </p>
 
                 {health?.mockAuth && (

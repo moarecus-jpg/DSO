@@ -8,6 +8,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.js";
 import sessionRoutes from "./routes/sessions.js";
+import { discogsCallbackUrl } from "./appUrl.js";
 import { googleCallbackUrl, googleConfigured } from "./auth/google.js";
 
 dotenv.config();
@@ -20,13 +21,13 @@ const isProduction =
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 
 if (isProduction) {
   app.set("trust proxy", 1);
 }
 
 if (!isProduction) {
+  const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
   app.use(
     cors({
       origin: CLIENT_URL,
@@ -50,7 +51,7 @@ app.use(
   })
 );
 
-app.get("/api/health", (_req, res) => {
+app.get("/api/health", (req, res) => {
   const mockAuth =
     process.env.USE_MOCK_AUTH === "true" || !googleConfigured();
   res.json({
@@ -62,11 +63,7 @@ app.get("/api/health", (_req, res) => {
     discogsConfigured: Boolean(
       process.env.DISCOGS_CONSUMER_KEY && process.env.DISCOGS_CONSUMER_SECRET
     ),
-    discogsCallbackUrl:
-      process.env.DISCOGS_CONSUMER_KEY && process.env.DISCOGS_CONSUMER_SECRET
-        ? (process.env.CLIENT_URL || "http://localhost:5173").replace(/\/$/, "") +
-          "/auth/discogs/callback"
-        : null,
+    discogsCallbackUrl: discogsCallbackUrl(req),
   });
 });
 

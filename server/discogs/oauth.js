@@ -14,6 +14,7 @@ export function discogsOAuthConfigured() {
   );
 }
 
+/** @deprecated Use appUrl.discogsCallbackUrl(req) */
 export function discogsCallbackUrl() {
   const base = (process.env.CLIENT_URL || "http://localhost:5173").replace(/\/$/, "");
   return `${base}/auth/discogs/callback`;
