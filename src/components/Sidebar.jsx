@@ -69,7 +69,7 @@ export function Sidebar() {
       </div>
 
       <div className="sidebar-footer">
-        <label className="sidebar-theme-toggle">
+        <label className="sidebar-footer-item sidebar-theme-toggle">
           <span className="sidebar-theme-toggle-label">
             <Moon size={16} aria-hidden />
             {t("nav.darkMode")}
@@ -83,11 +83,11 @@ export function Sidebar() {
           <span className="sidebar-theme-toggle-track" aria-hidden />
         </label>
 
-        <StealthModeToggle />
+        <StealthModeToggle className="sidebar-footer-item" />
 
-        <LanguageToggle />
+        <LanguageToggle className="sidebar-footer-item" compact />
 
-        <div className="sidebar-footer-account">
+        <div className="sidebar-footer-item sidebar-footer-account">
           <Link to="/settings" className="sidebar-user-card">
             <UserAvatar
               name={user?.name}
@@ -95,7 +95,7 @@ export function Sidebar() {
                 user?.discogsConnected ? user.discogsAvatarUrl : user?.picture
               }
               className="sidebar-user-avatar"
-              size={40}
+              size={36}
             />
             <div className="sidebar-user-text">
               <p className="sidebar-user-name">{user?.name}</p>
@@ -109,7 +109,7 @@ export function Sidebar() {
             onClick={logout}
             title={t("nav.logout")}
           >
-            <LogOut size={18} aria-hidden />
+            <LogOut size={16} aria-hidden />
             <span>{t("nav.logout")}</span>
           </button>
         </div>

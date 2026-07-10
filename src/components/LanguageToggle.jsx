@@ -4,7 +4,7 @@ import { AppSelect } from "./AppSelect.jsx";
 
 const LOCALES = ["sl", "en"];
 
-export function LanguageToggle({ className = "", compact = false }) {
+export function LanguageToggle({ className = "", compact = false, hideLabel = false }) {
   const { locale, setLocale, t } = useLocale();
 
   const options = LOCALES.map((value) => ({
@@ -14,7 +14,7 @@ export function LanguageToggle({ className = "", compact = false }) {
 
   return (
     <div className={`sidebar-lang-toggle ${className}`.trim()}>
-      {!compact && (
+      {!hideLabel && (
         <span className="sidebar-lang-toggle-label">
           <Languages size={16} aria-hidden />
           {t("language.label")}

@@ -21,7 +21,7 @@ export function MobileTopBar() {
       </Link>
 
       <div className="mobile-topbar-actions">
-        <LanguageToggle compact className="mobile-topbar-lang" />
+        <LanguageToggle compact hideLabel className="mobile-topbar-lang" />
 
         <button
           type="button"
