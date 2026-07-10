@@ -360,6 +360,10 @@ export function getGroupSession(id) {
        FROM session_members sm
        JOIN users u ON u.id = sm.user_id
        WHERE sm.session_id = ?
+         AND EXISTS (
+           SELECT 1 FROM session_links sl
+           WHERE sl.session_id = sm.session_id AND sl.user_id = sm.user_id
+         )
        ORDER BY sm.joined_at ASC`
     )
     .all(id);
@@ -430,7 +434,7 @@ export function listGroupSessions(status = "open") {
   return db
     .prepare(
       `SELECT gs.*, u.name as creator_name, u.username as creator_username,
-        (SELECT COUNT(*) FROM session_members WHERE session_id = gs.id) as member_count,
+        (SELECT COUNT(DISTINCT user_id) FROM session_links WHERE session_id = gs.id) as member_count,
         (SELECT COUNT(*) FROM session_links WHERE session_id = gs.id) as link_count
        FROM group_sessions gs
        JOIN users u ON u.id = gs.created_by
@@ -445,7 +449,7 @@ export function listAllGroupSessions() {
   return db
     .prepare(
       `SELECT gs.*, u.name as creator_name, u.username as creator_username,
-        (SELECT COUNT(*) FROM session_members WHERE session_id = gs.id) as member_count,
+        (SELECT COUNT(DISTINCT user_id) FROM session_links WHERE session_id = gs.id) as member_count,
         (SELECT COUNT(*) FROM session_links WHERE session_id = gs.id) as link_count
        FROM group_sessions gs
        JOIN users u ON u.id = gs.created_by
@@ -569,6 +573,25 @@ export function joinSession(sessionId, userId) {
   return getGroupSession(sessionId);
 }
 
+function ensureSessionMember(sessionId, userId) {
+  db.prepare(
+    "INSERT OR IGNORE INTO session_members (session_id, user_id) VALUES (?, ?)"
+  ).run(sessionId, userId);
+}
+
+function removeSessionMemberIfNoLinks(sessionId, userId) {
+  const remaining = db
+    .prepare(
+      "SELECT 1 FROM session_links WHERE session_id = ? AND user_id = ? LIMIT 1"
+    )
+    .get(sessionId, userId);
+  if (!remaining) {
+    db.prepare(
+      "DELETE FROM session_members WHERE session_id = ? AND user_id = ?"
+    ).run(sessionId, userId);
+  }
+}
+
 export function findDuplicateSessionLink(sessionId, userId, { listingId, url }) {
   if (listingId != null) {
     return db
@@ -631,6 +654,8 @@ export function addSessionLink({
     itemDescription ?? null
   );
 
+  ensureSessionMember(sessionId, userId);
+
   return getSessionLinkById(id);
 }
 
@@ -657,7 +682,9 @@ function getSessionLinkById(id) {
 
 export function removeSessionLink(sessionId, linkId) {
   const link = db
-    .prepare("SELECT id FROM session_links WHERE id = ? AND session_id = ?")
+    .prepare(
+      "SELECT id, user_id FROM session_links WHERE id = ? AND session_id = ?"
+    )
     .get(linkId, sessionId);
   if (!link) return null;
 
@@ -665,6 +692,7 @@ export function removeSessionLink(sessionId, linkId) {
     linkId,
     sessionId
   );
+  removeSessionMemberIfNoLinks(sessionId, link.user_id);
   return getGroupSession(sessionId);
 }
 

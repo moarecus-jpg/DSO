@@ -13,6 +13,7 @@ import { useLocale } from "../hooks/useLocale.jsx";
 import { useTheme } from "../hooks/useTheme.jsx";
 import { BrandMark } from "./BrandMark.jsx";
 import { LanguageToggle } from "./LanguageToggle.jsx";
+import { StealthModeToggle } from "./StealthModeToggle.jsx";
 import { UserAvatar } from "./UserAvatar.jsx";
 
 export function Sidebar() {
@@ -68,26 +69,6 @@ export function Sidebar() {
       </div>
 
       <div className="sidebar-footer">
-        <Link to="/settings" className="sidebar-user-card">
-          <UserAvatar
-            name={user?.name}
-            avatarUrl={
-              user?.discogsConnected ? user.discogsAvatarUrl : user?.picture
-            }
-            className="sidebar-user-avatar"
-            size={48}
-          />
-          <div className="sidebar-user-text">
-            <p className="sidebar-user-name">{user?.name}</p>
-            <p className="sidebar-user-meta">
-              {user?.discogsUsername ? `@${user.discogsUsername}` : user?.username ?? ""}
-            </p>
-          </div>
-          <ChevronDown size={18} className="sidebar-user-chevron" aria-hidden />
-        </Link>
-
-        <LanguageToggle />
-
         <label className="sidebar-theme-toggle">
           <span className="sidebar-theme-toggle-label">
             <Moon size={16} aria-hidden />
@@ -102,10 +83,36 @@ export function Sidebar() {
           <span className="sidebar-theme-toggle-track" aria-hidden />
         </label>
 
-        <button type="button" className="sidebar-logout" onClick={logout}>
-          <LogOut size={16} />
-          {t("nav.logout")}
-        </button>
+        <StealthModeToggle />
+
+        <LanguageToggle />
+
+        <div className="sidebar-footer-account">
+          <Link to="/settings" className="sidebar-user-card">
+            <UserAvatar
+              name={user?.name}
+              avatarUrl={
+                user?.discogsConnected ? user.discogsAvatarUrl : user?.picture
+              }
+              className="sidebar-user-avatar"
+              size={40}
+            />
+            <div className="sidebar-user-text">
+              <p className="sidebar-user-name">{user?.name}</p>
+            </div>
+            <ChevronDown size={18} className="sidebar-user-chevron" aria-hidden />
+          </Link>
+
+          <button
+            type="button"
+            className="sidebar-logout sidebar-logout--aside"
+            onClick={logout}
+            title={t("nav.logout")}
+          >
+            <LogOut size={18} aria-hidden />
+            <span>{t("nav.logout")}</span>
+          </button>
+        </div>
       </div>
     </aside>
   );

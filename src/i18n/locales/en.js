@@ -35,6 +35,7 @@ export default {
     myItems: "My items",
     logout: "Log out",
     darkMode: "Dark mode",
+    stealthMode: "Stealth mode",
     mobileOpen: "Open",
     mobileClosed: "Closed",
     mobileItems: "Items",

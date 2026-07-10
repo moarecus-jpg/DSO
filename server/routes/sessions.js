@@ -29,7 +29,7 @@ import {
 } from "../discogs/client.js";
 import { sellerMywantsUrl } from "../../shared/discogsUrls.js";
 import { matchWantlistToInventory, parseDiscogsUrl } from "../discogs/match.js";
-import { MOCK_INVENTORY, MOCK_SESSION, MOCK_USER, MOCK_WANTLIST } from "../mock.js";
+import { MOCK_INVENTORY, MOCK_SESSION, MOCK_USER, MOCK_USER_2, MOCK_WANTLIST } from "../mock.js";
 import { formatOrderTitle } from "../../shared/orderTitle.js";
 import { resolveRecordFromUrl } from "../discogs/recordMeta.js";
 import { parseDiscogsUrlList } from "../../shared/parseRecordUrl.js";
@@ -46,27 +46,58 @@ const router = Router();
 let mockOrderSeq = 1;
 let mockSessions = [{ ...MOCK_SESSION }];
 
+function mockMembersFromLinks(links = []) {
+  const catalog = {
+    [MOCK_USER.id]: {
+      id: MOCK_USER.id,
+      name: MOCK_USER.name,
+      account_name: MOCK_USER.name,
+      email: MOCK_USER.email,
+      discogs_username: MOCK_USER.discogs_username,
+    },
+    [MOCK_USER_2.id]: {
+      id: MOCK_USER_2.id,
+      name: MOCK_USER_2.name,
+      account_name: MOCK_USER_2.name,
+      email: MOCK_USER_2.email,
+      discogs_username: MOCK_USER_2.discogs_username,
+    },
+  };
+
+  const seen = new Set();
+  const members = [];
+  for (const link of links) {
+    const userId = link.user_id;
+    if (!userId || seen.has(userId)) continue;
+    seen.add(userId);
+    const known = catalog[userId];
+    if (known) {
+      members.push(known);
+      continue;
+    }
+    const user = findUserById(userId);
+    if (user) {
+      members.push({
+        id: user.id,
+        name: user.name,
+        account_name: user.name,
+        email: user.email,
+        discogs_username: user.discogs_username,
+      });
+    }
+  }
+  return members;
+}
+
 function mockSessionDetail(summary) {
+  const links = summary.links ?? [];
   return enrichSessionOrder({
     ...summary,
     notes: summary.notes ?? [],
-    members: [
-      {
-        id: MOCK_USER.id,
-        name: MOCK_USER.name,
-        account_name: MOCK_USER.name,
-        email: MOCK_USER.email,
-        discogs_username: MOCK_USER.discogs_username,
-      },
-      {
-        id: "mock-user-2",
-        name: "Maya",
-        account_name: "Maya",
-        email: "maya@example.com",
-        discogs_username: null,
-      },
-    ],
-    links: summary.links ?? [],
+    members: mockMembersFromLinks(links),
+    links,
+    member_count: new Set(links.map((link) => link.user_id).filter(Boolean)).size,
+    link_count: links.length,
   });
 }
 
@@ -859,6 +890,7 @@ router.delete("/:id/links/:linkId", requireUser, (req, res) => {
       ...summary,
       links,
       link_count: links.length,
+      member_count: new Set(links.map((item) => item.user_id).filter(Boolean)).size,
     };
 
     return res.json({

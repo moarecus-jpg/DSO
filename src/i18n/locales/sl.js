@@ -35,6 +35,7 @@ export default {
     myItems: "Naročeni Itemi",
     logout: "Odjava",
     darkMode: "Temni način",
+    stealthMode: "Stealth način",
     mobileOpen: "Odprta",
     mobileClosed: "Zaključena",
     mobileItems: "Itemi",
