@@ -1,11 +1,14 @@
 import { Link } from "react-router-dom";
 import { Disc3, ExternalLink } from "lucide-react";
 import { formatPrice, listingIdFor } from "../../shared/orderTotals.js";
+import { useLocale } from "../hooks/useLocale.jsx";
 import { SellerAvatar } from "./SellerAvatar.jsx";
 
 export function MyItemsList({ groups = [], loading, emptyMessage }) {
+  const { t } = useLocale();
+
   if (loading) {
-    return <p className="orders-loading">Nalagam naročene iteme…</p>;
+    return <p className="orders-loading">{t("common.loadingItems")}</p>;
   }
 
   if (groups.length === 0) {
@@ -34,15 +37,13 @@ export function MyItemsList({ groups = [], loading, emptyMessage }) {
                 <Link to={`/session/${group.sessionId}`} className="my-items-order-link">
                   {group.orderTitle}
                 </Link>
-                <p className="my-items-seller">
-                  @{group.sellerUsername}
-                </p>
+                <p className="my-items-seller">@{group.sellerUsername}</p>
               </div>
               <span
                 className={`status-pill-v2 ${isClosed ? "status-pill-v2-closed" : "status-pill-v2-open"}`}
               >
                 <span className="status-dot" />
-                {isClosed ? "Zaključeno" : "Odprto"}
+                {isClosed ? t("common.closed") : t("common.open")}
               </span>
             </header>
 
@@ -64,7 +65,7 @@ export function MyItemsList({ groups = [], loading, emptyMessage }) {
                     </span>
                     {item.ordererName && (
                       <span className="my-items-orderer muted fine">
-                        Naročil: {item.ordererName}
+                        {t("session.orderedBy")} {item.ordererName}
                       </span>
                     )}
                   </div>

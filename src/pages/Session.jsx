@@ -8,11 +8,13 @@ import { OrderSummary } from "../components/OrderSummary.jsx";
 import { RecordList } from "../components/RecordList.jsx";
 import { api } from "../api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
+import { useLocale } from "../hooks/useLocale.jsx";
 import { sellerMywantsUrl } from "../../shared/discogsUrls.js";
 
 export function Session() {
   const { id } = useParams();
   const { user } = useAuth();
+  const { t } = useLocale();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [session, setSession] = useState(null);
@@ -43,13 +45,7 @@ export function Session() {
   }, [searchParams, setSearchParams]);
 
   async function handleCancel() {
-    if (
-      !confirm(
-        "Preklicati to naročilo? Vsi vnosi bodo izbrisani in naročilo ne bo več na seznamu."
-      )
-    ) {
-      return;
-    }
+    if (!confirm(t("session.confirmCancel"))) return;
     setCancelling(true);
     try {
       await api(`/api/sessions/${id}/cancel`, { method: "POST" });
@@ -62,7 +58,7 @@ export function Session() {
   }
 
   async function handleClose() {
-    if (!confirm("Zaključiti to naročilo? Premaknjeno bo med Zaprta naročila.")) return;
+    if (!confirm(t("session.confirmClose"))) return;
     setClosing(true);
     try {
       await api(`/api/sessions/${id}/close`, { method: "POST" });
@@ -112,7 +108,7 @@ export function Session() {
           });
           added += 1;
         } catch (err) {
-          errors.push({ url: urls[i], error: err.message ?? "Napaka" });
+          errors.push({ url: urls[i], error: err.message ?? t("common.error") });
         }
       }
 
@@ -124,14 +120,18 @@ export function Session() {
           .map((e) => `• ${e.url}\n  ${e.error}`)
           .join("\n");
         alert(
-          `Dodanih: ${added}, neuspešnih: ${errors.length}.${detail ? `\n\n${detail}` : ""}`
+          t("session.addPartial", {
+            added,
+            failed: errors.length,
+            detail: detail ? `\n\n${detail}` : "",
+          })
         );
         return { ok: added > 0 };
       }
 
       return { ok: added > 0 };
     } catch (err) {
-      alert(err.message ?? "Napaka pri dodajanju.");
+      alert(err.message ?? t("session.addFailed"));
       return { ok: false };
     } finally {
       setAddingRecord(false);
@@ -146,7 +146,7 @@ export function Session() {
       });
       setSession(next);
     } catch (err) {
-      alert(err.message ?? "Imena ni bilo mogoče shraniti.");
+      alert(err.message ?? t("session.renameFailed"));
       throw err;
     }
   }
@@ -159,13 +159,13 @@ export function Session() {
       });
       setSession(next);
     } catch (err) {
-      alert(err.message ?? "Imena ni bilo mogoče shraniti.");
+      alert(err.message ?? t("session.renameFailed"));
       throw err;
     }
   }
 
-  if (loading) return <p className="muted center page">Nalagam naročilo…</p>;
-  if (!session) return <p className="muted center page">Naročilo ni najdeno</p>;
+  if (loading) return <p className="muted center page">{t("common.loadingOrder")}</p>;
+  if (!session) return <p className="muted center page">{t("session.notFound")}</p>;
 
   const sellerUrl = `https://www.discogs.com/seller/${session.seller_username}/profile`;
   const wantlistUrl = sellerMywantsUrl(
@@ -183,10 +183,10 @@ export function Session() {
           className="btn btn-cancel-order"
           onClick={handleCancel}
           disabled={cancelling}
-          title="Prekliči naročilo"
+          title={t("session.cancelOrder")}
         >
           <X size={18} strokeWidth={2.5} />
-          {cancelling ? "Preklicujem…" : "Prekliči naročilo"}
+          {cancelling ? t("session.cancelling") : t("session.cancelOrder")}
         </button>
         <button
           type="button"
@@ -195,7 +195,7 @@ export function Session() {
           disabled={closing}
         >
           <Archive size={16} />
-          {closing ? "Zaključujem…" : "Zaključi order"}
+          {closing ? t("session.closing") : t("session.closeOrder")}
         </button>
       </div>
     ) : null;
@@ -203,7 +203,8 @@ export function Session() {
   return (
     <div className="page page-detail">
       <Link to={isClosed ? "/closed" : "/"} className="back-link">
-        <ArrowLeft size={16} /> {isClosed ? "Zaključena naročila" : "Odprta naročila"}
+        <ArrowLeft size={16} />{" "}
+        {isClosed ? t("nav.closedOrders") : t("nav.openOrders")}
       </Link>
 
       <header className="page-header">
@@ -221,7 +222,7 @@ export function Session() {
               <ExternalLink size={14} />
             </a>
           </div>
-          {isClosed && <p className="muted fine">To naročilo je zaključeno.</p>}
+          {isClosed && <p className="muted fine">{t("session.closedNote")}</p>}
         </div>
         <div className="page-header-actions">
           {wantlistUrl && (
@@ -232,13 +233,13 @@ export function Session() {
               className="btn btn-ghost"
             >
               <Heart size={18} />
-              Odpri Wantlisto
+              {t("session.openWantlist")}
             </a>
           )}
           {!isClosed && (
             <button type="button" className="btn btn-primary" onClick={() => setAddRecordOpen(true)}>
               <Plus size={18} />
-              Dodaj Item
+              {t("session.addItem")}
             </button>
           )}
         </div>
@@ -253,7 +254,7 @@ export function Session() {
       />
 
       <div className="members card">
-        <span className="label">Sodelujoči</span>
+        <span className="label">{t("session.participants")}</span>
         <MemberChips
           members={session.members}
           canManage={session.canManageMembers}
@@ -266,9 +267,11 @@ export function Session() {
         {recordCount === 0 ? (
           <div className="empty card order-empty">
             <Disc3 size={40} strokeWidth={1.2} />
-            <h2 className="order-empty-title">Naročilo je prazno</h2>
+            <h2 className="order-empty-title">{t("session.emptyTitle")}</h2>
             <p className="muted">
-              Dodaj Item s <strong>povezavo</strong> do Discogs listinga (shop ali sell URL) — eno ali več naenkrat.
+              {t("session.emptyBodyBefore")}
+              <strong>{t("session.emptyBodyLink")}</strong>
+              {t("session.emptyBodyAfter")}
             </p>
           </div>
         ) : (

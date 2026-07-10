@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { OrderList } from "../components/OrderList.jsx";
 import { OrdersPageHeader } from "../components/OrdersPageHeader.jsx";
-import { formatOrderTitle } from "../../shared/orderTitle.js";
+import { filterSessions } from "../../shared/filterOrders.js";
 import { api } from "../api.js";
+import { useLocale } from "../hooks/useLocale.jsx";
 
 export function ClosedOrders() {
+  const { t } = useLocale();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [searchMode, setSearchMode] = useState("creator");
 
   useEffect(() => {
     api("/api/sessions?status=closed")
@@ -16,35 +19,27 @@ export function ClosedOrders() {
       .finally(() => setLoading(false));
   }, []);
 
-  const filteredSessions = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return sessions;
-    return sessions.filter((s) => {
-      const title =
-        s.order_number != null
-          ? formatOrderTitle(s.order_number, s.seller_username)
-          : s.title ?? "";
-      return (
-        title.toLowerCase().includes(q) ||
-        s.seller_username?.toLowerCase().includes(q)
-      );
-    });
-  }, [sessions, query]);
+  const filteredSessions = useMemo(
+    () => filterSessions(sessions, { query, searchMode }),
+    [sessions, query, searchMode]
+  );
 
   return (
     <div className="page page-orders">
       <OrdersPageHeader
-        title="Zaključena naročila"
-        subtitle="Pretekla skupinska naročila, ki niso več odprta"
+        title={t("orders.closedTitle")}
+        subtitle={t("orders.closedSubtitle")}
         query={query}
         onQueryChange={setQuery}
+        searchMode={searchMode}
+        onSearchModeChange={setSearchMode}
       />
 
       <OrderList
         sessions={filteredSessions}
         loading={loading}
         emptyMessage={
-          query.trim() ? "Ni zadetkov za iskanje." : "Ni zaključenih naročil."
+          query.trim() ? t("common.noSearchResults") : t("orders.emptyClosed")
         }
       />
     </div>

@@ -9,14 +9,17 @@ import {
   Plus,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth.jsx";
+import { useLocale } from "../hooks/useLocale.jsx";
 import { useTheme } from "../hooks/useTheme.jsx";
 import { BrandMark } from "./BrandMark.jsx";
+import { LanguageToggle } from "./LanguageToggle.jsx";
 import { UserAvatar } from "./UserAvatar.jsx";
 
 export function Sidebar() {
   const [searchParams] = useSearchParams();
   const { user, logout } = useAuth();
   const { darkMode, setDarkMode } = useTheme();
+  const { t } = useLocale();
   const newOrderOpen = searchParams.get("new") === "1";
 
   return (
@@ -33,7 +36,7 @@ export function Sidebar() {
           }
         >
           <Plus size={20} strokeWidth={2.5} />
-          Novo naročilo
+          {t("nav.newOrder")}
         </NavLink>
 
         <nav className="sidebar-nav sidebar-nav-v2">
@@ -45,21 +48,21 @@ export function Sidebar() {
             }
           >
             <Folder size={18} />
-            Odprta naročila
+            {t("nav.openOrders")}
           </NavLink>
           <NavLink
             to="/closed"
             className={({ isActive }) => `sidebar-link-v2${isActive ? " active" : ""}`}
           >
             <Lock size={18} />
-            Zaključena naročila
+            {t("nav.closedOrders")}
           </NavLink>
           <NavLink
             to="/my-items"
             className={({ isActive }) => `sidebar-link-v2${isActive ? " active" : ""}`}
           >
             <Package size={18} />
-            Naročeni Itemi
+            {t("nav.myItems")}
           </NavLink>
         </nav>
       </div>
@@ -83,10 +86,12 @@ export function Sidebar() {
           <ChevronDown size={18} className="sidebar-user-chevron" aria-hidden />
         </Link>
 
+        <LanguageToggle />
+
         <label className="sidebar-theme-toggle">
           <span className="sidebar-theme-toggle-label">
             <Moon size={16} aria-hidden />
-            Temni način
+            {t("nav.darkMode")}
           </span>
           <input
             type="checkbox"
@@ -99,7 +104,7 @@ export function Sidebar() {
 
         <button type="button" className="sidebar-logout" onClick={logout}>
           <LogOut size={16} />
-          Odjava
+          {t("nav.logout")}
         </button>
       </div>
     </aside>

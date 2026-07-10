@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Pencil, X } from "lucide-react";
+import { useLocale } from "../hooks/useLocale.jsx";
 
 export function EditableParticipantName({
   value,
@@ -8,6 +9,7 @@ export function EditableParticipantName({
   onSave,
   className = "",
 }) {
+  const { t } = useLocale();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value ?? "");
   const [saving, setSaving] = useState(false);
@@ -58,15 +60,15 @@ export function EditableParticipantName({
           }}
           maxLength={80}
           disabled={saving}
-          aria-label="Ime naročnika"
-          placeholder={placeholder ?? "Ime"}
+          aria-label={t("session.ordererAria")}
+          placeholder={placeholder ?? t("common.name")}
         />
         <button
           type="button"
           className="chip-icon-btn"
           onClick={save}
           disabled={saving}
-          title="Shrani"
+          title={t("common.save")}
         >
           <Check size={14} />
         </button>
@@ -75,7 +77,7 @@ export function EditableParticipantName({
           className="chip-icon-btn"
           onClick={cancel}
           disabled={saving}
-          title="Prekliči"
+          title={t("common.cancel")}
         >
           <X size={14} />
         </button>
@@ -85,13 +87,13 @@ export function EditableParticipantName({
 
   return (
     <span className={`editable-participant ${className}`.trim()}>
-      <span className="editable-participant-value">{value ?? "Neznan"}</span>
+      <span className="editable-participant-value">{value ?? t("common.unknown")}</span>
       {canEdit && (
         <button
           type="button"
           className="chip-icon-btn chip-edit-btn"
           onClick={() => setEditing(true)}
-          title="Spremeni ime"
+          title={t("common.changeName")}
         >
           <Pencil size={12} />
         </button>

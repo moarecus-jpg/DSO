@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth.jsx";
+import { LocaleProvider, useLocale } from "./hooks/useLocale.jsx";
 import { ThemeProvider } from "./hooks/useTheme.jsx";
 import { Layout } from "./components/Layout.jsx";
 import { Login } from "./pages/Login.jsx";
@@ -11,7 +12,8 @@ import { Settings } from "./pages/Settings.jsx";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
-  if (loading) return <p className="muted center page">Loading…</p>;
+  const { t } = useLocale();
+  if (loading) return <p className="muted center page">{t("common.loading")}</p>;
   if (!user) return <Navigate to="/login" replace />;
   return children;
 }
@@ -40,12 +42,14 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </AuthProvider>
-    </ThemeProvider>
+    <LocaleProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </AuthProvider>
+      </ThemeProvider>
+    </LocaleProvider>
   );
 }

@@ -8,6 +8,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.js";
 import sessionRoutes from "./routes/sessions.js";
+import { getDatabaseInfo } from "./db.js";
 import { sessionStore } from "./sessionStore.js";
 import { discogsCallbackUrl } from "./appUrl.js";
 import { googleCallbackUrl, googleConfigured } from "./auth/google.js";
@@ -56,8 +57,10 @@ app.use(
 app.get("/api/health", (req, res) => {
   const mockAuth =
     process.env.USE_MOCK_AUTH === "true" || !googleConfigured();
+  const database = getDatabaseInfo();
   res.json({
     ok: true,
+    database,
     mockAuth,
     googleOAuthEnabled: googleConfigured() && process.env.USE_MOCK_AUTH !== "true",
     googleCallbackUrl: googleConfigured() ? googleCallbackUrl() : null,
@@ -85,7 +88,15 @@ if (serveClient) {
 }
 
 const server = app.listen(PORT, () => {
+  const database = getDatabaseInfo();
   console.log(`${isProduction ? "App" : "API"} http://localhost:${PORT}`);
+  console.log(`Baza: ${database.path} (${database.userCount} računov)`);
+  if (isProduction && !database.persistent) {
+    console.warn(
+      "OPOZORILO: DATA_DIR ni nastavljen — SQLite se ob vsakem redeployu na Railwayu pobriše. " +
+        "Dodaj Volume (npr. /data) in nastavi DATA_DIR=/data."
+    );
+  }
   console.log(
     `Auth: lokalni računi${googleConfigured() ? " + Google OAuth" : ""}${process.env.USE_MOCK_AUTH === "true" ? " · Discogs demo" : ""}`
   );

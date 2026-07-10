@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { MyItemsList } from "../components/MyItemsList.jsx";
 import { OrdersPageHeader } from "../components/OrdersPageHeader.jsx";
 import { api } from "../api.js";
+import { useLocale } from "../hooks/useLocale.jsx";
 
 function groupItemsBySession(items) {
   const map = new Map();
@@ -22,6 +23,7 @@ function groupItemsBySession(items) {
 }
 
 export function MyItems() {
+  const { t } = useLocale();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -52,29 +54,31 @@ export function MyItems() {
 
   const totalItems = filteredGroups.reduce((n, g) => n + g.items.length, 0);
 
+  const subtitle = loading
+    ? t("common.loading")
+    : totalItems === 0
+      ? t("orders.myItemsSubtitle")
+      : t("orders.myItemsCount", {
+          count: totalItems,
+          items: totalItems === 1 ? t("orders.itemOne") : t("orders.itemMany"),
+          orders: filteredGroups.length,
+        });
+
   return (
     <div className="page page-orders">
       <OrdersPageHeader
-        title="Naročeni Itemi"
-        subtitle={
-          loading
-            ? "Nalagam…"
-            : totalItems === 0
-              ? "Tvoji vnosi v skupinskih naročilih"
-              : `${totalItems} ${totalItems === 1 ? "item" : "itemov"} v ${filteredGroups.length} naročilih`
-        }
+        title={t("orders.myItemsTitle")}
+        subtitle={subtitle}
         query={query}
         onQueryChange={setQuery}
-        placeholder="Išči po itemu, sellerju ali naročilu…"
+        placeholder={t("orders.searchItems")}
       />
 
       <MyItemsList
         groups={filteredGroups}
         loading={loading}
         emptyMessage={
-          query.trim()
-            ? "Ni zadetkov za iskanje."
-            : "Še nisi dodal nobenega itema. Odpri naročilo in uporabi Dodaj Item."
+          query.trim() ? t("common.noSearchResults") : t("orders.emptyMyItems")
         }
       />
     </div>

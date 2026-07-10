@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Disc3, X } from "lucide-react";
 import { parseDiscogsUrlList } from "../../shared/parseRecordUrl.js";
+import { useLocale } from "../hooks/useLocale.jsx";
 
 export function AddRecordModal({
   open,
@@ -9,6 +10,7 @@ export function AddRecordModal({
   submitting,
   sellerUsername,
 }) {
+  const { t } = useLocale();
   const [urlsText, setUrlsText] = useState("");
   const [progress, setProgress] = useState(null);
 
@@ -30,9 +32,7 @@ export function AddRecordModal({
     e.preventDefault();
     if (!validUrls.length) {
       alert(
-        invalidUrls.length
-          ? "Nobena povezava ni veljavna. Preveri format (/sell/item/… ali /shop/item/…)."
-          : "Vnesi vsaj eno Discogs povezavo (ena na vrstico)."
+        invalidUrls.length ? t("items.noValidLinks") : t("items.enterAtLeastOne")
       );
       return;
     }
@@ -49,7 +49,7 @@ export function AddRecordModal({
         onClose();
       }
     } catch (err) {
-      alert(err.message ?? "Napaka pri dodajanju.");
+      alert(err.message ?? t("session.addFailed"));
     } finally {
       setProgress(null);
     }
@@ -58,12 +58,12 @@ export function AddRecordModal({
   const busy = submitting || progress != null;
   const submitLabel =
     progress && progress.total > 0
-      ? `Dodajam ${progress.current}/${progress.total}…`
+      ? t("items.adding", { current: progress.current, total: progress.total })
       : validUrls.length === 0
-        ? "Dodaj"
+        ? t("items.add")
         : validUrls.length === 1
-          ? "Dodaj 1 item"
-          : `Dodaj ${validUrls.length} itemov`;
+          ? t("items.addOne")
+          : t("items.addMany", { count: validUrls.length });
 
   return (
     <div
@@ -75,26 +75,23 @@ export function AddRecordModal({
         <div className="modal-header">
           <h2>
             <Disc3 size={20} />
-            Dodaj Item
+            {t("items.addItem")}
           </h2>
           <button
             type="button"
             className="modal-close"
             onClick={onClose}
             disabled={busy}
-            aria-label="Zapri"
+            aria-label={t("common.close")}
           >
             <X size={20} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="modal-link-form">
-          <p className="muted fine">
-            Prilepi eno ali več povezav do listingov pri sellerju{" "}
-            <strong>@{sellerUsername}</strong> — <strong>ena na vrstico</strong>.
-          </p>
+          <p className="muted fine">{t("items.linksHint", { seller: sellerUsername })}</p>
           <label>
-            Povezave do itemov
+            {t("items.linksLabel")}
             <textarea
               className="modal-urls-textarea"
               value={urlsText}
@@ -110,20 +107,20 @@ export function AddRecordModal({
           {validUrls.length > 0 && (
             <p className="muted fine">
               {validUrls.length === 1
-                ? "1 veljavna povezava"
-                : `${validUrls.length} veljavnih povezav`}
+                ? t("items.validLinkOne")
+                : t("items.validLinkMany", { count: validUrls.length })}
             </p>
           )}
           {invalidUrls.length > 0 && (
             <p className="form-error fine">
               {invalidUrls.length === 1
-                ? "1 vrstica ni veljavna Discogs povezava"
-                : `${invalidUrls.length} vrstic ni veljavnih Discogs povezav`}
+                ? t("items.invalidLineOne")
+                : t("items.invalidLineMany", { count: invalidUrls.length })}
             </p>
           )}
           <div className="modal-actions">
             <button type="button" className="btn btn-ghost" onClick={onClose} disabled={busy}>
-              Prekliči
+              {t("common.cancel")}
             </button>
             <button
               type="submit"

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { formatPrice } from "../../shared/orderTotals.js";
+import { useLocale } from "../hooks/useLocale.jsx";
 
 export function OrderSummary({
   memberTotals = [],
@@ -12,6 +13,8 @@ export function OrderSummary({
   onSaveShipping,
   savingShipping = false,
 }) {
+  const { t } = useLocale();
+
   if (!memberTotals.length) return null;
 
   const {
@@ -55,18 +58,16 @@ export function OrderSummary({
     if (!onSaveShipping || readOnly) return;
 
     const trimmed = draft.trim();
-    const next =
-      trimmed === "" ? null : Number(trimmed.replace(",", "."));
+    const next = trimmed === "" ? null : Number(trimmed.replace(",", "."));
     if (trimmed !== "" && Number.isNaN(next)) {
-      alert("Vnesi veljavno številko za poštnino.");
+      alert(t("summary.invalidShipping"));
       return;
     }
 
     const splitTrimmed = draftSplit.trim();
-    const nextSplit =
-      splitTrimmed === "" ? null : Math.floor(Number(splitTrimmed));
+    const nextSplit = splitTrimmed === "" ? null : Math.floor(Number(splitTrimmed));
     if (splitTrimmed !== "" && (Number.isNaN(nextSplit) || nextSplit < 1)) {
-      alert("Število oseb mora biti vsaj 1.");
+      alert(t("summary.minPeople"));
       return;
     }
 
@@ -101,14 +102,14 @@ export function OrderSummary({
 
   return (
     <div className="order-summary card">
-      <h3 className="order-summary-title">Povzetek naročila</h3>
+      <h3 className="order-summary-title">{t("summary.title")}</h3>
 
       <table className="order-summary-table">
         <thead>
           <tr>
-            <th>Sodelujoči</th>
-            <th>Št. plat</th>
-            <th>Seštevek</th>
+            <th>{t("summary.participants")}</th>
+            <th>{t("summary.recordCount")}</th>
+            <th>{t("summary.subtotal")}</th>
           </tr>
         </thead>
         <tbody>
@@ -119,7 +120,7 @@ export function OrderSummary({
               <td>
                 {formatPrice(row.total, row.currency)}
                 {row.hasUnknownPrice && (
-                  <span className="muted fine"> (+ brez cene)</span>
+                  <span className="muted fine">{t("common.withoutPrice")}</span>
                 )}
               </td>
             </tr>
@@ -128,7 +129,7 @@ export function OrderSummary({
         <tfoot>
           <tr className="order-summary-subtotal">
             <td>
-              <strong>Seštevek</strong>
+              <strong>{t("summary.subtotal")}</strong>
             </td>
             <td>
               <strong>{count ?? 0}</strong>
@@ -136,15 +137,15 @@ export function OrderSummary({
             <td>
               <strong>{formatPrice(itemsTotal, currency)}</strong>
               {hasUnknown && (
-                <span className="muted fine"> · nekatere brez cene</span>
+                <span className="muted fine">{t("common.someWithoutPrice")}</span>
               )}
             </td>
           </tr>
           <tr className="order-summary-shipping">
             <td colSpan={2}>
-              <strong>Poštnina</strong>
+              <strong>{t("summary.shipping")}</strong>
               {!readOnly && (
-                <span className="muted fine"> (skupaj za naročilo)</span>
+                <span className="muted fine">{t("summary.shippingHint")}</span>
               )}
             </td>
             <td>
@@ -167,7 +168,7 @@ export function OrderSummary({
                     }}
                     placeholder="0.00"
                     disabled={savingShipping}
-                    aria-label="Poštnina"
+                    aria-label={t("summary.shippingAria")}
                   />
                   <span className="order-summary-shipping-currency">{shipCur}</span>
                 </div>
@@ -176,19 +177,21 @@ export function OrderSummary({
           </tr>
           <tr className="order-summary-shipping-split">
             <td colSpan={2}>
-              <strong>Deli poštnino na</strong>
+              <strong>{t("summary.splitShipping")}</strong>
               {!readOnly && (
-                <span className="muted fine"> št. oseb</span>
+                <span className="muted fine">{t("summary.peopleCount")}</span>
               )}
             </td>
             <td>
               {readOnly ? (
                 <span>
-                  {computedSplit ?? "—"} oseb
+                  {t("summary.people", { count: computedSplit ?? "—" })}
                   {perPerson != null && (
                     <span className="muted fine">
                       {" "}
-                      · {formatPrice(perPerson, shipCur)} / osebo
+                      · {t("summary.perPerson", {
+                        price: formatPrice(perPerson, shipCur),
+                      })}
                     </span>
                   )}
                 </span>
@@ -209,11 +212,13 @@ export function OrderSummary({
                     }}
                     placeholder="1"
                     disabled={savingShipping}
-                    aria-label="Število oseb za delitev poštnine"
+                    aria-label={t("summary.splitAria")}
                   />
                   {perPerson != null && shipping > 0 && (
                     <span className="order-summary-per-person muted fine">
-                      {formatPrice(perPerson, shipCur)} / osebo
+                      {t("summary.perPerson", {
+                        price: formatPrice(perPerson, shipCur),
+                      })}
                     </span>
                   )}
                 </div>
@@ -222,7 +227,7 @@ export function OrderSummary({
           </tr>
           <tr className="order-summary-grand">
             <td colSpan={2}>
-              <strong>Skupaj z poštnino</strong>
+              <strong>{t("summary.totalWithShipping")}</strong>
             </td>
             <td>
               <strong className="order-total-value">

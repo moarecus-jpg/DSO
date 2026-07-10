@@ -2,8 +2,10 @@ import { useMemo, useState } from "react";
 import { Link2, User } from "lucide-react";
 import { parseDiscogsRecordUrl } from "../../shared/parseRecordUrl.js";
 import { parseSellerInput } from "../../shared/parseSeller.js";
+import { useLocale } from "../hooks/useLocale.jsx";
 
 export function NewOrderForm({ onSubmit, creating, error }) {
+  const { t } = useLocale();
   const [sellerMode, setSellerMode] = useState("username");
   const [seller, setSeller] = useState("");
 
@@ -26,7 +28,7 @@ export function NewOrderForm({ onSubmit, creating, error }) {
 
   return (
     <form className="card form-card" onSubmit={handleCreate}>
-      <h2>Novo naročilo</h2>
+      <h2>{t("orders.newOrder")}</h2>
 
       <div className="tabs seller-tabs">
         <button
@@ -35,7 +37,7 @@ export function NewOrderForm({ onSubmit, creating, error }) {
           onClick={() => setSellerMode("username")}
         >
           <User size={16} />
-          Uporabniško ime
+          {t("orders.tabUsername")}
         </button>
         <button
           type="button"
@@ -43,19 +45,19 @@ export function NewOrderForm({ onSubmit, creating, error }) {
           onClick={() => setSellerMode("url")}
         >
           <Link2 size={16} />
-          URL
+          {t("orders.tabUrl")}
         </button>
       </div>
 
       <label>
-        {sellerMode === "username" ? "Seller uporabniško ime" : "Seller URL"}
+        {sellerMode === "username" ? t("orders.sellerUsername") : t("orders.sellerUrl")}
         <input
           value={seller}
           onChange={(e) => setSeller(e.target.value)}
           placeholder={
             sellerMode === "username"
-              ? "vinyl_japan_tokyo"
-              : "https://www.discogs.com/seller/…/profile"
+              ? t("orders.sellerPlaceholder")
+              : t("orders.urlPlaceholder")
           }
           required
           disabled={creating}
@@ -64,34 +66,33 @@ export function NewOrderForm({ onSubmit, creating, error }) {
 
       {parsedSeller?.username && (
         <p className="muted fine">
-          Seller: <code>@{parsedSeller.username}</code>
+          {t("orders.sellerDetected")} <code>@{parsedSeller.username}</code>
         </p>
       )}
 
       {parsedSeller?.source === "listing" && (
-        <p className="muted fine">
-          Listing URL — sellerja poiščemo iz Discogs ob odpiranju naročila.
-        </p>
+        <p className="muted fine">{t("orders.listingDetected")}</p>
       )}
 
       {seller.trim() && !parsedSeller && (
-        <p className="form-error">Ne prepoznam Discogs povezave. Preveri URL.</p>
+        <p className="form-error">{t("orders.invalidUrl")}</p>
       )}
 
       {error && <p className="form-error">{error}</p>}
 
       <p className="muted fine">
-        Naslov: <code>seller#····</code>
+        {t("orders.titleHint")} <code>seller#····</code>
         {parsedSeller?.username && (
           <>
             {" "}
-            npr. <code>{parsedSeller.username}#0007</code>
+            {t("orders.titleExample")}{" "}
+            <code>{parsedSeller.username}#0007</code>
           </>
         )}
       </p>
 
       <button className="btn btn-primary" type="submit" disabled={creating || !seller.trim()}>
-        {creating ? "Odpiram…" : "Odpri naročilo"}
+        {creating ? t("orders.opening") : t("orders.openOrder")}
       </button>
     </form>
   );

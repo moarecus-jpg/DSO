@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Pencil, X } from "lucide-react";
+import { useLocale } from "../hooks/useLocale.jsx";
 
 export function MemberChips({ members = [], canManage = false, disabled = false, onRename }) {
   return (
@@ -17,6 +18,7 @@ export function MemberChips({ members = [], canManage = false, disabled = false,
 }
 
 function MemberChip({ member, canEdit, onRename }) {
+  const { t } = useLocale();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(member.name ?? "");
   const [saving, setSaving] = useState(false);
@@ -65,15 +67,15 @@ function MemberChip({ member, canEdit, onRename }) {
           }}
           maxLength={80}
           disabled={saving}
-          aria-label="Ime sodelujočega"
-          placeholder={member.account_name ?? "Ime"}
+          aria-label={t("session.participantAria")}
+          placeholder={member.account_name ?? t("common.name")}
         />
         <button
           type="button"
           className="chip-icon-btn"
           onClick={save}
           disabled={saving}
-          title="Shrani"
+          title={t("common.save")}
         >
           <Check size={14} />
         </button>
@@ -82,7 +84,7 @@ function MemberChip({ member, canEdit, onRename }) {
           className="chip-icon-btn"
           onClick={cancel}
           disabled={saving}
-          title="Prekliči"
+          title={t("common.cancel")}
         >
           <X size={14} />
         </button>
@@ -96,14 +98,14 @@ function MemberChip({ member, canEdit, onRename }) {
       {member.discogs_username ? (
         <small>@{member.discogs_username}</small>
       ) : (
-        <small className="warn">Discogs ni povezan</small>
+        <small className="warn">{t("session.discogsNotConnected")}</small>
       )}
       {canEdit && (
         <button
           type="button"
           className="chip-icon-btn chip-edit-btn"
           onClick={() => setEditing(true)}
-          title="Spremeni ime"
+          title={t("common.changeName")}
         >
           <Pencil size={12} />
         </button>

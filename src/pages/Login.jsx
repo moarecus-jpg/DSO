@@ -12,7 +12,9 @@ import {
   UserPlus,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth.jsx";
+import { useLocale } from "../hooks/useLocale.jsx";
 import { BrandMark } from "../components/BrandMark.jsx";
+import { LanguageToggle } from "../components/LanguageToggle.jsx";
 
 const REMEMBER_USERNAME_KEY = "dso_remember_username";
 const REMEMBER_ME_KEY = "dso_remember_me";
@@ -64,6 +66,8 @@ function AuthPasswordField({
   required,
   autoComplete,
   minLength,
+  showLabel,
+  hideLabel,
 }) {
   const [visible, setVisible] = useState(false);
 
@@ -87,7 +91,7 @@ function AuthPasswordField({
           type="button"
           className="auth-field-toggle"
           onClick={() => setVisible((v) => !v)}
-          aria-label={visible ? "Skrij geslo" : "Prikaži geslo"}
+          aria-label={visible ? hideLabel : showLabel}
         >
           {visible ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>
@@ -99,7 +103,8 @@ function AuthPasswordField({
 export function Login() {
   const navigate = useNavigate();
   const { user, loading, login, register } = useAuth();
-  const [mode, setMode] = useState("register");
+  const { t } = useLocale();
+  const [mode, setMode] = useState("login");
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
@@ -135,7 +140,7 @@ export function Login() {
   if (loading) {
     return (
       <div className="login-page login-page-v2">
-        <p className="muted center page">Nalagam…</p>
+        <p className="muted center page">{t("common.loading")}</p>
       </div>
     );
   }
@@ -162,7 +167,7 @@ export function Login() {
       }
       navigate("/", { replace: true });
     } catch (err) {
-      setError(err.message ?? "Prijava ni uspela");
+      setError(err.message ?? t("auth.loginFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -176,7 +181,7 @@ export function Login() {
       await register({ ...registerForm, rememberMe: true });
       navigate("/", { replace: true });
     } catch (err) {
-      setError(err.message ?? "Registracija ni uspela");
+      setError(err.message ?? t("auth.registerFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -196,12 +201,14 @@ export function Login() {
           <BrandMark variant="login" />
         </div>
 
+        <div className="login-lang-wrap">
+          <LanguageToggle className="login-lang-toggle" />
+        </div>
+
         <div className="login-heading">
-          <h2>{isRegister ? "Ustvari račun" : "Prijava"}</h2>
+          <h2>{isRegister ? t("auth.register") : t("auth.login")}</h2>
           <p>
-            {isRegister
-              ? "Ustvari svoj račun in začni naročati pri Discogs."
-              : "Prijavi se v svoj DSO račun."}
+            {isRegister ? t("auth.registerSubtitle") : t("auth.loginSubtitle")}
           </p>
         </div>
 
@@ -210,30 +217,30 @@ export function Login() {
         {isRegister ? (
           <form className="login-form login-form-v2" onSubmit={handleRegister}>
             <AuthField
-              label="Ime"
+              label={t("auth.firstName")}
               icon={User}
               value={registerForm.firstName}
               onChange={(e) =>
                 setRegisterForm((f) => ({ ...f, firstName: e.target.value }))
               }
-              placeholder="Tvoje ime"
+              placeholder={t("auth.firstNamePlaceholder")}
               required
               autoComplete="given-name"
               autoFocus
             />
             <AuthField
-              label="Priimek"
+              label={t("auth.lastName")}
               icon={User}
               value={registerForm.lastName}
               onChange={(e) =>
                 setRegisterForm((f) => ({ ...f, lastName: e.target.value }))
               }
-              placeholder="Tvoj priimek"
+              placeholder={t("auth.lastNamePlaceholder")}
               required
               autoComplete="family-name"
             />
             <AuthField
-              label="Uporabniško ime (za prijavo)"
+              label={t("auth.usernameForLogin")}
               icon={AtSign}
               value={registerForm.username}
               onChange={(e) =>
@@ -242,7 +249,7 @@ export function Login() {
                   username: e.target.value.toLowerCase(),
                 }))
               }
-              placeholder="npr. marko.novak"
+              placeholder={t("auth.usernamePlaceholder")}
               required
               minLength={3}
               maxLength={32}
@@ -250,36 +257,40 @@ export function Login() {
               pattern="[a-z0-9._-]+"
             />
             <AuthPasswordField
-              label="Geslo"
+              label={t("auth.password")}
               value={registerForm.password}
               onChange={(e) =>
                 setRegisterForm((f) => ({ ...f, password: e.target.value }))
               }
-              placeholder="Ustvari močno geslo"
+              placeholder={t("auth.passwordCreatePlaceholder")}
               required
               minLength={6}
               autoComplete="new-password"
+              showLabel={t("common.showPassword")}
+              hideLabel={t("common.hidePassword")}
             />
             <AuthPasswordField
-              label="Ponovi geslo"
+              label={t("auth.passwordConfirm")}
               value={registerForm.passwordConfirm}
               onChange={(e) =>
                 setRegisterForm((f) => ({ ...f, passwordConfirm: e.target.value }))
               }
-              placeholder="Ponovi geslo"
+              placeholder={t("auth.passwordConfirmPlaceholder")}
               required
               minLength={6}
               autoComplete="new-password"
+              showLabel={t("common.showPassword")}
+              hideLabel={t("common.hidePassword")}
             />
 
             <p className="login-hint">
               <Info size={16} aria-hidden />
-              Uporabniško ime uporabiš samo pri prijavi v aplikacijo.
+              {t("auth.usernameHint")}
             </p>
 
             <button type="submit" className="login-btn-primary" disabled={submitting}>
               <UserPlus size={20} />
-              {submitting ? "Ustvarjam…" : "Ustvari račun"}
+              {submitting ? t("auth.registering") : t("auth.registerSubmit")}
             </button>
 
             <button
@@ -290,18 +301,19 @@ export function Login() {
                 setError(null);
               }}
             >
-              Že imaš račun? <span className="login-link-accent">Prijavi se</span>
+              {t("auth.hasAccount")}{" "}
+              <span className="login-link-accent">{t("auth.signIn")}</span>
             </button>
 
             <p className="login-footer-hint">
               <Shield size={16} aria-hidden />
-              Po prijavi lahko v nastavitvah povežeš Discogs profil.
+              {t("auth.afterLoginHint")}
             </p>
           </form>
         ) : (
           <form className="login-form login-form-v2" onSubmit={handleLogin}>
             <AuthField
-              label="Uporabniško ime"
+              label={t("auth.username")}
               icon={AtSign}
               value={loginForm.username}
               onChange={(e) =>
@@ -310,20 +322,22 @@ export function Login() {
                   username: e.target.value.toLowerCase(),
                 }))
               }
-              placeholder="npr. marko.novak"
+              placeholder={t("auth.usernamePlaceholder")}
               required
               autoComplete="username"
               autoFocus
             />
             <AuthPasswordField
-              label="Geslo"
+              label={t("auth.password")}
               value={loginForm.password}
               onChange={(e) =>
                 setLoginForm((f) => ({ ...f, password: e.target.value }))
               }
-              placeholder="Tvoje geslo"
+              placeholder={t("auth.passwordPlaceholder")}
               required
               autoComplete="current-password"
+              showLabel={t("common.showPassword")}
+              hideLabel={t("common.hidePassword")}
             />
 
             <label className="login-remember login-remember-v2">
@@ -332,12 +346,12 @@ export function Login() {
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
               />
-              Zapomni si me
+              {t("auth.rememberMe")}
             </label>
 
             <button type="submit" className="login-btn-primary" disabled={submitting}>
               <LogIn size={20} />
-              {submitting ? "Prijavljam…" : "Prijava"}
+              {submitting ? t("auth.loggingIn") : t("auth.loginSubmit")}
             </button>
 
             <button
@@ -348,7 +362,8 @@ export function Login() {
                 setError(null);
               }}
             >
-              Nimaš računa? <span className="login-link-accent">Ustvari račun</span>
+              {t("auth.noAccount")}{" "}
+              <span className="login-link-accent">{t("auth.createAccount")}</span>
             </button>
           </form>
         )}

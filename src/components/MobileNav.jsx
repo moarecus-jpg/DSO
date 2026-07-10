@@ -1,12 +1,14 @@
 import { NavLink, useSearchParams } from "react-router-dom";
 import { Folder, Lock, Package, Plus, Settings } from "lucide-react";
+import { useLocale } from "../hooks/useLocale.jsx";
 
 export function MobileNav() {
   const [searchParams] = useSearchParams();
+  const { t } = useLocale();
   const newOrderOpen = searchParams.get("new") === "1";
 
   return (
-    <nav className="mobile-nav" aria-label="Glavna navigacija">
+    <nav className="mobile-nav" aria-label={t("nav.mainNav")}>
       <NavLink
         to="/"
         end
@@ -15,7 +17,7 @@ export function MobileNav() {
         }
       >
         <Folder size={20} strokeWidth={2} />
-        <span>Odprta</span>
+        <span>{t("nav.mobileOpen")}</span>
       </NavLink>
 
       <NavLink
@@ -23,13 +25,13 @@ export function MobileNav() {
         className={({ isActive }) => `mobile-nav-link${isActive ? " active" : ""}`}
       >
         <Lock size={20} strokeWidth={2} />
-        <span>Zaključena</span>
+        <span>{t("nav.mobileClosed")}</span>
       </NavLink>
 
       <NavLink
         to={{ pathname: "/", search: "?new=1" }}
         className={() => `mobile-nav-fab${newOrderOpen ? " active" : ""}`}
-        aria-label="Novo naročilo"
+        aria-label={t("nav.newOrder")}
       >
         <Plus size={26} strokeWidth={2.5} />
       </NavLink>
@@ -39,7 +41,7 @@ export function MobileNav() {
         className={({ isActive }) => `mobile-nav-link${isActive ? " active" : ""}`}
       >
         <Package size={20} strokeWidth={2} />
-        <span>Itemi</span>
+        <span>{t("nav.mobileItems")}</span>
       </NavLink>
 
       <NavLink
@@ -47,7 +49,7 @@ export function MobileNav() {
         className={({ isActive }) => `mobile-nav-link${isActive ? " active" : ""}`}
       >
         <Settings size={20} strokeWidth={2} />
-        <span>Profil</span>
+        <span>{t("nav.mobileProfile")}</span>
       </NavLink>
     </nav>
   );

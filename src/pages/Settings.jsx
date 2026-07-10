@@ -3,6 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import { Disc3, ExternalLink, Unplug } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
+import { useLocale } from "../hooks/useLocale.jsx";
+import { LanguageToggle } from "../components/LanguageToggle.jsx";
 
 function discogsCallbackFallback() {
   if (typeof window !== "undefined") {
@@ -13,6 +15,7 @@ function discogsCallbackFallback() {
 
 export function Settings() {
   const { user, refresh } = useAuth();
+  const { t } = useLocale();
   const [params] = useSearchParams();
   const [message, setMessage] = useState(null);
   const [messageType, setMessageType] = useState("ok");
@@ -27,67 +30,60 @@ export function Settings() {
 
   useEffect(() => {
     const discogs = params.get("discogs");
+    const callback = health?.discogsCallbackUrl ?? discogsCallbackFallback();
+
     if (discogs === "connected") {
       setMessageType("ok");
       setMessage(
         params.get("mock") === "1"
-          ? "Discogs povezan (demo način)."
-          : "Discogs račun je povezan."
+          ? t("settings.connectedMock")
+          : t("settings.connected")
       );
       refresh();
     } else if (discogs === "error") {
       setMessageType("warn");
       const reason = params.get("reason");
-      const callback = health?.discogsCallbackUrl ?? discogsCallbackFallback();
 
       if (reason === "session") {
-        setMessage(
-          "Povezava je prekinjena — seja se ni shranila med preusmeritvijo na Discogs. " +
-            "Poskusi znova (priporočeno: ob prijavi označi Zapomni si me)."
-        );
+        setMessage(t("settings.sessionError"));
       } else if (reason === "start") {
         setMessage(
           <>
-            Discogs OAuth se ni zagnal. Preveri <code>DISCOGS_CONSUMER_KEY</code> in{" "}
-            <code>DISCOGS_CONSUMER_SECRET</code> v Railway Variables (brez presledkov).
-            Callback URL: <code>{callback}</code>
+            {t("settings.startError")} <code>{callback}</code>
           </>
         );
       } else if (reason === "callback") {
         setMessage(
           <>
-            Discogs je vrnil napako ob potrditvi. Preveri, da je Callback URL v Developer
-            nastavitvah točno: <code>{callback}</code>
+            {t("settings.callbackError")} <code>{callback}</code>
           </>
         );
       } else {
         setMessage(
           <>
-            Povezava z Discogs ni uspela. V Discogs Developer pri aplikaciji DSO dodaj
-            Callback URL: <code>{callback}</code>. Nato znova klikni Poveži Discogs.
+            {t("settings.genericError")} <code>{callback}</code>.{" "}
+            {t("settings.genericErrorRetry")}
           </>
         );
       }
     } else if (discogs === "nokeys") {
       setMessageType("warn");
-      setMessage(
-        "Manjkata DISCOGS_CONSUMER_KEY in DISCOGS_CONSUMER_SECRET v .env datoteki."
-      );
+      setMessage(t("settings.noKeys"));
     }
-  }, [params, refresh, health]);
+  }, [params, refresh, health, t]);
 
   async function disconnect() {
     await api("/auth/discogs/disconnect", { method: "POST" });
     await refresh();
     setMessageType("ok");
-    setMessage("Discogs račun je odklopljen.");
+    setMessage(t("settings.disconnected"));
   }
 
   const discogsReady = health?.discogsConfigured === true;
 
   return (
     <div className="page page-settings">
-      <h1>Nastavitve</h1>
+      <h1>{t("settings.title")}</h1>
 
       {message && (
         <div className={`banner ${messageType === "warn" ? "banner-warn" : "banner-ok"}`}>
@@ -96,80 +92,77 @@ export function Settings() {
       )}
 
       <div className="card settings-card">
-        <h2>Račun</h2>
+        <h2>{t("language.label")}</h2>
+        <LanguageToggle />
+      </div>
+
+      <div className="card settings-card">
+        <h2>{t("settings.account")}</h2>
         <p>
           <strong>{user?.name}</strong>
         </p>
         {user?.username && (
           <p className="muted">
-            Uporabniško ime: <code>{user.username}</code>
+            {t("settings.usernameLabel")} <code>{user.username}</code>
           </p>
         )}
       </div>
 
       <div className="card settings-card">
         <h2>
-          <Disc3 size={20} /> Discogs račun
+          <Disc3 size={20} /> {t("settings.discogsAccount")}
         </h2>
         {user?.discogsConnected ? (
           <>
             <p>
-              Povezan kot <strong>@{user.discogsUsername}</strong>
+              {t("settings.connectedAs")} <strong>@{user.discogsUsername}</strong>
             </p>
-            <p className="muted">
-              Pri naročilih se prikaže tvoj Discogs uporabniško ime med sodelujočimi.
-            </p>
+            <p className="muted">{t("settings.connectedHint")}</p>
             <button type="button" className="btn btn-ghost" onClick={disconnect}>
-              <Unplug size={16} /> Odklopi Discogs
+              <Unplug size={16} /> {t("settings.disconnect")}
             </button>
           </>
         ) : (
           <>
-            <p className="muted">
-              Poveži svoj Discogs račun, da se pri skupinskih naročilih prikaže tvoje
-              uporabniško ime (@…).
-            </p>
+            <p className="muted">{t("settings.connectHint")}</p>
             {discogsReady ? (
               <>
                 <a href="/auth/discogs" className="btn btn-primary">
-                  Poveži Discogs
+                  {t("settings.connect")}
                 </a>
-                <p className="fine-print muted">
-                  Odpre se stran discogs.com za prijavo in potrditev dostopa.
-                </p>
+                <p className="fine-print muted">{t("settings.connectFine")}</p>
               </>
             ) : (
               <>
                 <button type="button" className="btn btn-primary" disabled>
-                  Poveži Discogs
+                  {t("settings.connect")}
                 </button>
                 <p className="fine-print muted">
-                  Za pravo povezavo nastavi <code>DISCOGS_CONSUMER_KEY</code> in{" "}
-                  <code>DISCOGS_CONSUMER_SECRET</code> v Railway Variables ali lokalno v{" "}
-                  <code>.env</code>, iz{" "}
-                  <a
-                    href="https://www.discogs.com/settings/developers"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="discogs-inline-link"
-                  >
-                    Discogs Developer
-                    <ExternalLink size={12} style={{ marginLeft: 4 }} />
-                  </a>
-                  . Callback URL:{" "}
+                  {t("settings.keysHint")}{" "}
                   <code>{health?.discogsCallbackUrl ?? discogsCallbackFallback()}</code>
                 </p>
                 {health?.mockAuth && (
                   <p className="fine-print muted">
-                    Brez ključev lahko v demo načinu uporabiš{" "}
+                    {t("settings.demoHint")}{" "}
                     <a href="/auth/discogs" className="discogs-inline-link">
-                      demo Discogs povezavo
+                      {t("settings.demoLink")}
                     </a>{" "}
-                    (vzorčni podatki).
+                    {t("settings.demoData")}
                   </p>
                 )}
               </>
             )}
+            <p className="fine-print muted">
+              <a
+                href="https://www.discogs.com/settings/developers"
+                target="_blank"
+                rel="noreferrer"
+                className="discogs-inline-link"
+              >
+                Discogs Developer
+                <ExternalLink size={12} style={{ marginLeft: 4 }} />
+              </a>
+            </p>
           </>
         )}
       </div>

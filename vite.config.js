@@ -9,10 +9,12 @@ export default defineConfig({
       "/api": {
         target: "http://localhost:3001",
         timeout: 300_000,
+        changeOrigin: true,
       },
       "/auth": {
         target: "http://localhost:3001",
         timeout: 60_000,
+        changeOrigin: true,
       },
     },
   },

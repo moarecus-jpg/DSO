@@ -1,14 +1,17 @@
 import Database from "better-sqlite3";
 import { randomUUID } from "crypto";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { formatOrderTitle } from "../shared/orderTitle.js";
 import { hashPassword, verifyPassword } from "./auth/password.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbPath = path.join(__dirname, "..", "data", "app.db");
+const dataDir =
+  process.env.DATA_DIR?.trim() || path.join(__dirname, "..", "data");
+const dbPath =
+  process.env.DATABASE_PATH?.trim() || path.join(dataDir, "app.db");
 
-import fs from "fs";
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 
 let db;
@@ -340,7 +343,7 @@ export function getGroupSession(id) {
 export function listGroupSessions(status = "open") {
   return db
     .prepare(
-      `SELECT gs.*, u.name as creator_name,
+      `SELECT gs.*, u.name as creator_name, u.username as creator_username,
         (SELECT COUNT(*) FROM session_members WHERE session_id = gs.id) as member_count,
         (SELECT COUNT(*) FROM session_links WHERE session_id = gs.id) as link_count
        FROM group_sessions gs
@@ -355,7 +358,7 @@ export function listGroupSessions(status = "open") {
 export function listAllGroupSessions() {
   return db
     .prepare(
-      `SELECT gs.*, u.name as creator_name,
+      `SELECT gs.*, u.name as creator_name, u.username as creator_username,
         (SELECT COUNT(*) FROM session_members WHERE session_id = gs.id) as member_count,
         (SELECT COUNT(*) FROM session_links WHERE session_id = gs.id) as link_count
        FROM group_sessions gs
@@ -563,6 +566,15 @@ export function publicUser(user) {
     discogsConnected: Boolean(user.discogs_token),
     discogsUsername: user.discogs_username ?? null,
     discogsAvatarUrl: user.discogs_avatar_url ?? null,
+  };
+}
+
+export function getDatabaseInfo() {
+  return {
+    path: dbPath,
+    dataDir,
+    persistent: Boolean(process.env.DATA_DIR?.trim() || process.env.DATABASE_PATH?.trim()),
+    userCount: db.prepare("SELECT COUNT(*) AS c FROM users").get()?.c ?? 0,
   };
 }
 
