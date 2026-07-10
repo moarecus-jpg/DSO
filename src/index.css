@@ -1398,7 +1398,7 @@ code {
   position: absolute;
   top: calc(100% + 0.45rem);
   left: 0;
-  z-index: 40;
+  z-index: 200;
   width: min(18.5rem, calc(100vw - 2rem));
   padding: 0.75rem;
   border-radius: 1rem;
@@ -3182,6 +3182,16 @@ code {
   flex-shrink: 0;
 }
 
+/* backdrop-filter on .card creates stacking contexts; lift open dropdown hosts */
+.card:has(.app-date-picker--open),
+.card:has(.app-select--open),
+.orders-search-filter:has(.app-select--open),
+.lang-select:has(.app-select--open) {
+  position: relative;
+  z-index: 90;
+  overflow: visible;
+}
+
 .app-select-trigger {
   display: inline-flex;
   align-items: center;
@@ -3237,7 +3247,7 @@ code {
   position: absolute;
   top: calc(100% + 0.45rem);
   right: 0;
-  z-index: 40;
+  z-index: 200;
   min-width: 100%;
   margin: 0;
   padding: 0.35rem;
