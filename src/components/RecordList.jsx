@@ -1,4 +1,5 @@
 import { ExternalLink } from "lucide-react";
+import { DiscogsAddToCartLink } from "./DiscogsAddToCartLink.jsx";
 import { EditableParticipantName } from "./EditableParticipantName.jsx";
 import {
   formatPrice,
@@ -32,49 +33,56 @@ export function RecordList({
         </thead>
         <tbody>
           {links.map((link) => (
-            <tr key={link.id}>
+            <tr key={link.id} className={link.blurred ? "order-item-row--hidden" : undefined}>
               <td className="col-participant">
                 <EditableParticipantName
                   className="order-participant"
                   value={link.user_name ?? t("common.unknown")}
                   placeholder={link.member_name ?? t("common.name")}
-                  canEdit={canManageMembers && Boolean(onRenameLink)}
+                  canEdit={canManageMembers && Boolean(onRenameLink) && !link.blurred}
                   onSave={(name) => onRenameLink(link.id, name)}
                 />
               </td>
               <td className="col-item">
-                <div className="order-item-cell">
-                  <a
-                    href={link.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="order-listing-id"
-                  >
-                    {listingIdFor(link)}
-                    <ExternalLink size={12} aria-hidden />
-                  </a>
-                  <a
-                    href={link.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="order-item-title"
-                  >
-                    {recordTitle(link)}
-                  </a>
-                  {link.media_condition && (
-                    <p className="order-item-condition">
-                      {t("items.mediaCondition")}: {link.media_condition}
-                    </p>
-                  )}
-                  {link.sleeve_condition && (
-                    <p className="order-item-condition">
-                      {t("items.sleeveCondition")}: {link.sleeve_condition}
-                    </p>
-                  )}
-                </div>
+                {link.blurred ? (
+                  <div className="order-item-hidden" aria-hidden="true">
+                    <span className="order-item-hidden-placeholder" />
+                  </div>
+                ) : (
+                  <div className="order-item-cell">
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="order-listing-id"
+                    >
+                      {listingIdFor(link)}
+                      <ExternalLink size={12} aria-hidden />
+                    </a>
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="order-item-title"
+                    >
+                      {recordTitle(link)}
+                    </a>
+                    {link.media_condition && (
+                      <p className="order-item-condition">
+                        {t("items.mediaCondition")}: {link.media_condition}
+                      </p>
+                    )}
+                    {link.sleeve_condition && (
+                      <p className="order-item-condition">
+                        {t("items.sleeveCondition")}: {link.sleeve_condition}
+                      </p>
+                    )}
+                    <DiscogsAddToCartLink link={link} />
+                  </div>
+                )}
               </td>
               <td className="col-price">
-                {formatPrice(link.price_value, link.price_currency)}
+                {link.blurred ? "—" : formatPrice(link.price_value, link.price_currency)}
               </td>
             </tr>
           ))}

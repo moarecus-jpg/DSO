@@ -6,6 +6,7 @@ import {
   findUserById,
   publicUser,
   updateDiscogsAvatar,
+  updateHideMyRecords,
   upsertGoogleUser,
   verifyLocalUser,
 } from "../db.js";
@@ -64,6 +65,24 @@ router.get("/me", async (req, res) => {
     return res.json({ user: publicUser(MOCK_USER) });
   }
   user = await ensureUserDiscogsAvatar(user);
+  res.json({ user: publicUser(user) });
+});
+
+router.patch("/me/privacy", (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Prijavi se v aplikacijo." });
+  }
+
+  const hideMyRecords = req.body?.hideMyRecords;
+  if (typeof hideMyRecords !== "boolean") {
+    return res.status(400).json({ error: "Neveljavna nastavitev zasebnosti." });
+  }
+
+  const user = updateHideMyRecords(req.session.userId, hideMyRecords);
+  if (!user) {
+    return res.status(404).json({ error: "Uporabnik ni bil najden." });
+  }
+
   res.json({ user: publicUser(user) });
 });
 

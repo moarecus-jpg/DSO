@@ -113,6 +113,39 @@ export function Settings() {
       </div>
 
       <div className="card settings-card">
+        <h2>{t("settings.privacyTitle")}</h2>
+        <p className="muted settings-privacy-hint">{t("settings.privacyHint")}</p>
+        <label className="settings-theme-toggle">
+          <span>{t("settings.hideMyRecords")}</span>
+          <input
+            type="checkbox"
+            className="sidebar-theme-toggle-input"
+            checked={Boolean(user?.hideMyRecords)}
+            onChange={async (e) => {
+              const hideMyRecords = e.target.checked;
+              try {
+                await api("/auth/me/privacy", {
+                  method: "PATCH",
+                  body: JSON.stringify({ hideMyRecords }),
+                });
+                await refresh();
+                setMessageType("ok");
+                setMessage(
+                  hideMyRecords
+                    ? t("settings.hideMyRecordsEnabled")
+                    : t("settings.hideMyRecordsDisabled")
+                );
+              } catch (err) {
+                setMessageType("warn");
+                setMessage(err.message ?? t("common.error"));
+              }
+            }}
+          />
+          <span className="sidebar-theme-toggle-track" aria-hidden />
+        </label>
+      </div>
+
+      <div className="card settings-card">
         <h2>{t("settings.account")}</h2>
         <p>
           <strong>{user?.name}</strong>

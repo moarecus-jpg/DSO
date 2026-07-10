@@ -136,6 +136,8 @@ export default {
     addFailed: "Error while adding.",
     addPartial: "Added: {{added}}, failed: {{failed}}.{{detail}}",
     orderedBy: "Ordered by:",
+    hiddenItemsNote:
+      "{{count}} item(s) from other participants are hidden. Only the person who opened this order can see everything.",
   },
   items: {
     addItem: "Add item",
@@ -159,6 +161,18 @@ export default {
     mediaCondition: "Media condition",
     sleeveCondition: "Sleeve condition",
     subtotalFor: "Subtotal for {{label}}",
+    addToCart: "Add to cart",
+    addToCartHint:
+      "Opens Discogs in a new tab and adds this listing to your cart. You must be logged in on discogs.com.",
+    addAllToCart: "Add all to cart ({{count}})",
+    addAllToCartProgress: "Adding {{current}}/{{total}}…",
+    addAllToCartHint:
+      "Adds each listing to your Discogs cart one by one, then opens the cart. Allow pop-ups and stay logged in on discogs.com.",
+    addAllToCartPopupBlocked:
+      "Pop-up was blocked. Allow pop-ups for this site and try again.",
+    addAllToCartFailed: "Could not add items to the Discogs cart. Try again.",
+    hiddenItem: "Hidden item",
+    hiddenItemPlaceholder: "This participant hid their picks in settings.",
     recordOne: "1 record",
     recordTwo: "2 records",
     recordFew: "{{count}} records",
@@ -215,6 +229,12 @@ export default {
     persistenceTitle: "Accounts are wiped on every redeploy",
     persistenceBody:
       "On Railway add a Volume with mount path {{path}} (Service → Volumes → Add Volume), then redeploy. Accounts will persist after that.",
+    privacyTitle: "Privacy",
+    privacyHint:
+      "When enabled, other participants see your items as blurred in group orders. You and the person who opened the order still see everything.",
+    hideMyRecords: "Hide my records",
+    hideMyRecordsEnabled: "Your records are now hidden from other participants.",
+    hideMyRecordsDisabled: "Your records are visible to other participants again.",
   },
   errors: {
     passwordsMismatch: "Passwords do not match.",

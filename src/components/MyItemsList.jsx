@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Disc3, ExternalLink } from "lucide-react";
+import { DiscogsAddToCartLink } from "./DiscogsAddToCartLink.jsx";
 import { formatPrice, listingIdFor } from "../../shared/orderTotals.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { SellerAvatar } from "./SellerAvatar.jsx";
@@ -68,6 +69,9 @@ export function MyItemsList({ groups = [], loading, emptyMessage }) {
                         {t("session.orderedBy")} {item.ordererName}
                       </span>
                     )}
+                    <DiscogsAddToCartLink
+                      link={{ listing_id: item.listingId, url: item.url }}
+                    />
                   </div>
                   <div className="my-items-row-price">
                     {formatPrice(item.priceValue, item.priceCurrency)}

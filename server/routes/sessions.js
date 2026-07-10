@@ -30,6 +30,7 @@ import { resolveRecordFromUrl } from "../discogs/recordMeta.js";
 import { parseDiscogsUrlList } from "../../shared/parseRecordUrl.js";
 import { DISPLAY_CURRENCY, toEurAmount } from "../../shared/currency.js";
 import { enrichSessionOrder, recordTitle } from "../../shared/orderTotals.js";
+import { sessionForViewer } from "../../shared/sessionPrivacy.js";
 import { resolveSellerInput } from "../discogs/resolveSeller.js";
 import { googleConfigured } from "../auth/google.js";
 import { discogsAppConfigured } from "../discogs/auth.js";
@@ -182,10 +183,12 @@ function requireUser(req, res, next) {
 }
 
 function withOrderPermissions(session, userId) {
-  const enriched = enrichSessionOrder(session);
+  const isAdmin = isOrderAdmin(session, userId);
+  const viewed = sessionForViewer(session, userId, isAdmin);
   return {
-    ...enriched,
-    canManageMembers: isOrderAdmin(session, userId),
+    ...viewed,
+    canManageMembers: isAdmin,
+    canManageShipping: isAdmin,
   };
 }
 
@@ -346,6 +349,19 @@ router.post("/", requireUser, async (req, res) => {
 });
 
 router.patch("/:id/shipping", requireUser, (req, res) => {
+  const sessionId = req.params.id;
+  const existingSession =
+    useMockAuth() && sessionId.startsWith("mock")
+      ? mockSessions.find((s) => s.id === sessionId)
+      : getGroupSession(sessionId);
+
+  if (!existingSession) {
+    return res.status(404).json({ error: "Session not found" });
+  }
+  if (!isOrderAdmin(existingSession, req.session.userId)) {
+    return res.status(403).json({ error: "Samo admin lahko spreminja poštnino." });
+  }
+
   const raw = req.body?.shippingValue;
   const shippingValue =
     raw === null || raw === undefined || raw === ""

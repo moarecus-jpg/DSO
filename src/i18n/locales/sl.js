@@ -138,6 +138,8 @@ export default {
     addPartial:
       "Dodanih: {{added}}, neuspešnih: {{failed}}.{{detail}}",
     orderedBy: "Naročil:",
+    hiddenItemsNote:
+      "{{count}} itemov drugih udeležencev je skritih. Vse vidi samo oseba, ki je odprla to naročilo.",
   },
   items: {
     addItem: "Dodaj Item",
@@ -161,6 +163,18 @@ export default {
     mediaCondition: "Media Condition",
     sleeveCondition: "Sleeve Condition",
     subtotalFor: "Vmesna vsota za {{label}}",
+    addToCart: "Dodaj v košarico",
+    addToCartHint:
+      "Odpre Discogs v novem zavihku in doda ta listing v tvojo košarico. Prijavljen moraš biti na discogs.com.",
+    addAllToCart: "Dodaj vse v košarico ({{count}})",
+    addAllToCartProgress: "Dodajam {{current}}/{{total}}…",
+    addAllToCartHint:
+      "Vsak listing se doda v Discogs košarico posebej, na koncu se odpre košarica. Dovoli pojavna okna in ostani prijavljen na discogs.com.",
+    addAllToCartPopupBlocked:
+      "Pojavno okno je blokirano. Dovoli pojavna okna za to stran in poskusi znova.",
+    addAllToCartFailed: "Itemov ni bilo mogoče dodati v Discogs košarico. Poskusi znova.",
+    hiddenItem: "Skrit item",
+    hiddenItemPlaceholder: "Ta udeleženec je skril svoje izbire v nastavitvah.",
     recordOne: "1 plato",
     recordTwo: "2 plati",
     recordFew: "{{count}} plati",
@@ -219,6 +233,12 @@ export default {
     persistenceTitle: "Računi se po redeployu brišejo",
     persistenceBody:
       "Na Railwayu dodaj Volume z mount path {{path}} (Service → Volumes → Add Volume), nato redeploy. Potem se računi ohranijo.",
+    privacyTitle: "Zasebnost",
+    privacyHint:
+      "Ko je vklopljeno, drugi udeleženci v skupinskih naročilih vidijo tvoje iteme zamegljene. Ti in oseba, ki je odprla naročilo, še vedno vidiš vse.",
+    hideMyRecords: "Skrij moje recorde",
+    hideMyRecordsEnabled: "Tvoji recordi so zdaj skriti pred drugimi udeleženci.",
+    hideMyRecordsDisabled: "Tvoji recordi so spet vidni drugim udeležencem.",
   },
   errors: {
     passwordsMismatch: "Gesli se ne ujemata.",

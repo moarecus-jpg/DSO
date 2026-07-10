@@ -131,6 +131,7 @@ for (const sql of [
   "ALTER TABLE group_sessions ADD COLUMN shipping_split_count INTEGER",
   "ALTER TABLE session_members ADD COLUMN display_name TEXT",
   "ALTER TABLE session_links ADD COLUMN orderer_display_name TEXT",
+  "ALTER TABLE users ADD COLUMN hide_my_records INTEGER NOT NULL DEFAULT 0",
 ]) {
   try {
     db.exec(sql);
@@ -355,7 +356,8 @@ export function getGroupSession(id) {
   const links = db
     .prepare(
       `SELECT sl.*, ${EFFECTIVE_ORDERER_NAME_SQL} as user_name,
-              ${MEMBER_DISPLAY_NAME_SQL} as member_name, u.discogs_username
+              ${MEMBER_DISPLAY_NAME_SQL} as member_name, u.discogs_username,
+              u.hide_my_records as orderer_hide_records
        FROM session_links sl
        JOIN users u ON u.id = sl.user_id
        LEFT JOIN session_members sm
@@ -581,6 +583,14 @@ export function updateMemberDisplayName(sessionId, memberUserId, displayName) {
   return getGroupSession(sessionId);
 }
 
+export function updateHideMyRecords(userId, hideMyRecords) {
+  db.prepare("UPDATE users SET hide_my_records = ? WHERE id = ?").run(
+    hideMyRecords ? 1 : 0,
+    userId
+  );
+  return findUserById(userId);
+}
+
 export function publicUser(user) {
   if (!user) return null;
   return {
@@ -594,6 +604,7 @@ export function publicUser(user) {
     discogsConnected: Boolean(user.discogs_token),
     discogsUsername: user.discogs_username ?? null,
     discogsAvatarUrl: user.discogs_avatar_url ?? null,
+    hideMyRecords: Boolean(user.hide_my_records),
   };
 }
 

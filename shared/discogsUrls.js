@@ -13,3 +13,14 @@ export function sellerProfileUrl(sellerUsername) {
   if (!seller) return null;
   return `https://www.discogs.com/seller/${encodeURIComponent(seller)}/profile`;
 }
+
+/** Opens Discogs cart page and adds one listing (user must be logged in on discogs.com). */
+export function discogsAddToCartUrl(listingId) {
+  const id = String(listingId ?? "").trim();
+  if (!id || id === "—") return null;
+  return `https://www.discogs.com/sell/cart/?add=${encodeURIComponent(id)}&ev=atc_br`;
+}
+
+export function discogsCartUrl() {
+  return "https://www.discogs.com/sell/cart/";
+}

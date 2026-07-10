@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Archive, Disc3, ExternalLink, Heart, Plus, X } from "lucide-react";
 import { AddRecordModal } from "../components/AddRecordModal.jsx";
+import { DiscogsAddAllToCartButton } from "../components/DiscogsAddAllToCartButton.jsx";
 import { MemberChips } from "../components/MemberChips.jsx";
 import { SellerAvatar } from "../components/SellerAvatar.jsx";
 import { OrderSummary } from "../components/OrderSummary.jsx";
@@ -177,27 +178,36 @@ export function Session() {
   const recordCount = session.links?.length ?? 0;
 
   const orderActions =
-    !isClosed ? (
+    recordCount > 0 || !isClosed ? (
       <div className="order-session-actions">
-        <button
-          type="button"
-          className="btn btn-cancel-order"
-          onClick={handleCancel}
-          disabled={cancelling}
-          title={t("session.cancelOrder")}
-        >
-          <X size={18} strokeWidth={2.5} />
-          {cancelling ? t("session.cancelling") : t("session.cancelOrder")}
-        </button>
-        <button
-          type="button"
-          className="btn btn-ghost"
-          onClick={handleClose}
-          disabled={closing}
-        >
-          <Archive size={16} />
-          {closing ? t("session.closing") : t("session.closeOrder")}
-        </button>
+        {!isClosed && (
+          <button
+            type="button"
+            className="btn btn-cancel-order"
+            onClick={handleCancel}
+            disabled={cancelling}
+            title={t("session.cancelOrder")}
+          >
+            <X size={18} strokeWidth={2.5} />
+            {cancelling ? t("session.cancelling") : t("session.cancelOrder")}
+          </button>
+        )}
+        <div className="order-session-actions-end">
+          {recordCount > 0 && (
+            <DiscogsAddAllToCartButton links={session.links} disabled={isClosed} />
+          )}
+          {!isClosed && (
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={handleClose}
+              disabled={closing}
+            >
+              <Archive size={16} />
+              {closing ? t("session.closing") : t("session.closeOrder")}
+            </button>
+          )}
+        </div>
       </div>
     ) : null;
 
@@ -290,8 +300,8 @@ export function Session() {
               shippingCurrency={session.shipping_currency}
               shippingSplitCount={session.shipping_split_count}
               memberCount={session.members?.length ?? 0}
-              readOnly={isClosed}
-              onSaveShipping={handleSaveShipping}
+              readOnly={isClosed || !session.canManageShipping}
+              onSaveShipping={session.canManageShipping ? handleSaveShipping : undefined}
               savingShipping={savingShipping}
             />
           </>
