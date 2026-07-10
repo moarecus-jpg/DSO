@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { BrandMark } from "../components/BrandMark.jsx";
 import { useAuth } from "../hooks/useAuth.jsx";
@@ -128,9 +128,14 @@ export function Login() {
 
   return (
 
-    <div className="login-page">
+    <div className="login-page login-page-v2">
 
-      <div className="login-card">
+      <div className="layout-glow" aria-hidden>
+        <div className="layout-glow-orb layout-glow-orb--violet" />
+        <div className="layout-glow-orb layout-glow-orb--indigo" />
+      </div>
+
+      <div className="login-card login-card-v2">
 
         <div className="login-brand">
           <BrandMark variant="login" />
@@ -415,7 +420,7 @@ export function Login() {
 
         {error && (
 
-          <p className="fine-print" style={{ color: "var(--warn)" }}>
+          <p className="login-error">
 
             {error}
 
@@ -425,9 +430,9 @@ export function Login() {
 
 
 
-        <p className="fine-print muted">
+        <p className="fine-print muted login-footnote">
 
-          Po prijavi lahko v <Link to="/settings">nastavitvah</Link> povežeš Discogs profil.
+          Po prijavi lahko v <span className="login-footnote-muted">nastavitvah</span> povežeš Discogs profil.
 
         </p>
 
