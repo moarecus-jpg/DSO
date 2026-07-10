@@ -4,6 +4,7 @@ import { Layout } from "./components/Layout.jsx";
 import { Login } from "./pages/Login.jsx";
 import { Home } from "./pages/Home.jsx";
 import { ClosedOrders } from "./pages/ClosedOrders.jsx";
+import { MyItems } from "./pages/MyItems.jsx";
 import { Session } from "./pages/Session.jsx";
 import { Settings } from "./pages/Settings.jsx";
 
@@ -27,6 +28,7 @@ function AppRoutes() {
       >
         <Route path="/" element={<Home />} />
         <Route path="/closed" element={<ClosedOrders />} />
+        <Route path="/my-items" element={<MyItems />} />
         <Route path="/session/:id" element={<Session />} />
         <Route path="/settings" element={<Settings />} />
       </Route>

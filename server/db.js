@@ -520,6 +520,23 @@ export function updateLinkOrdererDisplayName(sessionId, linkId, ordererDisplayNa
   return getGroupSession(sessionId);
 }
 
+export function listUserOrderedItems(userId) {
+  return db
+    .prepare(
+      `SELECT sl.*, gs.id as session_id, gs.seller_username, gs.status as session_status,
+              gs.order_number, gs.created_at as session_created_at,
+              ${EFFECTIVE_ORDERER_NAME_SQL} as user_name
+       FROM session_links sl
+       JOIN group_sessions gs ON gs.id = sl.session_id
+       JOIN users u ON u.id = sl.user_id
+       LEFT JOIN session_members sm
+         ON sm.session_id = sl.session_id AND sm.user_id = sl.user_id
+       WHERE sl.user_id = ?
+       ORDER BY gs.created_at DESC, sl.created_at DESC`
+    )
+    .all(userId);
+}
+
 export function updateMemberDisplayName(sessionId, memberUserId, displayName) {
   const trimmed = displayName?.trim() ?? "";
   const value = trimmed === "" ? null : trimmed;

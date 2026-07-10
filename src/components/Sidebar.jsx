@@ -1,5 +1,5 @@
 import { Link, NavLink, useSearchParams } from "react-router-dom";
-import { Folder, Lock, LogOut, Plus, Settings } from "lucide-react";
+import { Folder, Lock, LogOut, Package, Plus, Settings } from "lucide-react";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { UserAvatar } from "./UserAvatar.jsx";
 
@@ -42,6 +42,13 @@ export function Sidebar() {
           >
             <Lock size={18} />
             Zaključena naročila
+          </NavLink>
+          <NavLink
+            to="/my-items"
+            className={({ isActive }) => `sidebar-link-v2${isActive ? " active" : ""}`}
+          >
+            <Package size={18} />
+            Naročeni Itemi
           </NavLink>
         </nav>
       </div>

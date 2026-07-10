@@ -14,6 +14,7 @@ import {
   joinSession,
   listAllGroupSessions,
   listGroupSessions,
+  listUserOrderedItems,
   publicUser,
 } from "../db.js";
 import {
@@ -28,7 +29,7 @@ import { formatOrderTitle } from "../../shared/orderTitle.js";
 import { resolveRecordFromUrl } from "../discogs/recordMeta.js";
 import { parseDiscogsUrlList } from "../../shared/parseRecordUrl.js";
 import { DISPLAY_CURRENCY, toEurAmount } from "../../shared/currency.js";
-import { enrichSessionOrder } from "../../shared/orderTotals.js";
+import { enrichSessionOrder, recordTitle } from "../../shared/orderTotals.js";
 import { resolveSellerInput } from "../discogs/resolveSeller.js";
 import { googleConfigured } from "../auth/google.js";
 import { discogsAppConfigured } from "../discogs/auth.js";
@@ -232,6 +233,55 @@ router.get("/", requireUser, async (req, res) => {
   const sessions =
     status === "all" ? listAllGroupSessions() : listGroupSessions(status);
   res.json({ sessions: await ensureSellerAvatars(sessions) });
+});
+
+function serializeOrderedItem(row) {
+  const priceEur = toEurAmount(row.price_value, row.price_currency);
+  return {
+    id: row.id,
+    sessionId: row.session_id,
+    url: row.url,
+    listingId: row.listing_id,
+    itemTitle: recordTitle(row),
+    ordererName: row.user_name,
+    priceValue: priceEur,
+    priceCurrency: priceEur == null ? null : DISPLAY_CURRENCY,
+    mediaCondition: row.media_condition,
+    sleeveCondition: row.sleeve_condition,
+    orderedAt: row.created_at,
+    sellerUsername: row.seller_username,
+    sessionStatus: row.session_status,
+    orderNumber: row.order_number,
+    orderTitle: formatOrderTitle(row.order_number ?? 1),
+  };
+}
+
+function mockUserOrderedItems(userId) {
+  const items = [];
+  for (const session of mockSessions) {
+    for (const link of session.links ?? []) {
+      if (link.user_id !== userId) continue;
+      items.push(
+        serializeOrderedItem({
+          ...link,
+          session_id: session.id,
+          seller_username: session.seller_username,
+          session_status: session.status ?? "open",
+          order_number: session.order_number,
+          created_at: link.created_at ?? session.created_at,
+        })
+      );
+    }
+  }
+  return items;
+}
+
+router.get("/my-items", requireUser, (req, res) => {
+  if (useMockSessions(req)) {
+    return res.json({ items: mockUserOrderedItems(req.session.userId) });
+  }
+  const rows = listUserOrderedItems(req.session.userId);
+  res.json({ items: rows.map(serializeOrderedItem) });
 });
 
 router.post("/", requireUser, async (req, res) => {
