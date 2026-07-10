@@ -98,7 +98,7 @@ export function Sidebar() {
               size={36}
             />
             <div className="sidebar-user-text">
-              <p className="sidebar-user-name">{user?.name}</p>
+              <p className="sidebar-user-name">{t("settings.title")}</p>
             </div>
             <ChevronDown size={18} className="sidebar-user-chevron" aria-hidden />
           </Link>
@@ -107,10 +107,10 @@ export function Sidebar() {
             type="button"
             className="sidebar-logout sidebar-logout--aside"
             onClick={logout}
+            aria-label={t("nav.logout")}
             title={t("nav.logout")}
           >
-            <LogOut size={16} aria-hidden />
-            <span>{t("nav.logout")}</span>
+            <LogOut size={18} aria-hidden />
           </button>
         </div>
       </div>

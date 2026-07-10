@@ -4,10 +4,11 @@ import { api } from "../api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
 
-export function StealthModeToggle({ className = "" }) {
+export function StealthModeToggle({ className = "", variant = "sidebar" }) {
   const { user, refresh } = useAuth();
   const { t } = useLocale();
   const [saving, setSaving] = useState(false);
+  const active = Boolean(user?.hideMyRecords);
 
   async function handleChange(hideMyRecords) {
     setSaving(true);
@@ -24,6 +25,24 @@ export function StealthModeToggle({ className = "" }) {
     }
   }
 
+  if (variant === "icon") {
+    return (
+      <button
+        type="button"
+        className={`mobile-topbar-icon-btn${
+          active ? " mobile-topbar-icon-btn--active" : ""
+        }${className ? ` ${className}` : ""}`}
+        onClick={() => handleChange(!active)}
+        disabled={saving}
+        aria-label={t("nav.stealthMode")}
+        aria-pressed={active}
+        title={t("settings.privacyHint")}
+      >
+        <EyeOff size={18} aria-hidden />
+      </button>
+    );
+  }
+
   return (
     <label
       className={`sidebar-theme-toggle${className ? ` ${className}` : ""}`}
@@ -36,7 +55,7 @@ export function StealthModeToggle({ className = "" }) {
       <input
         type="checkbox"
         className="sidebar-theme-toggle-input"
-        checked={Boolean(user?.hideMyRecords)}
+        checked={active}
         disabled={saving}
         onChange={(e) => handleChange(e.target.checked)}
         aria-label={t("nav.stealthMode")}
