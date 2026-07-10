@@ -1,11 +1,17 @@
 import { Link } from "react-router-dom";
 import { Disc3, ExternalLink } from "lucide-react";
-import { DiscogsAddToCartLink } from "./DiscogsAddToCartLink.jsx";
+import { DiscogsCartActions } from "./DiscogsCartActions.jsx";
 import { formatPrice, listingIdFor } from "../../shared/orderTotals.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { SellerAvatar } from "./SellerAvatar.jsx";
 
-export function MyItemsList({ groups = [], loading, emptyMessage }) {
+export function MyItemsList({
+  groups = [],
+  loading,
+  emptyMessage,
+  onRemoveItem,
+  removingItemId,
+}) {
   const { t } = useLocale();
 
   if (loading) {
@@ -69,8 +75,14 @@ export function MyItemsList({ groups = [], loading, emptyMessage }) {
                         {t("session.orderedBy")} {item.ordererName}
                       </span>
                     )}
-                    <DiscogsAddToCartLink
+                    <DiscogsCartActions
                       link={{ listing_id: item.listingId, url: item.url }}
+                      onRemove={
+                        !isClosed && onRemoveItem
+                          ? () => onRemoveItem(item)
+                          : undefined
+                      }
+                      removing={removingItemId === item.id}
                     />
                   </div>
                   <div className="my-items-row-price">

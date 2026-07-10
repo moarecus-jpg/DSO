@@ -6,6 +6,8 @@ import { DiscogsAddAllToCartButton } from "../components/DiscogsAddAllToCartButt
 import { MemberChips } from "../components/MemberChips.jsx";
 import { SellerAvatar } from "../components/SellerAvatar.jsx";
 import { OrderSummary } from "../components/OrderSummary.jsx";
+import { OrderTargetDate } from "../components/OrderTargetDate.jsx";
+import { OrderNotes } from "../components/OrderNotes.jsx";
 import { RecordList } from "../components/RecordList.jsx";
 import { api } from "../api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
@@ -25,6 +27,9 @@ export function Session() {
   const [addRecordOpen, setAddRecordOpen] = useState(false);
   const [addingRecord, setAddingRecord] = useState(false);
   const [savingShipping, setSavingShipping] = useState(false);
+  const [savingTargetDate, setSavingTargetDate] = useState(false);
+  const [removingLinkId, setRemovingLinkId] = useState(null);
+  const [postingNote, setPostingNote] = useState(false);
   const [loading, setLoading] = useState(true);
 
   function loadSession() {
@@ -95,6 +100,21 @@ export function Session() {
     }
   }
 
+  async function handleSaveTargetDate(targetDate) {
+    setSavingTargetDate(true);
+    try {
+      const { session: updated } = await api(`/api/sessions/${id}/target-date`, {
+        method: "PATCH",
+        body: JSON.stringify({ targetDate }),
+      });
+      setSession(updated);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSavingTargetDate(false);
+    }
+  }
+
   async function handleAddRecord({ urls, onProgress }) {
     setAddingRecord(true);
     const errors = [];
@@ -140,30 +160,43 @@ export function Session() {
     }
   }
 
-  async function handleRenameMember(userId, displayName) {
+  async function handleRemoveLink(link) {
+    if (!confirm(t("session.confirmRemoveItem"))) return;
+    setRemovingLinkId(link.id);
     try {
-      const { session: next } = await api(`/api/sessions/${id}/members/${userId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ displayName }),
+      const { session: updated } = await api(`/api/sessions/${id}/links/${link.id}`, {
+        method: "DELETE",
       });
-      setSession(next);
+      setSession(updated);
     } catch (err) {
-      alert(err.message ?? t("session.renameFailed"));
-      throw err;
+      alert(err.message);
+    } finally {
+      setRemovingLinkId(null);
     }
   }
 
-  async function handleRenameLink(linkId, ordererDisplayName) {
+  async function handlePostNote(body) {
+    setPostingNote(true);
     try {
-      const { session: next } = await api(`/api/sessions/${id}/links/${linkId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ ordererDisplayName }),
+      const { session: updated } = await api(`/api/sessions/${id}/notes`, {
+        method: "POST",
+        body: JSON.stringify({ body }),
       });
-      setSession(next);
+      setSession(updated);
+      return true;
     } catch (err) {
-      alert(err.message ?? t("session.renameFailed"));
-      throw err;
+      alert(err.message);
+      return false;
+    } finally {
+      setPostingNote(false);
     }
+  }
+
+  function canRemoveLink(link) {
+    if (session?.status === "closed") return false;
+    return (
+      link.user_id === user?.id || session?.created_by === user?.id
+    );
   }
 
   if (loading) return <p className="muted center page">{t("common.loadingOrder")}</p>;
@@ -176,9 +209,10 @@ export function Session() {
   );
   const isClosed = session.status === "closed";
   const recordCount = session.links?.length ?? 0;
+  const canManageOrder = session.canManageOrder;
 
   const orderActions =
-    recordCount > 0 || !isClosed ? (
+    canManageOrder && (recordCount > 0 || !isClosed) ? (
       <div className="order-session-actions">
         {!isClosed && (
           <button
@@ -266,13 +300,15 @@ export function Session() {
 
       <div className="members card">
         <span className="label">{t("session.participants")}</span>
-        <MemberChips
-          members={session.members}
-          canManage={session.canManageMembers}
-          disabled={isClosed}
-          onRename={handleRenameMember}
-        />
+        <MemberChips members={session.members} />
       </div>
+
+      <OrderTargetDate
+        targetDate={session.target_date}
+        readOnly={isClosed || !canManageOrder}
+        saving={savingTargetDate}
+        onSave={canManageOrder ? handleSaveTargetDate : undefined}
+      />
 
       <section>
         {recordCount === 0 ? (
@@ -290,8 +326,9 @@ export function Session() {
             <RecordList
               links={session.links}
               orderGrandTotal={session.orderGrandTotal}
-              canManageMembers={session.canManageMembers && !isClosed}
-              onRenameLink={handleRenameLink}
+              onRemoveLink={handleRemoveLink}
+              removingLinkId={removingLinkId}
+              canRemoveLink={canRemoveLink}
             />
             <OrderSummary
               memberTotals={session.memberTotals}
@@ -306,6 +343,12 @@ export function Session() {
             />
           </>
         )}
+        <OrderNotes
+          notes={session.notes}
+          readOnly={isClosed}
+          posting={postingNote}
+          onPostNote={handlePostNote}
+        />
         {orderActions}
       </section>
     </div>

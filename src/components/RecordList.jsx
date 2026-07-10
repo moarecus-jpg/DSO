@@ -1,6 +1,5 @@
 import { ExternalLink } from "lucide-react";
-import { DiscogsAddToCartLink } from "./DiscogsAddToCartLink.jsx";
-import { EditableParticipantName } from "./EditableParticipantName.jsx";
+import { DiscogsCartActions } from "./DiscogsCartActions.jsx";
 import {
   formatPrice,
   listingIdFor,
@@ -11,8 +10,9 @@ import { useLocale } from "../hooks/useLocale.jsx";
 export function RecordList({
   links = [],
   orderGrandTotal,
-  canManageMembers = false,
-  onRenameLink,
+  onRemoveLink,
+  removingLinkId,
+  canRemoveLink,
 }) {
   const { t, recordsLabel } = useLocale();
 
@@ -35,13 +35,9 @@ export function RecordList({
           {links.map((link) => (
             <tr key={link.id} className={link.blurred ? "order-item-row--hidden" : undefined}>
               <td className="col-participant">
-                <EditableParticipantName
-                  className="order-participant"
-                  value={link.user_name ?? t("common.unknown")}
-                  placeholder={link.member_name ?? t("common.name")}
-                  canEdit={canManageMembers && Boolean(onRenameLink) && !link.blurred}
-                  onSave={(name) => onRenameLink(link.id, name)}
-                />
+                <span className="order-participant">
+                  {link.user_name ?? t("common.unknown")}
+                </span>
               </td>
               <td className="col-item">
                 {link.blurred ? (
@@ -77,7 +73,15 @@ export function RecordList({
                         {t("items.sleeveCondition")}: {link.sleeve_condition}
                       </p>
                     )}
-                    <DiscogsAddToCartLink link={link} />
+                    <DiscogsCartActions
+                      link={link}
+                      onRemove={
+                        canRemoveLink?.(link)
+                          ? () => onRemoveLink?.(link)
+                          : undefined
+                      }
+                      removing={removingLinkId === link.id}
+                    />
                   </div>
                 )}
               </td>

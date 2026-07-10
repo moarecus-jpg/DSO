@@ -27,6 +27,7 @@ export function MyItems() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [removingItemId, setRemovingItemId] = useState(null);
 
   useEffect(() => {
     api("/api/sessions/my-items")
@@ -51,6 +52,21 @@ export function MyItems() {
       }))
       .filter((group) => group.items.length > 0);
   }, [items, query]);
+
+  async function handleRemoveItem(item) {
+    if (!confirm(t("session.confirmRemoveItem"))) return;
+    setRemovingItemId(item.id);
+    try {
+      await api(`/api/sessions/${item.sessionId}/links/${item.id}`, {
+        method: "DELETE",
+      });
+      setItems((prev) => prev.filter((row) => row.id !== item.id));
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setRemovingItemId(null);
+    }
+  }
 
   const totalItems = filteredGroups.reduce((n, g) => n + g.items.length, 0);
 
@@ -80,6 +96,8 @@ export function MyItems() {
         emptyMessage={
           query.trim() ? t("common.noSearchResults") : t("orders.emptyMyItems")
         }
+        onRemoveItem={handleRemoveItem}
+        removingItemId={removingItemId}
       />
     </div>
   );

@@ -1,10 +1,12 @@
 import { Router } from "express";
 import {
   addSessionLink,
+  addSessionNote,
   closeGroupSession,
   deleteGroupSession,
   findDuplicateSessionLink,
   updateSessionShipping,
+  updateSessionTargetDate,
   updateSessionSellerAvatar,
   updateMemberDisplayName,
   updateLinkOrdererDisplayName,
@@ -12,11 +14,13 @@ import {
   findUserById,
   getGroupSession,
   upsertGoogleUser,
+  isSessionMember,
   joinSession,
   listAllGroupSessions,
   listGroupSessions,
   listUserOrderedItems,
   publicUser,
+  removeSessionLink,
 } from "../db.js";
 import {
   fetchInventoryForReleaseIds,
@@ -36,7 +40,7 @@ import { resolveSellerInput } from "../discogs/resolveSeller.js";
 import { googleConfigured } from "../auth/google.js";
 import { discogsAppConfigured } from "../discogs/auth.js";
 import { discogsOAuthConfigured } from "../discogs/oauth.js";
-import { isOrderAdmin } from "../auth/orderAdmin.js";
+import { canRemoveSessionLink, isOrderAdmin, isOrderCreator } from "../auth/orderAdmin.js";
 
 const router = Router();
 let mockOrderSeq = 1;
@@ -45,6 +49,7 @@ let mockSessions = [{ ...MOCK_SESSION }];
 function mockSessionDetail(summary) {
   return enrichSessionOrder({
     ...summary,
+    notes: summary.notes ?? [],
     members: [
       {
         id: MOCK_USER.id,
@@ -190,6 +195,7 @@ function withOrderPermissions(session, userId) {
     ...viewed,
     canManageMembers: isAdmin,
     canManageShipping: isAdmin,
+    canManageOrder: isOrderCreator(session, userId),
   };
 }
 
@@ -421,31 +427,126 @@ router.patch("/:id/shipping", requireUser, (req, res) => {
   }
 });
 
+router.patch("/:id/target-date", requireUser, (req, res) => {
+  const sessionId = req.params.id;
+  const userId = req.session.userId;
+  const existingSession =
+    useMockAuth() && sessionId.startsWith("mock")
+      ? mockSessions.find((s) => s.id === sessionId)
+      : getGroupSession(sessionId);
+
+  if (!existingSession) {
+    return res.status(404).json({ error: "Session not found" });
+  }
+  if (!isOrderCreator(existingSession, userId)) {
+    return res.status(403).json({
+      error: "Samo odpravitelj naročila lahko nastavi ciljni datum.",
+    });
+  }
+  if (existingSession.status === "closed") {
+    return res.status(400).json({ error: "Zaključenega naročila ni mogoče urejati." });
+  }
+
+  let targetDate;
+  try {
+    targetDate = parseTargetDateInput(req.body?.targetDate);
+  } catch (err) {
+    return res.status(400).json({ error: err.message ?? "Neveljaven ciljni datum." });
+  }
+
+  if (useMockAuth() && sessionId.startsWith("mock")) {
+    const idx = mockSessions.findIndex((s) => s.id === sessionId);
+    if (idx === -1) {
+      return res.status(404).json({ error: "Session not found" });
+    }
+    mockSessions[idx] = { ...mockSessions[idx], target_date: targetDate };
+    return res.json({
+      session: withOrderPermissions(mockSessionDetail(mockSessions[idx]), userId),
+    });
+  }
+
+  try {
+    const updated = updateSessionTargetDate(sessionId, targetDate);
+    if (!updated) return res.status(404).json({ error: "Session not found" });
+    res.json({ session: withOrderPermissions(updated, userId) });
+  } catch (err) {
+    res.status(400).json({ error: err.message ?? "Ciljnega datuma ni bilo mogoče shraniti." });
+  }
+});
+
+function parseTargetDateInput(value) {
+  if (value == null || value === "") return null;
+  const trimmed = String(value).trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    throw new Error("Neveljaven ciljni datum.");
+  }
+  const [year, month, day] = trimmed.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    throw new Error("Neveljaven ciljni datum.");
+  }
+  return trimmed;
+}
+
 router.post("/:id/close", requireUser, (req, res) => {
+  const userId = req.session.userId;
+
   if (useMockAuth() && req.params.id.startsWith("mock")) {
     const idx = mockSessions.findIndex((s) => s.id === req.params.id);
     if (idx === -1) {
       return res.status(404).json({ error: "Session not found" });
     }
+    if (!isOrderCreator(mockSessions[idx], userId)) {
+      return res.status(403).json({
+        error: "Samo odpravitelj naročila lahko zaključi naročilo.",
+      });
+    }
     mockSessions[idx] = { ...mockSessions[idx], status: "closed" };
     return res.json({
-      session: withOrderPermissions(mockSessionDetail(mockSessions[idx]), req.session.userId),
+      session: withOrderPermissions(mockSessionDetail(mockSessions[idx]), userId),
+    });
+  }
+
+  const existing = getGroupSession(req.params.id);
+  if (!existing) return res.status(404).json({ error: "Session not found" });
+  if (!isOrderCreator(existing, userId)) {
+    return res.status(403).json({
+      error: "Samo odpravitelj naročila lahko zaključi naročilo.",
     });
   }
 
   const session = closeGroupSession(req.params.id);
   if (!session) return res.status(404).json({ error: "Session not found" });
-  res.json({ session: withOrderPermissions(session, req.session.userId) });
+  res.json({ session: withOrderPermissions(session, userId) });
 });
 
 router.post("/:id/cancel", requireUser, (req, res) => {
+  const userId = req.session.userId;
+
   if (useMockAuth() && req.params.id.startsWith("mock")) {
     const idx = mockSessions.findIndex((s) => s.id === req.params.id);
     if (idx === -1) {
       return res.status(404).json({ error: "Session not found" });
     }
+    if (!isOrderCreator(mockSessions[idx], userId)) {
+      return res.status(403).json({
+        error: "Samo odpravitelj naročila lahko prekliče naročilo.",
+      });
+    }
     mockSessions.splice(idx, 1);
     return res.json({ ok: true });
+  }
+
+  const existing = getGroupSession(req.params.id);
+  if (!existing) return res.status(404).json({ error: "Session not found" });
+  if (!isOrderCreator(existing, userId)) {
+    return res.status(403).json({
+      error: "Samo odpravitelj naročila lahko prekliče naročilo.",
+    });
   }
 
   if (!deleteGroupSession(req.params.id)) {
@@ -470,7 +571,7 @@ router.get("/:id", requireUser, async (req, res) => {
   if (!session) return res.status(404).json({ error: "Session not found" });
 
   joinSession(req.params.id, req.session.userId);
-  session = await ensureSellerAvatar(session);
+  session = await ensureSellerAvatar(getGroupSession(req.params.id));
   res.json({ session: withOrderPermissions(session, req.session.userId) });
 });
 
@@ -727,6 +828,129 @@ router.post("/:id/links", requireUser, async (req, res) => {
     console.error(err);
     const status = err.message === "Session not found" ? 404 : 400;
     res.status(status).json({ error: err.message ?? "Failed to add record" });
+  }
+});
+
+router.delete("/:id/links/:linkId", requireUser, (req, res) => {
+  const { id, linkId } = req.params;
+  const userId = req.session.userId;
+
+  if (useMockAuth() && id.startsWith("mock")) {
+    const idx = mockSessions.findIndex((s) => s.id === id);
+    if (idx === -1) {
+      return res.status(404).json({ error: "Session not found" });
+    }
+
+    const summary = mockSessions[idx];
+    if ((summary.status ?? "open") === "closed") {
+      return res.status(400).json({ error: "Zaključenega naročila ni mogoče urejati." });
+    }
+
+    const link = (summary.links ?? []).find((item) => item.id === linkId);
+    if (!link) {
+      return res.status(404).json({ error: "Vnos ni v tem naročilu." });
+    }
+    if (!canRemoveSessionLink(summary, link, userId)) {
+      return res.status(403).json({ error: "Lahko odstraniš samo svoje iteme." });
+    }
+
+    const links = (summary.links ?? []).filter((item) => item.id !== linkId);
+    mockSessions[idx] = {
+      ...summary,
+      links,
+      link_count: links.length,
+    };
+
+    return res.json({
+      session: withOrderPermissions(
+        mockSessionDetail(mockSessions[idx]),
+        userId
+      ),
+    });
+  }
+
+  const session = getGroupSession(id);
+  if (!session) return res.status(404).json({ error: "Session not found" });
+  if (session.status === "closed") {
+    return res.status(400).json({ error: "Zaključenega naročila ni mogoče urejati." });
+  }
+
+  const link = session.links?.find((item) => item.id === linkId);
+  if (!link) {
+    return res.status(404).json({ error: "Vnos ni v tem naročilu." });
+  }
+  if (!canRemoveSessionLink(session, link, userId)) {
+    return res.status(403).json({ error: "Lahko odstraniš samo svoje iteme." });
+  }
+
+  const updated = removeSessionLink(id, linkId);
+  if (!updated) {
+    return res.status(404).json({ error: "Vnos ni v tem naročilu." });
+  }
+
+  res.json({ session: withOrderPermissions(updated, userId) });
+});
+
+router.post("/:id/notes", requireUser, (req, res) => {
+  const { id } = req.params;
+  const userId = req.session.userId;
+  const raw = req.body?.body;
+  if (raw == null || typeof raw !== "string") {
+    return res.status(400).json({ error: "Komentar je obvezen." });
+  }
+  const body = raw.trim();
+  if (!body) {
+    return res.status(400).json({ error: "Komentar je obvezen." });
+  }
+  if (body.length > 2000) {
+    return res.status(400).json({ error: "Komentar je predolg (največ 2000 znakov)." });
+  }
+
+  if (useMockAuth() && id.startsWith("mock")) {
+    const idx = mockSessions.findIndex((s) => s.id === id);
+    if (idx === -1) {
+      return res.status(404).json({ error: "Session not found" });
+    }
+    const summary = mockSessions[idx];
+    if ((summary.status ?? "open") === "closed") {
+      return res.status(400).json({ error: "Zaključenega naročila ni mogoče urejati." });
+    }
+    const user = findUserById(userId);
+    const note = {
+      id: `note-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      session_id: id,
+      user_id: userId,
+      user_name: user?.name ?? MOCK_USER.name,
+      body,
+      created_at: new Date().toISOString(),
+    };
+    const notes = [...(summary.notes ?? []), note];
+    mockSessions[idx] = { ...summary, notes };
+    return res.status(201).json({
+      note,
+      session: withOrderPermissions(mockSessionDetail(mockSessions[idx]), userId),
+    });
+  }
+
+  const session = getGroupSession(id);
+  if (!session) return res.status(404).json({ error: "Session not found" });
+  if (session.status === "closed") {
+    return res.status(400).json({ error: "Zaključenega naročila ni mogoče urejati." });
+  }
+  if (!isSessionMember(id, userId)) {
+    return res.status(403).json({ error: "Nisi udeleženec tega naročila." });
+  }
+
+  try {
+    const note = addSessionNote(id, userId, body);
+    const updated = getGroupSession(id);
+    res.status(201).json({
+      note,
+      session: withOrderPermissions(updated, userId),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message ?? "Komentarja ni bilo mogoče shraniti." });
   }
 });
 

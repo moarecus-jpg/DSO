@@ -1285,6 +1285,159 @@ code {
   color: var(--muted);
 }
 
+.order-notes {
+  margin-top: 1rem;
+}
+
+.order-target-date {
+  margin-top: 1rem;
+}
+
+.order-target-date-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--muted);
+}
+
+.order-target-date-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.order-target-date-value {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.order-target-date-edit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+}
+
+.order-target-date-input {
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+}
+
+.order-target-date-input:focus {
+  outline: none;
+  border-color: rgba(139, 92, 246, 0.45);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.15);
+}
+
+.order-target-date-input:disabled {
+  opacity: 0.65;
+}
+
+.order-target-date-hint {
+  margin: 0.5rem 0 0;
+}
+
+.order-notes-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--muted);
+}
+
+.order-notes-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.order-notes-empty {
+  margin: 0 0 0.75rem;
+}
+
+.order-notes-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.order-note {
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.75rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.order-note-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.65rem;
+  margin-bottom: 0.35rem;
+}
+
+.order-note-author {
+  font-size: 0.88rem;
+}
+
+.order-note-time {
+  font-size: 0.78rem;
+}
+
+.order-note-body {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.order-notes-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.order-notes-input {
+  width: 100%;
+  min-height: 4.5rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.order-notes-input:focus {
+  outline: none;
+  border-color: rgba(139, 92, 246, 0.45);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.15);
+}
+
+.order-notes-input:disabled {
+  opacity: 0.65;
+}
+
+.order-notes-form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .member-chips {
   display: flex;
   flex-wrap: wrap;
@@ -1675,12 +1828,20 @@ code {
   color: var(--muted);
 }
 
-.discogs-add-to-cart {
+.discogs-cart-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  align-self: flex-start;
+  margin-top: 0.35rem;
+}
+
+.discogs-add-to-cart,
+.remove-from-order {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  align-self: flex-start;
-  margin-top: 0.35rem;
   padding: 0.3rem 0.55rem;
   border-radius: 999px;
   border: 1px solid rgba(139, 92, 246, 0.35);
@@ -1700,6 +1861,31 @@ code {
   border-color: rgba(139, 92, 246, 0.55);
   color: #ede9fe;
   text-decoration: none;
+}
+
+.remove-from-order {
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.08);
+  color: #fca5a5;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.remove-from-order:hover:not(:disabled) {
+  background: rgba(248, 113, 113, 0.16);
+  border-color: rgba(248, 113, 113, 0.5);
+  color: #fecaca;
+}
+
+.remove-from-order:disabled {
+  opacity: 0.65;
+  cursor: wait;
 }
 
 .order-item-hidden {
@@ -3412,8 +3598,13 @@ code {
     justify-content: center;
   }
 
-  .discogs-add-to-cart {
+  .discogs-cart-actions {
     width: 100%;
+  }
+
+  .discogs-add-to-cart,
+  .remove-from-order {
+    flex: 1 1 8.5rem;
     justify-content: center;
   }
 
@@ -3675,6 +3866,18 @@ code {
   color: #5b21b6;
 }
 
+[data-theme="light"] .remove-from-order {
+  background: rgba(220, 38, 38, 0.06);
+  border-color: rgba(220, 38, 38, 0.22);
+  color: #b91c1c;
+}
+
+[data-theme="light"] .remove-from-order:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.1);
+  border-color: rgba(220, 38, 38, 0.35);
+  color: #991b1b;
+}
+
 [data-theme="light"] .order-item-hidden {
   background: rgba(0, 0, 0, 0.03);
   border-color: #e4e4e7;
@@ -3731,6 +3934,33 @@ code {
 
 [data-theme="light"] .layout-dashboard .members .label {
   color: #52525b;
+}
+
+[data-theme="light"] .order-note {
+  background: #f4f4f5;
+  border-color: #e4e4e7;
+}
+
+[data-theme="light"] .order-notes-input {
+  background: #fafafa;
+  border-color: #d4d4d8;
+  color: #18181b;
+}
+
+[data-theme="light"] .order-notes-input:focus {
+  border-color: rgba(124, 58, 237, 0.45);
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.12);
+}
+
+[data-theme="light"] .order-target-date-input {
+  background: #fafafa;
+  border-color: #d4d4d8;
+  color: #18181b;
+}
+
+[data-theme="light"] .order-target-date-input:focus {
+  border-color: rgba(124, 58, 237, 0.45);
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.12);
 }
 
 [data-theme="light"] .layout-dashboard .chip {

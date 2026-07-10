@@ -104,6 +104,16 @@ db.exec(`
     FOREIGN KEY (session_id) REFERENCES group_sessions(id),
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
+
+  CREATE TABLE IF NOT EXISTS session_notes (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    body TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (session_id) REFERENCES group_sessions(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
 `);
 
 try {
@@ -132,6 +142,7 @@ for (const sql of [
   "ALTER TABLE session_members ADD COLUMN display_name TEXT",
   "ALTER TABLE session_links ADD COLUMN orderer_display_name TEXT",
   "ALTER TABLE users ADD COLUMN hide_my_records INTEGER NOT NULL DEFAULT 0",
+  "ALTER TABLE group_sessions ADD COLUMN target_date TEXT",
 ]) {
   try {
     db.exec(sql);
@@ -367,7 +378,52 @@ export function getGroupSession(id) {
     )
     .all(id);
 
-  return withOrderTitle({ ...session, members, links });
+  const notes = listSessionNotes(id);
+
+  return withOrderTitle({ ...session, members, links, notes });
+}
+
+export function listSessionNotes(sessionId) {
+  return db
+    .prepare(
+      `SELECT sn.id, sn.session_id, sn.user_id, sn.body, sn.created_at,
+              ${MEMBER_DISPLAY_NAME_SQL} as user_name
+       FROM session_notes sn
+       JOIN users u ON u.id = sn.user_id
+       LEFT JOIN session_members sm
+         ON sm.session_id = sn.session_id AND sm.user_id = sn.user_id
+       WHERE sn.session_id = ?
+       ORDER BY sn.created_at ASC`
+    )
+    .all(sessionId);
+}
+
+export function isSessionMember(sessionId, userId) {
+  return Boolean(
+    db
+      .prepare(
+        "SELECT 1 FROM session_members WHERE session_id = ? AND user_id = ?"
+      )
+      .get(sessionId, userId)
+  );
+}
+
+export function addSessionNote(sessionId, userId, body) {
+  const id = randomUUID();
+  db.prepare(
+    "INSERT INTO session_notes (id, session_id, user_id, body) VALUES (?, ?, ?, ?)"
+  ).run(id, sessionId, userId, body);
+  return db
+    .prepare(
+      `SELECT sn.id, sn.session_id, sn.user_id, sn.body, sn.created_at,
+              ${MEMBER_DISPLAY_NAME_SQL} as user_name
+       FROM session_notes sn
+       JOIN users u ON u.id = sn.user_id
+       LEFT JOIN session_members sm
+         ON sm.session_id = sn.session_id AND sm.user_id = sn.user_id
+       WHERE sn.id = ?`
+    )
+    .get(id);
 }
 
 export function listGroupSessions(status = "open") {
@@ -447,6 +503,38 @@ export function updateSessionShipping(
   return getGroupSession(id);
 }
 
+function parseTargetDate(value) {
+  if (value == null || value === "") return null;
+  const trimmed = String(value).trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    throw new Error("Neveljaven ciljni datum.");
+  }
+  const [year, month, day] = trimmed.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    throw new Error("Neveljaven ciljni datum.");
+  }
+  return trimmed;
+}
+
+export function updateSessionTargetDate(id, targetDate) {
+  const existing = db
+    .prepare("SELECT id FROM group_sessions WHERE id = ?")
+    .get(id);
+  if (!existing) return null;
+
+  const value = parseTargetDate(targetDate);
+  db.prepare("UPDATE group_sessions SET target_date = ? WHERE id = ?").run(
+    value,
+    id
+  );
+  return getGroupSession(id);
+}
+
 export function closeGroupSession(id) {
   const existing = db
     .prepare("SELECT id, status FROM group_sessions WHERE id = ?")
@@ -465,6 +553,7 @@ export function deleteGroupSession(id) {
   if (!existing) return false;
 
   const del = db.transaction(() => {
+    db.prepare("DELETE FROM session_notes WHERE session_id = ?").run(id);
     db.prepare("DELETE FROM session_links WHERE session_id = ?").run(id);
     db.prepare("DELETE FROM session_members WHERE session_id = ?").run(id);
     db.prepare("DELETE FROM group_sessions WHERE id = ?").run(id);
@@ -542,7 +631,12 @@ export function addSessionLink({
     itemDescription ?? null
   );
 
+  return getSessionLinkById(id);
+}
+
+function getSessionLinkById(id) {
   const link = db.prepare("SELECT * FROM session_links WHERE id = ?").get(id);
+  if (!link) return null;
   const row = db
     .prepare(
       `SELECT ${EFFECTIVE_ORDERER_NAME_SQL} as user_name,
@@ -553,12 +647,25 @@ export function addSessionLink({
          ON sm.session_id = sl.session_id AND sm.user_id = sl.user_id
        WHERE sl.session_id = ? AND sl.id = ?`
     )
-    .get(sessionId, id);
+    .get(link.session_id, id);
   return {
     ...link,
     user_name: row?.user_name ?? null,
     member_name: row?.member_name ?? null,
   };
+}
+
+export function removeSessionLink(sessionId, linkId) {
+  const link = db
+    .prepare("SELECT id FROM session_links WHERE id = ? AND session_id = ?")
+    .get(linkId, sessionId);
+  if (!link) return null;
+
+  db.prepare("DELETE FROM session_links WHERE id = ? AND session_id = ?").run(
+    linkId,
+    sessionId
+  );
+  return getGroupSession(sessionId);
 }
 
 export function updateLinkOrdererDisplayName(sessionId, linkId, ordererDisplayName) {
