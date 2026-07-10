@@ -777,13 +777,20 @@ code {
   border-radius: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.05);
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   cursor: text;
 }
 
 .auth-field:focus-within {
   border-color: #8b5cf6;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.55),
+    0 0 18px rgba(124, 58, 237, 0.38),
+    0 0 36px rgba(124, 58, 237, 0.18);
+}
+
+.auth-field:focus-within .auth-field-icon {
+  color: #c4b5fd;
 }
 
 .auth-field-icon {
