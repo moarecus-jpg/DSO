@@ -686,8 +686,8 @@ code {
 
 .login-page-v2 .login-form input[type="text"]:focus,
 .login-page-v2 .login-form input[type="password"]:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-dim);
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
 }
 
 .login-page-v2 .login-remember {
@@ -695,7 +695,7 @@ code {
 }
 
 .login-page-v2 .login-form .login-remember input[type="checkbox"] {
-  accent-color: var(--accent);
+  accent-color: #8b5cf6;
 }
 
 .login-page-v2 .btn-primary {
@@ -779,8 +779,8 @@ code {
 
 .login-form input:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-dim);
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
 }
 
 .login-remember {
@@ -803,7 +803,7 @@ code {
   border: none;
   background: transparent;
   box-shadow: none;
-  accent-color: var(--accent);
+  accent-color: #8b5cf6;
   cursor: pointer;
 }
 
