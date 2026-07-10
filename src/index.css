@@ -232,8 +232,8 @@ code {
   padding: 0.35rem 0.5rem;
 }
 
-.login-lang-toggle .sidebar-lang-select {
-  max-width: 7.5rem;
+.login-lang-toggle .lang-select {
+  max-width: 9.5rem;
 }
 
 .nav-right {
@@ -2582,16 +2582,24 @@ code {
   color: rgba(255, 255, 255, 0.65);
 }
 
-.sidebar-lang-select {
+.sidebar-lang-toggle .lang-select {
   flex: 1;
-  max-width: 9rem;
-  padding: 0.35rem 0.5rem;
-  border-radius: 0.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(0, 0, 0, 0.25);
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.82rem;
-  cursor: pointer;
+  max-width: 9.5rem;
+}
+
+.lang-select .app-select-trigger {
+  width: 100%;
+}
+
+.lang-select--compact .app-select-trigger {
+  min-width: 4.25rem;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.lang-select--compact .app-select-menu {
+  min-width: 5.5rem;
 }
 
 .settings-lang-row {
@@ -2660,10 +2668,8 @@ code {
   background: rgba(255, 255, 255, 0.08);
 }
 
-.settings-lang-row .sidebar-lang-select {
+.settings-card .sidebar-lang-toggle .lang-select {
   max-width: 12rem;
-  background: var(--surface-2, rgba(0, 0, 0, 0.2));
-  color: inherit;
 }
 
 .sidebar-logout {
@@ -3131,16 +3137,12 @@ code {
     flex-shrink: 0;
   }
 
-  .mobile-topbar-select {
-    padding: 0.35rem 0.55rem;
-    border-radius: 0.55rem;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.06);
-    color: var(--text);
-    font: inherit;
-    font-size: 0.78rem;
-    font-weight: 600;
-    cursor: pointer;
+  .mobile-topbar-lang {
+    flex-shrink: 0;
+  }
+
+  .mobile-topbar-lang.sidebar-lang-toggle {
+    padding: 0;
   }
 
   .mobile-topbar-icon-btn {
@@ -3409,7 +3411,6 @@ code {
   border-color: #e4e4e7;
 }
 
-[data-theme="light"] .mobile-topbar-select,
 [data-theme="light"] .mobile-topbar-icon-btn {
   background: #fff;
   border-color: #e4e4e7;
@@ -3527,12 +3528,6 @@ code {
 [data-theme="light"] .sidebar-theme-toggle-input:checked + .sidebar-theme-toggle-track {
   background: linear-gradient(90deg, #7c3aed, #6366f1);
   border-color: transparent;
-}
-
-[data-theme="light"] .sidebar-lang-select {
-  background: #fff;
-  border-color: #e4e4e7;
-  color: #18181b;
 }
 
 [data-theme="light"] .sidebar-user-chevron {
