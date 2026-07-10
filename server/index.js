@@ -3,22 +3,37 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import session from "express-session";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.js";
 import sessionRoutes from "./routes/sessions.js";
 import { googleCallbackUrl, googleConfigured } from "./auth/google.js";
 
 dotenv.config();
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const distDir = path.join(__dirname, "..", "dist");
+const serveClient = fs.existsSync(path.join(distDir, "index.html"));
+const isProduction =
+  process.env.NODE_ENV === "production" || Boolean(process.env.RAILWAY_ENVIRONMENT);
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 
-app.use(
-  cors({
-    origin: CLIENT_URL,
-    credentials: true,
-  })
-);
+if (isProduction) {
+  app.set("trust proxy", 1);
+}
+
+if (!isProduction) {
+  app.use(
+    cors({
+      origin: CLIENT_URL,
+      credentials: true,
+    })
+  );
+}
 app.use(express.json());
 app.use(cookieParser());
 app.use(
@@ -28,7 +43,8 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: false,
+      secure: isProduction,
+      sameSite: "lax",
       /* maxAge set on login when "Zapomni si me" is checked; otherwise session cookie */
     },
   })
@@ -57,8 +73,20 @@ app.get("/api/health", (_req, res) => {
 app.use("/auth", authRoutes);
 app.use("/api/sessions", sessionRoutes);
 
+if (serveClient) {
+  app.use(express.static(distDir));
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api") || req.path.startsWith("/auth")) {
+      return next();
+    }
+    res.sendFile(path.join(distDir, "index.html"), (err) => {
+      if (err) next(err);
+    });
+  });
+}
+
 const server = app.listen(PORT, () => {
-  console.log(`API http://localhost:${PORT}`);
+  console.log(`${isProduction ? "App" : "API"} http://localhost:${PORT}`);
   console.log(
     `Auth: lokalni računi${googleConfigured() ? " + Google OAuth" : ""}${process.env.USE_MOCK_AUTH === "true" ? " · Discogs demo" : ""}`
   );
