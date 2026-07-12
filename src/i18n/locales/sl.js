@@ -36,6 +36,7 @@ export default {
     logout: "Odjava",
     darkMode: "Temni način",
     stealthMode: "Stealth način",
+    notifications: "Obvestila",
     mobileOpen: "Odprta",
     mobileClosed: "Zaključena",
     mobileItems: "Itemi",

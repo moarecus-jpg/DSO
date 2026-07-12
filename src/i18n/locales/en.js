@@ -36,6 +36,7 @@ export default {
     logout: "Log out",
     darkMode: "Dark mode",
     stealthMode: "Stealth mode",
+    notifications: "Notifications",
     mobileOpen: "Open",
     mobileClosed: "Closed",
     mobileItems: "Items",

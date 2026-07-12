@@ -14,6 +14,7 @@ import { useTheme } from "../hooks/useTheme.jsx";
 import { BrandMark } from "./BrandMark.jsx";
 import { LanguageToggle } from "./LanguageToggle.jsx";
 import { StealthModeToggle } from "./StealthModeToggle.jsx";
+import { NotificationToggle } from "./NotificationToggle.jsx";
 import { UserAvatar } from "./UserAvatar.jsx";
 
 export function Sidebar() {
@@ -84,6 +85,8 @@ export function Sidebar() {
         </label>
 
         <StealthModeToggle className="sidebar-footer-item" />
+
+        <NotificationToggle className="sidebar-footer-item" />
 
         <LanguageToggle className="sidebar-footer-item" compact />
 

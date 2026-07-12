@@ -3146,6 +3146,16 @@ code {
   background: #fff;
 }
 
+.sidebar-theme-toggle--disabled {
+  text-decoration: none;
+  opacity: 0.55;
+  cursor: pointer;
+}
+
+.sidebar-theme-toggle--disabled:hover {
+  opacity: 0.75;
+}
+
 .sidebar-lang-toggle {
   display: flex;
   align-items: center;
