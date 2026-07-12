@@ -41,6 +41,12 @@ import { googleConfigured } from "../auth/google.js";
 import { discogsAppConfigured } from "../discogs/auth.js";
 import { discogsOAuthConfigured } from "../discogs/oauth.js";
 import { canRemoveSessionLink, isOrderAdmin, isOrderCreator } from "../auth/orderAdmin.js";
+import { appBaseUrl } from "../appUrl.js";
+import {
+  notifyNewOrderOpened,
+  notifyOrderClosed,
+  notifyOrderNotePosted,
+} from "../email/notifications.js";
 
 const router = Router();
 let mockOrderSeq = 1;
@@ -368,6 +374,12 @@ router.post("/", requireUser, async (req, res) => {
       sellerAvatarUrl,
     });
 
+    notifyNewOrderOpened({
+      baseUrl: appBaseUrl(req),
+      session,
+      excludeUserId: userId,
+    }).catch((err) => console.error("New order notification:", err));
+
     res.status(201).json({
       session: {
         ...session,
@@ -552,6 +564,13 @@ router.post("/:id/close", requireUser, (req, res) => {
 
   const session = closeGroupSession(req.params.id);
   if (!session) return res.status(404).json({ error: "Session not found" });
+
+  notifyOrderClosed({
+    baseUrl: appBaseUrl(req),
+    session,
+    excludeUserId: userId,
+  }).catch((err) => console.error("Order closed notification:", err));
+
   res.json({ session: withOrderPermissions(session, userId) });
 });
 
@@ -976,6 +995,16 @@ router.post("/:id/notes", requireUser, (req, res) => {
   try {
     const note = addSessionNote(id, userId, body);
     const updated = getGroupSession(id);
+    const author = findUserById(userId);
+
+    notifyOrderNotePosted({
+      baseUrl: appBaseUrl(req),
+      session: updated,
+      note,
+      authorName: author?.name ?? note.user_name ?? "Someone",
+      excludeUserId: userId,
+    }).catch((err) => console.error("Order note notification:", err));
+
     res.status(201).json({
       note,
       session: withOrderPermissions(updated, userId),

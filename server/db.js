@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { randomUUID } from "crypto";
+import { createHash, randomBytes, randomUUID } from "crypto";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -143,6 +143,9 @@ for (const sql of [
   "ALTER TABLE session_links ADD COLUMN orderer_display_name TEXT",
   "ALTER TABLE users ADD COLUMN hide_my_records INTEGER NOT NULL DEFAULT 0",
   "ALTER TABLE group_sessions ADD COLUMN target_date TEXT",
+  "ALTER TABLE users ADD COLUMN notify_new_order INTEGER NOT NULL DEFAULT 0",
+  "ALTER TABLE users ADD COLUMN notify_order_note INTEGER NOT NULL DEFAULT 0",
+  "ALTER TABLE users ADD COLUMN notify_order_closed INTEGER NOT NULL DEFAULT 0",
 ]) {
   try {
     db.exec(sql);
@@ -150,6 +153,17 @@ for (const sql of [
     /* column already exists */
   }
 }
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    token_hash TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+`);
 
 const needsBackfill = db
   .prepare("SELECT 1 FROM group_sessions WHERE order_number IS NULL LIMIT 1")
@@ -184,6 +198,26 @@ const MEMBER_DISPLAY_NAME_SQL =
 
 const EFFECTIVE_ORDERER_NAME_SQL = `COALESCE(NULLIF(TRIM(sl.orderer_display_name), ''), ${MEMBER_DISPLAY_NAME_SQL})`;
 
+const SYNTHETIC_EMAIL_SUFFIX = "@users.iglarnica";
+
+export function isDeliverableEmail(email) {
+  const trimmed = email?.trim().toLowerCase() ?? "";
+  if (!trimmed || !trimmed.includes("@")) return false;
+  return !trimmed.endsWith(SYNTHETIC_EMAIL_SUFFIX);
+}
+
+function hashResetToken(token) {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+function normalizeEmail(email) {
+  const trimmed = email?.trim().toLowerCase() ?? "";
+  if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+    throw new Error("Neveljaven e-poštni naslov.");
+  }
+  return trimmed;
+}
+
 function withOrderTitle(session) {
   if (!session) return null;
   const orderNumber =
@@ -212,6 +246,12 @@ export function findUserByUsername(username) {
   return db
     .prepare("SELECT * FROM users WHERE lower(username) = lower(?)")
     .get(username.trim());
+}
+
+export function findUserByEmail(email) {
+  return db
+    .prepare("SELECT * FROM users WHERE lower(email) = lower(?)")
+    .get(email.trim());
 }
 
 function slugName(value) {
@@ -250,7 +290,7 @@ export function normalizeUsername(value) {
   return raw;
 }
 
-export function createLocalUser({ firstName, lastName, password, username: chosen }) {
+export function createLocalUser({ firstName, lastName, password, username: chosen, email: rawEmail }) {
   const first = firstName?.trim();
   const last = lastName?.trim();
   if (!first || !last) {
@@ -269,8 +309,17 @@ export function createLocalUser({ firstName, lastName, password, username: chose
   } else {
     username = uniqueUsername(first, last);
   }
+
+  let email;
+  if (!rawEmail?.trim()) {
+    throw new Error("E-poštni naslov je obvezen.");
+  }
+  email = normalizeEmail(rawEmail);
+  if (findUserByEmail(email)) {
+    throw new Error("Ta e-poštni naslov je že v uporabi.");
+  }
+
   const name = `${first} ${last}`;
-  const email = `${username}@users.iglarnica`;
   const id = randomUUID();
 
   db.prepare(
@@ -747,6 +796,131 @@ export function updateHideMyRecords(userId, hideMyRecords) {
   return findUserById(userId);
 }
 
+export function updateUserEmail(userId, email) {
+  const normalized = normalizeEmail(email);
+  if (!isDeliverableEmail(normalized)) {
+    throw new Error("Vnesi veljaven e-poštni naslov.");
+  }
+  const existing = findUserByEmail(normalized);
+  if (existing && existing.id !== userId) {
+    throw new Error("Ta e-poštni naslov je že v uporabi.");
+  }
+  db.prepare("UPDATE users SET email = ? WHERE id = ?").run(normalized, userId);
+  return findUserById(userId);
+}
+
+export function updateNotificationPrefs(userId, prefs) {
+  const fields = [];
+  const values = [];
+
+  if (typeof prefs.notifyNewOrder === "boolean") {
+    fields.push("notify_new_order = ?");
+    values.push(prefs.notifyNewOrder ? 1 : 0);
+  }
+  if (typeof prefs.notifyOrderNote === "boolean") {
+    fields.push("notify_order_note = ?");
+    values.push(prefs.notifyOrderNote ? 1 : 0);
+  }
+  if (typeof prefs.notifyOrderClosed === "boolean") {
+    fields.push("notify_order_closed = ?");
+    values.push(prefs.notifyOrderClosed ? 1 : 0);
+  }
+
+  if (!fields.length) return findUserById(userId);
+
+  values.push(userId);
+  db.prepare(`UPDATE users SET ${fields.join(", ")} WHERE id = ?`).run(...values);
+  return findUserById(userId);
+}
+
+export function createPasswordResetToken(userId) {
+  db.prepare("DELETE FROM password_reset_tokens WHERE user_id = ?").run(userId);
+
+  const token = randomBytes(32).toString("hex");
+  const tokenHash = hashResetToken(token);
+  const id = randomUUID();
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+  db.prepare(
+    `INSERT INTO password_reset_tokens (id, user_id, token_hash, expires_at)
+     VALUES (?, ?, ?, ?)`
+  ).run(id, userId, tokenHash, expiresAt);
+
+  return token;
+}
+
+export function consumePasswordResetToken(token, newPassword) {
+  if (!token?.trim() || !newPassword || newPassword.length < 6) {
+    throw new Error("Neveljavna zahteva za ponastavitev gesla.");
+  }
+
+  const tokenHash = hashResetToken(token.trim());
+  const row = db
+    .prepare(
+      `SELECT prt.*, u.password_hash IS NOT NULL AS has_password
+       FROM password_reset_tokens prt
+       JOIN users u ON u.id = prt.user_id
+       WHERE prt.token_hash = ?`
+    )
+    .get(tokenHash);
+
+  if (!row) {
+    throw new Error("Povezava za ponastavitev gesla je neveljavna ali je potekla.");
+  }
+  if (new Date(row.expires_at) < new Date()) {
+    db.prepare("DELETE FROM password_reset_tokens WHERE id = ?").run(row.id);
+    throw new Error("Povezava za ponastavitev gesla je potekla. Zahtevaj novo.");
+  }
+  if (!row.has_password) {
+    throw new Error("Ta račun nima gesla. Prijavi se z Google.");
+  }
+
+  db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(
+    hashPassword(newPassword),
+    row.user_id
+  );
+  db.prepare("DELETE FROM password_reset_tokens WHERE user_id = ?").run(row.user_id);
+
+  return findUserById(row.user_id);
+}
+
+function deliverableUserFilter(alias = "u") {
+  return `lower(${alias}.email) NOT LIKE '%${SYNTHETIC_EMAIL_SUFFIX}'`;
+}
+
+export function listUsersForNewOrderNotifications(excludeUserId) {
+  return db
+    .prepare(
+      `SELECT id, email, name, username FROM users
+       WHERE notify_new_order = 1
+         AND ${deliverableUserFilter()}
+         AND id != ?`
+    )
+    .all(excludeUserId ?? "");
+}
+
+export function listSessionMembersForNotifications(sessionId, type, excludeUserId) {
+  const column =
+    type === "note"
+      ? "notify_order_note"
+      : type === "closed"
+        ? "notify_order_closed"
+        : null;
+  if (!column) return [];
+
+  return db
+    .prepare(
+      `SELECT u.id, u.email, u.name, u.username
+       FROM session_members sm
+       JOIN users u ON u.id = sm.user_id
+       WHERE sm.session_id = ?
+         AND u.${column} = 1
+         AND ${deliverableUserFilter()}
+         AND u.id != ?`
+    )
+    .all(sessionId, excludeUserId ?? "");
+}
+
 export function publicUser(user) {
   if (!user) return null;
   return {
@@ -761,6 +935,10 @@ export function publicUser(user) {
     discogsUsername: user.discogs_username ?? null,
     discogsAvatarUrl: user.discogs_avatar_url ?? null,
     hideMyRecords: Boolean(user.hide_my_records),
+    hasRealEmail: isDeliverableEmail(user.email),
+    notifyNewOrder: Boolean(user.notify_new_order),
+    notifyOrderNote: Boolean(user.notify_order_note),
+    notifyOrderClosed: Boolean(user.notify_order_closed),
   };
 }
 

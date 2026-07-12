@@ -146,6 +146,132 @@ export function Settings() {
       </div>
 
       <div className="card settings-card">
+        <h2>{t("settings.emailTitle")}</h2>
+        <p className="muted settings-privacy-hint">{t("settings.emailHint")}</p>
+        {user?.hasRealEmail ? (
+          <p>
+            <strong>{user.email}</strong>
+          </p>
+        ) : (
+          <form
+            className="settings-email-form"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const form = e.currentTarget;
+              const email = form.email.value.trim();
+              try {
+                await api("/auth/me/email", {
+                  method: "PATCH",
+                  body: JSON.stringify({ email }),
+                });
+                await refresh();
+                setMessageType("ok");
+                setMessage(t("settings.emailSaved"));
+              } catch (err) {
+                setMessageType("warn");
+                setMessage(err.message ?? t("common.error"));
+              }
+            }}
+          >
+            <label className="settings-email-field">
+              <span>{t("auth.email")}</span>
+              <input
+                type="email"
+                name="email"
+                defaultValue=""
+                placeholder={t("auth.emailPlaceholder")}
+                required
+                autoComplete="email"
+              />
+            </label>
+            <button type="submit" className="btn btn-ghost">
+              {t("settings.saveEmail")}
+            </button>
+          </form>
+        )}
+      </div>
+
+      <div className="card settings-card">
+        <h2>{t("settings.notificationsTitle")}</h2>
+        <p className="muted settings-privacy-hint">{t("settings.notificationsHint")}</p>
+        {!user?.hasRealEmail && (
+          <p className="fine-print muted">{t("settings.notificationsNeedEmail")}</p>
+        )}
+        <label className="settings-theme-toggle">
+          <span>{t("settings.notifyNewOrder")}</span>
+          <input
+            type="checkbox"
+            className="sidebar-theme-toggle-input"
+            checked={Boolean(user?.notifyNewOrder)}
+            disabled={!user?.hasRealEmail}
+            onChange={async (e) => {
+              try {
+                await api("/auth/me/notifications", {
+                  method: "PATCH",
+                  body: JSON.stringify({ notifyNewOrder: e.target.checked }),
+                });
+                await refresh();
+                setMessageType("ok");
+                setMessage(t("settings.notificationsSaved"));
+              } catch (err) {
+                setMessageType("warn");
+                setMessage(err.message ?? t("common.error"));
+              }
+            }}
+          />
+          <span className="sidebar-theme-toggle-track" aria-hidden />
+        </label>
+        <label className="settings-theme-toggle">
+          <span>{t("settings.notifyOrderNote")}</span>
+          <input
+            type="checkbox"
+            className="sidebar-theme-toggle-input"
+            checked={Boolean(user?.notifyOrderNote)}
+            disabled={!user?.hasRealEmail}
+            onChange={async (e) => {
+              try {
+                await api("/auth/me/notifications", {
+                  method: "PATCH",
+                  body: JSON.stringify({ notifyOrderNote: e.target.checked }),
+                });
+                await refresh();
+                setMessageType("ok");
+                setMessage(t("settings.notificationsSaved"));
+              } catch (err) {
+                setMessageType("warn");
+                setMessage(err.message ?? t("common.error"));
+              }
+            }}
+          />
+          <span className="sidebar-theme-toggle-track" aria-hidden />
+        </label>
+        <label className="settings-theme-toggle">
+          <span>{t("settings.notifyOrderClosed")}</span>
+          <input
+            type="checkbox"
+            className="sidebar-theme-toggle-input"
+            checked={Boolean(user?.notifyOrderClosed)}
+            disabled={!user?.hasRealEmail}
+            onChange={async (e) => {
+              try {
+                await api("/auth/me/notifications", {
+                  method: "PATCH",
+                  body: JSON.stringify({ notifyOrderClosed: e.target.checked }),
+                });
+                await refresh();
+                setMessageType("ok");
+                setMessage(t("settings.notificationsSaved"));
+              } catch (err) {
+                setMessageType("warn");
+                setMessage(err.message ?? t("common.error"));
+              }
+            }}
+          />
+          <span className="sidebar-theme-toggle-track" aria-hidden />
+        </label>
+      </div>
+
+      <div className="card settings-card">
         <h2>{t("settings.account")}</h2>
         <p>
           <strong>{user?.name}</strong>

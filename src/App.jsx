@@ -4,6 +4,7 @@ import { LocaleProvider, useLocale } from "./hooks/useLocale.jsx";
 import { ThemeProvider } from "./hooks/useTheme.jsx";
 import { Layout } from "./components/Layout.jsx";
 import { Login } from "./pages/Login.jsx";
+import { ResetPassword } from "./pages/ResetPassword.jsx";
 import { Home } from "./pages/Home.jsx";
 import { ClosedOrders } from "./pages/ClosedOrders.jsx";
 import { MyItems } from "./pages/MyItems.jsx";
@@ -22,6 +23,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route
         element={
           <PrivateRoute>

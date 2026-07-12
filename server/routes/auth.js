@@ -1,12 +1,18 @@
 import { Router } from "express";
 import {
   connectDiscogs,
+  consumePasswordResetToken,
   createLocalUser,
+  createPasswordResetToken,
   disconnectDiscogs,
+  findUserByEmail,
   findUserById,
+  isDeliverableEmail,
   publicUser,
   updateDiscogsAvatar,
   updateHideMyRecords,
+  updateNotificationPrefs,
+  updateUserEmail,
   upsertGoogleUser,
   verifyLocalUser,
 } from "../db.js";
@@ -26,6 +32,7 @@ import { getDiscogsUserProfile, getIdentity } from "../discogs/client.js";
 import { discogsAppConfigured } from "../discogs/auth.js";
 import { MOCK_USER } from "../mock.js";
 import { applySessionPersistence, saveSession } from "../auth/sessionCookie.js";
+import { sendPasswordResetEmail } from "../email/notifications.js";
 
 const router = Router();
 
@@ -86,6 +93,97 @@ router.patch("/me/privacy", (req, res) => {
   res.json({ user: publicUser(user) });
 });
 
+router.patch("/me/email", (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Prijavi se v aplikacijo." });
+  }
+
+  const raw = req.body?.email;
+  if (typeof raw !== "string" || !raw.trim()) {
+    return res.status(400).json({ error: "E-poštni naslov je obvezen." });
+  }
+
+  try {
+    const user = updateUserEmail(req.session.userId, raw);
+    res.json({ user: publicUser(user) });
+  } catch (err) {
+    res.status(400).json({ error: err.message ?? "E-pošte ni bilo mogoče shraniti." });
+  }
+});
+
+router.patch("/me/notifications", (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Prijavi se v aplikacijo." });
+  }
+
+  const body = req.body ?? {};
+  const prefs = {};
+  if (typeof body.notifyNewOrder === "boolean") prefs.notifyNewOrder = body.notifyNewOrder;
+  if (typeof body.notifyOrderNote === "boolean") prefs.notifyOrderNote = body.notifyOrderNote;
+  if (typeof body.notifyOrderClosed === "boolean") {
+    prefs.notifyOrderClosed = body.notifyOrderClosed;
+  }
+
+  const user = findUserById(req.session.userId);
+  if (!user) {
+    return res.status(404).json({ error: "Uporabnik ni bil najden." });
+  }
+
+  const enabling =
+    prefs.notifyNewOrder || prefs.notifyOrderNote || prefs.notifyOrderClosed;
+  if (enabling && !isDeliverableEmail(user.email)) {
+    return res.status(400).json({
+      error: "Najprej vnesi veljaven e-poštni naslov v nastavitvah.",
+    });
+  }
+
+  const updated = updateNotificationPrefs(req.session.userId, prefs);
+  res.json({ user: publicUser(updated) });
+});
+
+router.post("/forgot-password", async (req, res) => {
+  const raw = req.body?.email;
+  if (typeof raw !== "string" || !raw.trim()) {
+    return res.status(400).json({ error: "Vnesi e-poštni naslov." });
+  }
+
+  const genericOk = {
+    ok: true,
+    message:
+      "If an account exists with that email, you will receive a password reset link shortly.",
+  };
+
+  try {
+    const user = findUserByEmail(raw.trim());
+    if (user?.password_hash && isDeliverableEmail(user.email)) {
+      const token = createPasswordResetToken(user.id);
+      await sendPasswordResetEmail({
+        baseUrl: clientUrl(req),
+        user,
+        token,
+      });
+    }
+    res.json(genericOk);
+  } catch (err) {
+    console.error("Forgot password:", err);
+    res.json(genericOk);
+  }
+});
+
+router.post("/reset-password", (req, res) => {
+  const { token, password, passwordConfirm } = req.body ?? {};
+  if (password !== passwordConfirm) {
+    return res.status(400).json({ error: "Gesli se ne ujemata." });
+  }
+
+  try {
+    consumePasswordResetToken(token, password);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(400).json({ error: err.message ?? "Gesla ni bilo mogoče ponastaviti." });
+  }
+});
+
 router.get("/google", (req, res) => {
   if (useMockAuth()) {
     const user = upsertGoogleUser({
@@ -133,11 +231,11 @@ router.get("/google/callback", async (req, res) => {
 
 router.post("/register", async (req, res) => {
   try {
-    const { firstName, lastName, password, passwordConfirm, username } = req.body ?? {};
+    const { firstName, lastName, password, passwordConfirm, username, email } = req.body ?? {};
     if (password !== passwordConfirm) {
       return res.status(400).json({ error: "Gesli se ne ujemata." });
     }
-    const user = createLocalUser({ firstName, lastName, password, username });
+    const user = createLocalUser({ firstName, lastName, password, username, email });
     req.session.userId = user.id;
     const rememberMe = req.body?.rememberMe !== false;
     applySessionPersistence(req, rememberMe);
@@ -152,7 +250,9 @@ router.post("/register", async (req, res) => {
       msg.includes("obvezna") ||
       msg.includes("Geslo") ||
       msg.includes("Uporabniško") ||
-      msg.includes("zasedeno")
+      msg.includes("zasedeno") ||
+      msg.includes("e-pošt") ||
+      msg.includes("E-pošt")
         ? 400
         : 500;
     res.status(status).json({ error: msg });

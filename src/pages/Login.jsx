@@ -7,10 +7,12 @@ import {
   Info,
   Lock,
   LogIn,
+  Mail,
   Shield,
   User,
   UserPlus,
 } from "lucide-react";
+import { api } from "../api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { BrandMark } from "../components/BrandMark.jsx";
@@ -113,9 +115,12 @@ export function Login() {
     firstName: "",
     lastName: "",
     username: "",
+    email: "",
     password: "",
     passwordConfirm: "",
   });
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSent, setForgotSent] = useState(false);
 
   useEffect(() => {
     try {
@@ -187,7 +192,25 @@ export function Login() {
     }
   }
 
+  async function handleForgot(e) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      await api("/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email: forgotEmail.trim() }),
+      });
+      setForgotSent(true);
+    } catch (err) {
+      setError(err.message ?? t("auth.forgotFailed"));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   const isRegister = mode === "register";
+  const isForgot = mode === "forgot";
 
   return (
     <div className="login-page login-page-v2">
@@ -206,15 +229,71 @@ export function Login() {
         </div>
 
         <div className="login-heading">
-          <h2>{isRegister ? t("auth.register") : t("auth.login")}</h2>
+          <h2>
+            {isForgot
+              ? t("auth.forgotTitle")
+              : isRegister
+                ? t("auth.register")
+                : t("auth.login")}
+          </h2>
           <p>
-            {isRegister ? t("auth.registerSubtitle") : t("auth.loginSubtitle")}
+            {isForgot
+              ? forgotSent
+                ? t("auth.forgotSent")
+                : t("auth.forgotSubtitle")
+              : isRegister
+                ? t("auth.registerSubtitle")
+                : t("auth.loginSubtitle")}
           </p>
         </div>
 
         {error && <p className="login-error">{error}</p>}
 
-        {isRegister ? (
+        {isForgot ? (
+          forgotSent ? (
+            <button
+              type="button"
+              className="login-btn-secondary"
+              onClick={() => {
+                setMode("login");
+                setForgotSent(false);
+                setError(null);
+              }}
+            >
+              {t("auth.backToLogin")}
+            </button>
+          ) : (
+            <form className="login-form login-form-v2" onSubmit={handleForgot}>
+              <AuthField
+                label={t("auth.email")}
+                icon={Mail}
+                type="email"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                placeholder={t("auth.emailPlaceholder")}
+                required
+                autoComplete="email"
+                autoFocus
+              />
+
+              <button type="submit" className="login-btn-primary" disabled={submitting}>
+                <Mail size={20} />
+                {submitting ? t("auth.forgotSending") : t("auth.forgotSubmit")}
+              </button>
+
+              <button
+                type="button"
+                className="login-btn-secondary"
+                onClick={() => {
+                  setMode("login");
+                  setError(null);
+                }}
+              >
+                {t("auth.backToLogin")}
+              </button>
+            </form>
+          )
+        ) : isRegister ? (
           <form className="login-form login-form-v2" onSubmit={handleRegister}>
             <AuthField
               label={t("auth.firstName")}
@@ -255,6 +334,18 @@ export function Login() {
               maxLength={32}
               autoComplete="username"
               pattern="[a-z0-9._-]+"
+            />
+            <AuthField
+              label={t("auth.email")}
+              icon={Mail}
+              type="email"
+              value={registerForm.email}
+              onChange={(e) =>
+                setRegisterForm((f) => ({ ...f, email: e.target.value }))
+              }
+              placeholder={t("auth.emailPlaceholder")}
+              required
+              autoComplete="email"
             />
             <AuthPasswordField
               label={t("auth.password")}
@@ -348,6 +439,18 @@ export function Login() {
               />
               {t("auth.rememberMe")}
             </label>
+
+            <button
+              type="button"
+              className="login-forgot-link"
+              onClick={() => {
+                setMode("forgot");
+                setError(null);
+                setForgotSent(false);
+              }}
+            >
+              {t("auth.forgotPassword")}
+            </button>
 
             <button type="submit" className="login-btn-primary" disabled={submitting}>
               <LogIn size={20} />

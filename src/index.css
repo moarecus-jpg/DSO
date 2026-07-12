@@ -1019,6 +1019,64 @@ code {
   cursor: pointer;
 }
 
+.login-forgot-link {
+  align-self: flex-start;
+  margin: -0.25rem 0 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #a78bfa;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.login-forgot-link:hover {
+  color: #c4b5fd;
+  text-decoration: underline;
+}
+
+.login-btn-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.settings-email-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.settings-email-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+  max-width: 24rem;
+}
+
+.settings-email-field input {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: inherit;
+  font-size: 0.95rem;
+}
+
+.settings-email-field input:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.45);
+}
+
 .login-error {
   margin: 1rem 0 0;
   padding: 0.65rem 0.85rem;
