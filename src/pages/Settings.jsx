@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { Disc3, ExternalLink, Unplug } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { Disc3, ExternalLink, Shield, Unplug } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
@@ -282,6 +282,18 @@ export function Settings() {
           </p>
         )}
       </div>
+
+      {user?.isAdmin && (
+        <div className="card settings-card">
+          <h2>
+            <Shield size={20} /> {t("admin.title")}
+          </h2>
+          <p className="muted settings-privacy-hint">{t("admin.settingsHint")}</p>
+          <Link to="/admin/users" className="btn btn-primary">
+            {t("admin.openUsers")}
+          </Link>
+        </div>
+      )}
 
       <div className="card settings-card">
         <h2>

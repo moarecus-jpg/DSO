@@ -10,6 +10,7 @@ import { ClosedOrders } from "./pages/ClosedOrders.jsx";
 import { MyItems } from "./pages/MyItems.jsx";
 import { Session } from "./pages/Session.jsx";
 import { Settings } from "./pages/Settings.jsx";
+import { AdminUsers } from "./pages/AdminUsers.jsx";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -36,6 +37,7 @@ function AppRoutes() {
         <Route path="/my-items" element={<MyItems />} />
         <Route path="/session/:id" element={<Session />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/admin/users" element={<AdminUsers />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

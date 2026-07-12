@@ -7,6 +7,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.js";
+import adminRoutes from "./routes/admin.js";
 import sessionRoutes from "./routes/sessions.js";
 import { getDatabaseInfo } from "./db.js";
 import { sessionStore } from "./sessionStore.js";
@@ -73,6 +74,7 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/auth", authRoutes);
+app.use("/auth/admin", adminRoutes);
 app.use("/api/sessions", sessionRoutes);
 
 if (serveClient) {

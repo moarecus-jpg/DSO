@@ -4605,3 +4605,200 @@ code {
   color: #18181b;
   font-weight: 600;
 }
+
+.page-admin-users h1 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-users-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.admin-users-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+}
+
+.admin-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: min(100%, 16rem);
+}
+
+.admin-search input {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.admin-users-count {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.admin-user-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.admin-user-card {
+  padding: 1rem 1.1rem;
+  border-radius: 0.85rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.admin-user-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.admin-user-card-head h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+}
+
+.admin-user-meta {
+  margin: 0.15rem 0;
+  font-size: 0.88rem;
+}
+
+.admin-auth-badge {
+  flex-shrink: 0;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.admin-auth-badge--local {
+  background: rgba(124, 58, 237, 0.2);
+  color: #c4b5fd;
+}
+
+.admin-auth-badge--google {
+  background: rgba(59, 130, 246, 0.18);
+  color: #93c5fd;
+}
+
+.admin-user-email-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.92rem;
+}
+
+.admin-email-synthetic {
+  color: #fbbf24;
+}
+
+.admin-email-tag {
+  font-size: 0.72rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(251, 191, 36, 0.15);
+  color: #fcd34d;
+}
+
+.admin-user-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.admin-inline-form {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+.admin-inline-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+}
+
+.admin-inline-form input {
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.admin-user-message {
+  margin: 0.65rem 0 0;
+  font-size: 0.88rem;
+}
+
+.admin-user-message--ok {
+  color: #86efac;
+}
+
+.admin-user-message--warn {
+  color: #fca5a5;
+}
+
+[data-theme="light"] .admin-user-card {
+  background: #fff;
+  border-color: #e4e4e7;
+}
+
+[data-theme="light"] .admin-auth-badge {
+  background: #f4f4f5;
+  color: #52525b;
+}
+
+[data-theme="light"] .admin-auth-badge--local {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+[data-theme="light"] .admin-auth-badge--google {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+[data-theme="light"] .admin-email-synthetic {
+  color: #b45309;
+}
+
+[data-theme="light"] .admin-email-tag {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+[data-theme="light"] .admin-user-message--ok {
+  color: #15803d;
+}
+
+[data-theme="light"] .admin-user-message--warn {
+  color: #b91c1c;
+}

@@ -33,8 +33,15 @@ import { discogsAppConfigured } from "../discogs/auth.js";
 import { MOCK_USER } from "../mock.js";
 import { applySessionPersistence, saveSession } from "../auth/sessionCookie.js";
 import { sendPasswordResetEmail } from "../email/notifications.js";
+import { isAppAdmin } from "../auth/appAdmin.js";
 
 const router = Router();
+
+function withAdminFlag(user) {
+  const publicProfile = publicUser(user);
+  if (!publicProfile) return null;
+  return { ...publicProfile, isAdmin: isAppAdmin(user.id) };
+}
 
 function useMockAuth() {
   return process.env.USE_MOCK_AUTH === "true" || !googleConfigured();
@@ -72,7 +79,7 @@ router.get("/me", async (req, res) => {
     return res.json({ user: publicUser(MOCK_USER) });
   }
   user = await ensureUserDiscogsAvatar(user);
-  res.json({ user: publicUser(user) });
+  res.json({ user: withAdminFlag(user) });
 });
 
 router.patch("/me/privacy", (req, res) => {
@@ -241,7 +248,7 @@ router.post("/register", async (req, res) => {
     applySessionPersistence(req, rememberMe);
     await saveSession(req);
     res.status(201).json({
-      user: publicUser(user),
+      user: withAdminFlag(user),
       username: user.username,
     });
   } catch (err) {
@@ -272,7 +279,7 @@ router.post("/login", async (req, res) => {
     req.session.userId = user.id;
     applySessionPersistence(req, Boolean(rememberMe));
     await saveSession(req);
-    res.json({ user: publicUser(user) });
+    res.json({ user: withAdminFlag(user) });
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ error: "Prijava ni uspela. Poskusi znova." });

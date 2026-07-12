@@ -1,11 +1,5 @@
 import { findUserById } from "../db.js";
-
-function adminUsernames() {
-  return (process.env.ADMIN_USERNAMES ?? "")
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-}
+import { adminUsernames } from "./appAdmin.js";
 
 /** Ustvarjalec naročila ali uporabnik iz ADMIN_USERNAMES (v .env). */
 export function isOrderAdmin(session, userId) {

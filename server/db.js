@@ -884,6 +884,50 @@ export function consumePasswordResetToken(token, newPassword) {
   return findUserById(row.user_id);
 }
 
+export function listUsersForAdmin() {
+  return db
+    .prepare(
+      `SELECT id, username, name, email, created_at,
+              password_hash IS NOT NULL AS has_password,
+              google_id IS NOT NULL AS has_google,
+              discogs_username
+       FROM users
+       ORDER BY datetime(created_at) DESC, name ASC`
+    )
+    .all()
+    .map((row) => ({
+      id: row.id,
+      username: row.username ?? null,
+      name: row.name ?? null,
+      email: row.email,
+      hasRealEmail: isDeliverableEmail(row.email),
+      authType: row.has_google ? "google" : row.has_password ? "local" : "unknown",
+      createdAt: row.created_at,
+      discogsUsername: row.discogs_username ?? null,
+    }));
+}
+
+export function adminSetUserPassword(userId, newPassword) {
+  if (!newPassword || newPassword.length < 6) {
+    throw new Error("Geslo mora imeti vsaj 6 znakov.");
+  }
+
+  const user = findUserById(userId);
+  if (!user) {
+    throw new Error("Uporabnik ni bil najden.");
+  }
+  if (user.google_id && !user.password_hash) {
+    throw new Error("Ta račun uporablja Google prijavo in nima gesla.");
+  }
+
+  db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(
+    hashPassword(newPassword),
+    userId
+  );
+  db.prepare("DELETE FROM password_reset_tokens WHERE user_id = ?").run(userId);
+  return findUserById(userId);
+}
+
 function deliverableUserFilter(alias = "u") {
   return `lower(${alias}.email) NOT LIKE '%${SYNTHETIC_EMAIL_SUFFIX}'`;
 }
