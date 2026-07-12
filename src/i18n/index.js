@@ -24,6 +24,7 @@ const SERVER_ERROR_MAP = {
   "Samo admin lahko dostopa do te strani.": "errors.adminAccessDenied",
   "Uporabnik ni bil najden.": "errors.userNotFound",
   "Ta račun uporablja Google prijavo in nima gesla.": "errors.googleAccountNoPassword",
+  "Trenutno geslo ni pravilno.": "errors.wrongCurrentPassword",
   "Naročila ni bilo mogoče ustvariti.": "errors.createOrderFailed",
   "Naročila ni bilo mogoče odpreti.": "orders.createFailed",
   "Neveljavna poštnina.": "errors.invalidShipping",

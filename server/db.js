@@ -928,6 +928,27 @@ export function adminSetUserPassword(userId, newPassword) {
   return findUserById(userId);
 }
 
+export function changeUserPassword(userId, currentPassword, newPassword) {
+  if (!newPassword || newPassword.length < 6) {
+    throw new Error("Geslo mora imeti vsaj 6 znakov.");
+  }
+
+  const user = findUserById(userId);
+  if (!user?.password_hash) {
+    throw new Error("Ta račun nima gesla. Prijavi se z Google.");
+  }
+  if (!currentPassword || !verifyPassword(currentPassword, user.password_hash)) {
+    throw new Error("Trenutno geslo ni pravilno.");
+  }
+
+  db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(
+    hashPassword(newPassword),
+    userId
+  );
+  db.prepare("DELETE FROM password_reset_tokens WHERE user_id = ?").run(userId);
+  return findUserById(userId);
+}
+
 function deliverableUserFilter(alias = "u") {
   return `lower(${alias}.email) NOT LIKE '%${SYNTHETIC_EMAIL_SUFFIX}'`;
 }
@@ -980,6 +1001,7 @@ export function publicUser(user) {
     discogsAvatarUrl: user.discogs_avatar_url ?? null,
     hideMyRecords: Boolean(user.hide_my_records),
     hasRealEmail: isDeliverableEmail(user.email),
+    hasPassword: Boolean(user.password_hash),
     notifyNewOrder: Boolean(user.notify_new_order),
     notifyOrderNote: Boolean(user.notify_order_note),
     notifyOrderClosed: Boolean(user.notify_order_closed),

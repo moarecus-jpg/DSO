@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Disc3, ExternalLink, Shield, Unplug } from "lucide-react";
+import { Disc3, ExternalLink, Lock, Shield, Unplug } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
@@ -190,6 +190,70 @@ export function Settings() {
           </form>
         )}
       </div>
+
+      {user?.hasPassword && (
+        <div className="card settings-card">
+          <h2>
+            <Lock size={20} /> {t("settings.passwordTitle")}
+          </h2>
+          <p className="muted settings-privacy-hint">{t("settings.passwordHint")}</p>
+          <form
+            className="settings-email-form"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const form = e.currentTarget;
+              const currentPassword = form.currentPassword.value;
+              const password = form.password.value;
+              const passwordConfirm = form.passwordConfirm.value;
+              try {
+                await api("/auth/me/password", {
+                  method: "PATCH",
+                  body: JSON.stringify({ currentPassword, password, passwordConfirm }),
+                });
+                form.reset();
+                setMessageType("ok");
+                setMessage(t("settings.passwordChanged"));
+              } catch (err) {
+                setMessageType("warn");
+                setMessage(err.message ?? t("common.error"));
+              }
+            }}
+          >
+            <label className="settings-email-field">
+              <span>{t("settings.currentPassword")}</span>
+              <input
+                type="password"
+                name="currentPassword"
+                required
+                autoComplete="current-password"
+              />
+            </label>
+            <label className="settings-email-field">
+              <span>{t("auth.newPassword")}</span>
+              <input
+                type="password"
+                name="password"
+                minLength={6}
+                required
+                autoComplete="new-password"
+              />
+            </label>
+            <label className="settings-email-field">
+              <span>{t("auth.passwordConfirm")}</span>
+              <input
+                type="password"
+                name="passwordConfirm"
+                minLength={6}
+                required
+                autoComplete="new-password"
+              />
+            </label>
+            <button type="submit" className="btn btn-ghost">
+              {t("settings.changePassword")}
+            </button>
+          </form>
+        </div>
+      )}
 
       <div className="card settings-card">
         <h2>{t("settings.notificationsTitle")}</h2>

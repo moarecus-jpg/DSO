@@ -282,6 +282,11 @@ export default {
       "Uporablja se za ponastavitev gesla in e-poštna obvestila. Google računi že uporabljajo Google e-pošto.",
     saveEmail: "Shrani e-pošto",
     emailSaved: "E-poštni naslov je shranjen.",
+    passwordTitle: "Geslo",
+    passwordHint: "Spremeni geslo, s katerim se prijaviš z uporabniškim imenom.",
+    currentPassword: "Trenutno geslo",
+    changePassword: "Spremeni geslo",
+    passwordChanged: "Geslo posodobljeno.",
     notificationsTitle: "E-poštna obvestila",
     notificationsHint:
       "Prejmi e-pošto, ko se v DSO kaj zgodi. Vsako obvestilo lahko vklopiš ali izklopiš.",
@@ -317,6 +322,7 @@ export default {
     registerFailed: "Registracija ni uspela.",
     loginFields: "Vnesi uporabniško ime in geslo.",
     wrongCredentials: "Napačno uporabniško ime ali geslo.",
+    wrongCurrentPassword: "Trenutno geslo ni pravilno.",
     loginFailed: "Prijava ni uspela. Poskusi znova.",
     usernameLength: "Uporabniško ime mora imeti 3–32 znakov.",
     usernameChars:

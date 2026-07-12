@@ -13,6 +13,7 @@ import {
   updateHideMyRecords,
   updateNotificationPrefs,
   updateUserEmail,
+  changeUserPassword,
   upsertGoogleUser,
   verifyLocalUser,
 } from "../db.js";
@@ -115,6 +116,29 @@ router.patch("/me/email", (req, res) => {
     res.json({ user: publicUser(user) });
   } catch (err) {
     res.status(400).json({ error: err.message ?? "E-pošte ni bilo mogoče shraniti." });
+  }
+});
+
+router.patch("/me/password", (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Prijavi se v aplikacijo." });
+  }
+
+  const { currentPassword, password, passwordConfirm } = req.body ?? {};
+  if (password !== passwordConfirm) {
+    return res.status(400).json({ error: "Gesli se ne ujemata." });
+  }
+
+  try {
+    changeUserPassword(req.session.userId, currentPassword, password);
+    res.json({ ok: true });
+  } catch (err) {
+    const msg = err.message ?? "Gesla ni bilo mogoče spremeniti.";
+    const status =
+      msg.includes("ni pravilno") || msg.includes("nima gesla") || msg.includes("Geslo")
+        ? 400
+        : 500;
+    res.status(status).json({ error: msg });
   }
 });
 

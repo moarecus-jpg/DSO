@@ -278,6 +278,11 @@ export default {
       "Used for password reset and email notifications. Google accounts already use their Google email.",
     saveEmail: "Save email",
     emailSaved: "Email address saved.",
+    passwordTitle: "Password",
+    passwordHint: "Change the password you use to sign in with your username.",
+    currentPassword: "Current password",
+    changePassword: "Change password",
+    passwordChanged: "Password updated.",
     notificationsTitle: "Email notifications",
     notificationsHint:
       "Receive emails when something happens in DSO. You can turn each type on or off.",
@@ -313,6 +318,7 @@ export default {
     registerFailed: "Registration failed.",
     loginFields: "Enter username and password.",
     wrongCredentials: "Wrong username or password.",
+    wrongCurrentPassword: "Current password is incorrect.",
     loginFailed: "Sign-in failed. Try again.",
     usernameLength: "Username must be 3–32 characters.",
     usernameChars:
