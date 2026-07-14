@@ -104,7 +104,6 @@ export function OrderSummary({
   return (
     <div
       className={`order-summary${embedded ? " order-summary--embedded" : " card"}`}
-      id={embedded ? "order-sticky-details" : undefined}
     >
       {!embedded && <h3 className="order-summary-title">{t("summary.title")}</h3>}
 

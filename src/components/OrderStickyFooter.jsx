@@ -41,7 +41,7 @@ export function OrderStickyFooter({
         }`}
       >
         {expanded && (
-          <div className="order-sticky-footer-panel">
+          <div className="order-sticky-footer-panel" id="order-sticky-details">
             {members.length > 0 && (
               <div className="order-sticky-footer-members">
                 <span className="label">{t("session.participants")}</span>
@@ -63,31 +63,38 @@ export function OrderStickyFooter({
           </div>
         )}
 
-        <button
-          type="button"
-          className="order-sticky-footer-bar"
-          onClick={() => setExpanded((open) => !open)}
-          aria-expanded={expanded}
-          aria-controls="order-sticky-details"
-        >
-          <ChevronUp
-            size={20}
-            className={`order-sticky-footer-chevron${
-              expanded ? " order-sticky-footer-chevron--open" : ""
-            }`}
-            aria-hidden
-          />
-          <div className="order-sticky-footer-copy">
-            <span className="order-sticky-footer-label">{t("common.total")}</span>
-            <span className="order-sticky-footer-meta muted">
-              {recordsLabel(count ?? 0)} · {formatPrice(itemsTotal, currency)}
-              {hasUnknown && t("common.someWithoutPrice")}
-            </span>
+        <div className="order-sticky-footer-bar">
+          <button
+            type="button"
+            className="order-sticky-footer-toggle"
+            onClick={() => setExpanded((open) => !open)}
+            aria-expanded={expanded}
+            aria-controls="order-sticky-details"
+            aria-label={
+              expanded ? t("summary.hideDetails") : t("summary.showDetails")
+            }
+          >
+            <ChevronUp
+              size={20}
+              className={`order-sticky-footer-chevron${
+                expanded ? " order-sticky-footer-chevron--open" : ""
+              }`}
+              aria-hidden
+            />
+          </button>
+
+          <p className="order-sticky-footer-meta muted">
+            {recordsLabel(count ?? 0)} · {formatPrice(itemsTotal, currency)}
+            {hasUnknown && t("common.someWithoutPrice")}
+          </p>
+
+          <div className="order-sticky-footer-total-block">
+            <span className="order-sticky-footer-total-label">{t("common.total")}</span>
+            <strong className="order-sticky-footer-total-price order-total-value">
+              {formatPrice(total, currency)}
+            </strong>
           </div>
-          <strong className="order-sticky-footer-total order-total-value">
-            {formatPrice(total, currency)}
-          </strong>
-        </button>
+        </div>
       </div>
     </>
   );
