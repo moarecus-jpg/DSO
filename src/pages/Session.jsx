@@ -249,7 +249,15 @@ export function Session() {
             disabled={closing}
           >
             <Archive size={16} aria-hidden />
-            {closing ? t("session.closing") : t("session.closeOrder")}
+            <span className="order-sticky-footer-action-label order-sticky-footer-action-label--long">
+              {closing ? t("session.closing") : t("session.closeOrder")}
+            </span>
+            <span
+              className="order-sticky-footer-action-label order-sticky-footer-action-label--short"
+              aria-hidden
+            >
+              {closing ? t("session.closing") : t("session.closeOrderShort")}
+            </span>
           </button>
         )}
       </>

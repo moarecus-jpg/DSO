@@ -45,6 +45,13 @@ export function DiscogsAddAllToCartButton({
       })
     : t("items.addAllToCart", { count });
 
+  const shortLabel = running
+    ? t("items.addAllToCartProgress", {
+        current: progress?.current ?? 0,
+        total: progress?.total ?? count,
+      })
+    : t("items.addAllToCartShort", { count });
+
   const btnClass =
     variant === "outline" ? "" : "btn btn-ghost discogs-add-all-to-cart";
 
@@ -57,7 +64,15 @@ export function DiscogsAddAllToCartButton({
       title={t("items.addAllToCartHint")}
     >
       <ShoppingCart size={16} aria-hidden />
-      {label}
+      <span className="order-sticky-footer-action-label order-sticky-footer-action-label--long">
+        {label}
+      </span>
+      <span
+        className="order-sticky-footer-action-label order-sticky-footer-action-label--short"
+        aria-hidden
+      >
+        {shortLabel}
+      </span>
     </button>
   );
 }

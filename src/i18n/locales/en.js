@@ -138,6 +138,7 @@ export default {
     cancelOrder: "Cancel order",
     cancelling: "Cancelling…",
     closeOrder: "Close order",
+    closeOrderShort: "Close",
     closing: "Closing…",
     openWantlist: "Open wantlist",
     addItem: "Add item",
@@ -206,6 +207,7 @@ export default {
     removeFromOrderHint: "Removes this item from the order in DSO only.",
     removing: "Removing…",
     addAllToCart: "Create a Discogs cart ({{count}})",
+    addAllToCartShort: "Cart ({{count}})",
     addAllToCartProgress: "Creating cart {{current}}/{{total}}…",
     addAllToCartHint:
       "Adds each listing to your Discogs cart one by one, then opens the cart. Allow pop-ups and stay logged in on discogs.com.",

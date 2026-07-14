@@ -139,6 +139,7 @@ export default {
     cancelOrder: "Prekliči naročilo",
     cancelling: "Preklicujem…",
     closeOrder: "Zaključi naročilo",
+    closeOrderShort: "Zaključi",
     closing: "Zaključujem…",
     openWantlist: "Odpri Wantlisto",
     addItem: "Dodaj Item",
@@ -208,6 +209,7 @@ export default {
     removeFromOrderHint: "Odstrani ta item samo iz naročila v DSO.",
     removing: "Odstranjujem…",
     addAllToCart: "Ustvari Discogs košarico ({{count}})",
+    addAllToCartShort: "Košarica ({{count}})",
     addAllToCartProgress: "Ustvarjam košarico {{current}}/{{total}}…",
     addAllToCartHint:
       "Vsak listing se doda v Discogs košarico posebej, na koncu se odpre košarica. Dovoli pojavna okna in ostani prijavljen na discogs.com.",

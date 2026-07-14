@@ -62,8 +62,12 @@ export function OrderStickyFooter({
         <div className="order-sticky-footer-bar">
           <div className="order-sticky-footer-bar-inner">
             <div className="order-sticky-footer-cluster">
-              {footerLeadingActions}
-              {footerActions}
+              {(footerLeadingActions || footerActions) && (
+                <div className="order-sticky-footer-actions-row">
+                  {footerLeadingActions}
+                  {footerActions}
+                </div>
+              )}
 
               {hasTotals && (
                 <div className="order-sticky-footer-total-group">
