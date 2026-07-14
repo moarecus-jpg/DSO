@@ -20,7 +20,7 @@ export function OrderStickyFooter({
 
   if (!memberTotals.length) return null;
 
-  const { itemsTotal, total, currency, hasUnknown, count } = orderGrandTotal ?? {};
+  const { total, currency, hasUnknown, count } = orderGrandTotal ?? {};
 
   return (
     <>
@@ -57,10 +57,10 @@ export function OrderStickyFooter({
 
         <div className="order-sticky-footer-bar">
           <div className="order-sticky-footer-main">
-            <div className="order-sticky-footer-total-row">
+            <div className="order-sticky-footer-row">
               <button
                 type="button"
-                className="order-sticky-footer-toggle"
+                className="btn btn-primary order-sticky-footer-toggle"
                 onClick={() => setExpanded((open) => !open)}
                 aria-expanded={expanded}
                 aria-controls="order-sticky-details"
@@ -77,15 +77,18 @@ export function OrderStickyFooter({
                 />
               </button>
 
-              <div className="order-sticky-footer-total-block">
-                <span className="order-sticky-footer-total-label">{t("common.total")}</span>
-                <strong className="order-sticky-footer-total-price order-total-value">
-                  {formatPrice(total, currency)}
-                </strong>
-              </div>
+              <span className="order-sticky-footer-total-label">{t("common.total")}</span>
+
+              <strong className="order-sticky-footer-total-price order-total-value">
+                {formatPrice(total, currency)}
+              </strong>
             </div>
+
             <p className="order-sticky-footer-meta muted">
-              {recordsLabel(count ?? 0)} · {formatPrice(itemsTotal, currency)}
+              {t("summary.footerMeta", {
+                total: t("common.total"),
+                items: recordsLabel(count ?? 0),
+              })}
               {hasUnknown && t("common.someWithoutPrice")}
             </p>
           </div>

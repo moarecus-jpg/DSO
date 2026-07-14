@@ -232,6 +232,7 @@ export default {
     totalWithShipping: "Total with shipping",
     showDetails: "Show order details",
     hideDetails: "Hide order details",
+    footerMeta: "{{total}} · {{items}}",
     invalidShipping: "Enter a valid shipping amount.",
     minPeople: "Number of people must be at least 1.",
   },

@@ -234,6 +234,7 @@ export default {
     totalWithShipping: "Skupaj z poštnino",
     showDetails: "Prikaži podrobnosti naročila",
     hideDetails: "Skrij podrobnosti naročila",
+    footerMeta: "{{total}} · {{items}}",
     invalidShipping: "Vnesi veljavno številko za poštnino.",
     minPeople: "Število oseb mora biti vsaj 1.",
   },
