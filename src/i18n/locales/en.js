@@ -230,6 +230,8 @@ export default {
     perPerson: "{{price}} / person",
     splitAria: "Number of people to split shipping",
     totalWithShipping: "Total with shipping",
+    showDetails: "Show order details",
+    hideDetails: "Hide order details",
     invalidShipping: "Enter a valid shipping amount.",
     minPeople: "Number of people must be at least 1.",
   },

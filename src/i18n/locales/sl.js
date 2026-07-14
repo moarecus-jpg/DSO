@@ -232,6 +232,8 @@ export default {
     perPerson: "{{price}} / osebo",
     splitAria: "Število oseb za delitev poštnine",
     totalWithShipping: "Skupaj z poštnino",
+    showDetails: "Prikaži podrobnosti naročila",
+    hideDetails: "Skrij podrobnosti naročila",
     invalidShipping: "Vnesi veljavno številko za poštnino.",
     minPeople: "Število oseb mora biti vsaj 1.",
   },

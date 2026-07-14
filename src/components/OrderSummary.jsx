@@ -3,6 +3,7 @@ import { formatPrice } from "../../shared/orderTotals.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 
 export function OrderSummary({
+  embedded = false,
   memberTotals = [],
   orderGrandTotal,
   shippingValue,
@@ -101,8 +102,11 @@ export function OrderSummary({
       : null);
 
   return (
-    <div className="order-summary card">
-      <h3 className="order-summary-title">{t("summary.title")}</h3>
+    <div
+      className={`order-summary${embedded ? " order-summary--embedded" : " card"}`}
+      id={embedded ? "order-sticky-details" : undefined}
+    >
+      {!embedded && <h3 className="order-summary-title">{t("summary.title")}</h3>}
 
       <table className="order-summary-table">
         <thead>

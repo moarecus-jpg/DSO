@@ -3,9 +3,8 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { ArrowLeft, Archive, Disc3, ExternalLink, Heart, Plus, X } from "lucide-react";
 import { AddRecordModal } from "../components/AddRecordModal.jsx";
 import { DiscogsAddAllToCartButton } from "../components/DiscogsAddAllToCartButton.jsx";
-import { MemberChips } from "../components/MemberChips.jsx";
 import { SellerAvatar } from "../components/SellerAvatar.jsx";
-import { OrderSummary } from "../components/OrderSummary.jsx";
+import { OrderStickyFooter } from "../components/OrderStickyFooter.jsx";
 import { OrderTargetDate } from "../components/OrderTargetDate.jsx";
 import { OrderNotes } from "../components/OrderNotes.jsx";
 import { RecordList } from "../components/RecordList.jsx";
@@ -246,7 +245,7 @@ export function Session() {
     ) : null;
 
   return (
-    <div className="page page-detail">
+    <div className="page page-detail page-session-with-footer">
       <Link to={isClosed ? "/closed" : "/"} className="back-link">
         <ArrowLeft size={16} />{" "}
         {isClosed ? t("nav.closedOrders") : t("nav.openOrders")}
@@ -298,11 +297,6 @@ export function Session() {
         sellerUsername={session.seller_username}
       />
 
-      <div className="members card">
-        <span className="label">{t("session.participants")}</span>
-        <MemberChips members={session.members} />
-      </div>
-
       <OrderTargetDate
         targetDate={session.target_date}
         readOnly={isClosed || !canManageOrder}
@@ -325,21 +319,9 @@ export function Session() {
           <>
             <RecordList
               links={session.links}
-              orderGrandTotal={session.orderGrandTotal}
               onRemoveLink={handleRemoveLink}
               removingLinkId={removingLinkId}
               canRemoveLink={canRemoveLink}
-            />
-            <OrderSummary
-              memberTotals={session.memberTotals}
-              orderGrandTotal={session.orderGrandTotal}
-              shippingValue={session.shipping_value}
-              shippingCurrency={session.shipping_currency}
-              shippingSplitCount={session.shipping_split_count}
-              memberCount={session.members?.length ?? 0}
-              readOnly={isClosed || !session.canManageShipping}
-              onSaveShipping={session.canManageShipping ? handleSaveShipping : undefined}
-              savingShipping={savingShipping}
             />
           </>
         )}
@@ -351,6 +333,21 @@ export function Session() {
         />
         {orderActions}
       </section>
+
+      {recordCount > 0 && (
+        <OrderStickyFooter
+          members={session.members}
+          memberTotals={session.memberTotals}
+          orderGrandTotal={session.orderGrandTotal}
+          shippingValue={session.shipping_value}
+          shippingCurrency={session.shipping_currency}
+          shippingSplitCount={session.shipping_split_count}
+          memberCount={session.members?.length ?? 0}
+          readOnly={isClosed || !session.canManageShipping}
+          onSaveShipping={session.canManageShipping ? handleSaveShipping : undefined}
+          savingShipping={savingShipping}
+        />
+      )}
     </div>
   );
 }

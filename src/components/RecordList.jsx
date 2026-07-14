@@ -9,17 +9,13 @@ import { useLocale } from "../hooks/useLocale.jsx";
 
 export function RecordList({
   links = [],
-  orderGrandTotal,
   onRemoveLink,
   removingLinkId,
   canRemoveLink,
 }) {
-  const { t, recordsLabel } = useLocale();
+  const { t } = useLocale();
 
   if (!links.length) return null;
-
-  const { itemsTotal, total, currency, hasUnknown, count } = orderGrandTotal ?? {};
-  const platTotal = itemsTotal ?? total;
 
   return (
     <div className="order-items card">
@@ -91,29 +87,6 @@ export function RecordList({
             </tr>
           ))}
         </tbody>
-        <tfoot>
-          <tr className="order-subtotal-row">
-            <td colSpan={2}>
-              {t("items.subtotalFor", {
-                label: recordsLabel(count ?? links.length),
-              })}
-            </td>
-            <td className="col-price">{formatPrice(platTotal, currency)}</td>
-          </tr>
-          <tr className="order-total-row">
-            <td colSpan={2}>
-              <strong>{t("common.total")}</strong>
-            </td>
-            <td className="col-price">
-              <strong className="order-grand-total">
-                {formatPrice(total, currency)}
-              </strong>
-              {hasUnknown && (
-                <span className="muted fine">{t("common.someWithoutPrice")}</span>
-              )}
-            </td>
-          </tr>
-        </tfoot>
       </table>
     </div>
   );
