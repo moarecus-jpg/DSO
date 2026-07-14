@@ -56,31 +56,33 @@ export function OrderStickyFooter({
         )}
 
         <div className="order-sticky-footer-bar">
-          <button
-            type="button"
-            className="order-sticky-footer-toggle"
-            onClick={() => setExpanded((open) => !open)}
-            aria-expanded={expanded}
-            aria-controls="order-sticky-details"
-            aria-label={
-              expanded ? t("summary.hideDetails") : t("summary.showDetails")
-            }
-          >
-            <ChevronUp
-              size={22}
-              className={`order-sticky-footer-chevron${
-                expanded ? " order-sticky-footer-chevron--open" : ""
-              }`}
-              aria-hidden
-            />
-          </button>
-
           <div className="order-sticky-footer-main">
-            <div className="order-sticky-footer-total-block">
-              <span className="order-sticky-footer-total-label">{t("common.total")}</span>
-              <strong className="order-sticky-footer-total-price order-total-value">
-                {formatPrice(total, currency)}
-              </strong>
+            <div className="order-sticky-footer-total-row">
+              <button
+                type="button"
+                className="order-sticky-footer-toggle"
+                onClick={() => setExpanded((open) => !open)}
+                aria-expanded={expanded}
+                aria-controls="order-sticky-details"
+                aria-label={
+                  expanded ? t("summary.hideDetails") : t("summary.showDetails")
+                }
+              >
+                <ChevronUp
+                  size={22}
+                  className={`order-sticky-footer-chevron${
+                    expanded ? " order-sticky-footer-chevron--open" : ""
+                  }`}
+                  aria-hidden
+                />
+              </button>
+
+              <div className="order-sticky-footer-total-block">
+                <span className="order-sticky-footer-total-label">{t("common.total")}</span>
+                <strong className="order-sticky-footer-total-price order-total-value">
+                  {formatPrice(total, currency)}
+                </strong>
+              </div>
             </div>
             <p className="order-sticky-footer-meta muted">
               {recordsLabel(count ?? 0)} · {formatPrice(itemsTotal, currency)}
