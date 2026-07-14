@@ -247,6 +247,8 @@ export function Session() {
             className="order-sticky-footer-action-btn order-sticky-footer-action-btn--primary"
             onClick={handleClose}
             disabled={closing}
+            title={t("session.closeOrder")}
+            aria-label={closing ? t("session.closing") : t("session.closeOrder")}
           >
             <Archive size={16} aria-hidden />
             <span className="order-sticky-footer-action-label order-sticky-footer-action-label--long">

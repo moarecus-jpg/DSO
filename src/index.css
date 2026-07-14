@@ -1999,7 +1999,7 @@ code {
 
 @media (max-width: 768px) {
   .page-session-with-footer {
-    padding-bottom: calc(8.75rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(6.25rem + env(safe-area-inset-bottom));
   }
 }
 
@@ -2038,12 +2038,22 @@ code {
     left: var(--sidebar-width);
   }
 
+  .order-sticky-footer-bar {
+    padding-inline: 2.5rem;
+  }
+
   .order-sticky-footer-bar-inner {
-    transform: translateX(calc(var(--sidebar-width) / -2));
+    justify-content: stretch;
+    max-width: none;
   }
 
   .order-sticky-footer-panel {
-    transform: translateX(calc(var(--sidebar-width) / -2));
+    padding-inline: 2.5rem;
+  }
+
+  .order-sticky-footer-cluster {
+    justify-content: space-between;
+    width: 100%;
   }
 }
 
@@ -2270,72 +2280,42 @@ code {
   }
 
   .order-sticky-footer-cluster {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
     gap: 0.45rem;
     width: 100%;
   }
 
   .order-sticky-footer-actions-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: nowrap;
-    gap: 0.4rem;
-    width: 100%;
+    display: contents;
   }
 
-  .order-sticky-footer-actions-row > .order-sticky-footer-action-btn--destructive,
-  .order-sticky-footer-actions-row > .order-sticky-footer-action-btn--primary {
-    flex-shrink: 0;
-  }
-
-  .order-sticky-footer-actions-row > .order-sticky-footer-action-btn--secondary {
-    flex: 1 1 auto;
-    min-width: 0;
-    max-width: 100%;
-  }
-
-  .order-sticky-footer-actions-row
-    > .order-sticky-footer-action-btn--secondary
-    .order-sticky-footer-action-label {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .order-sticky-footer-total-group {
-    align-self: center;
-  }
-
-  .order-sticky-footer-action-label--long {
+  .order-sticky-footer-action-btn .order-sticky-footer-action-label {
     display: none;
   }
 
-  .order-sticky-footer-action-label--short {
-    display: inline;
+  .order-sticky-footer-action-btn {
+    width: var(--order-sticky-bar-height);
+    min-width: var(--order-sticky-bar-height);
+    max-width: var(--order-sticky-bar-height);
+    padding: 0;
+  }
+
+  .order-sticky-footer-price {
+    display: none;
+  }
+
+  .order-sticky-footer-total-group {
+    align-self: auto;
   }
 }
 
 @media (max-width: 640px) {
-  .order-sticky-footer-price {
-    padding-inline: 0.8rem;
-    font-size: 0.98rem;
-  }
-
-  .order-sticky-footer-action-btn {
-    padding-inline: 0.65rem;
-    font-size: 0.72rem;
-  }
-
-  .order-sticky-footer-action-btn--destructive .order-sticky-footer-action-label {
-    display: none;
-  }
-
-  .order-sticky-footer-action-btn--destructive {
-    width: var(--order-sticky-bar-height);
-    min-width: var(--order-sticky-bar-height);
-    padding: 0;
+  .order-sticky-footer-action-btn svg {
+    width: 1.05rem;
+    height: 1.05rem;
   }
 }
 
