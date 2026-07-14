@@ -31,7 +31,7 @@ import { sellerMywantsUrl } from "../../shared/discogsUrls.js";
 import { matchWantlistToInventory, parseDiscogsUrl } from "../discogs/match.js";
 import { MOCK_INVENTORY, MOCK_SESSION, MOCK_USER, MOCK_USER_2, MOCK_WANTLIST } from "../mock.js";
 import { formatOrderTitle } from "../../shared/orderTitle.js";
-import { resolveRecordFromUrl } from "../discogs/recordMeta.js";
+import { resolveRecordFromUrl, mockResolveRecordFromUrl } from "../discogs/recordMeta.js";
 import { parseDiscogsUrlList } from "../../shared/parseRecordUrl.js";
 import { DISPLAY_CURRENCY, toEurAmount } from "../../shared/currency.js";
 import { enrichSessionOrder, recordTitle } from "../../shared/orderTotals.js";
@@ -744,7 +744,15 @@ router.patch("/:id/links/:linkId", requireUser, (req, res) => {
 });
 
 async function createSessionLink(req, sessionId, trimmedUrl, note) {
-  const meta = await resolveRecordFromUrl(trimmedUrl, note);
+  const sellerUsername = resolveSessionSeller(sessionId);
+  const useMockDiscogs =
+    useMockAuth() &&
+    sessionId.startsWith("mock") &&
+    (!discogsOAuthConfigured() || findUserById(req.session.userId)?.discogs_token === "mock");
+
+  const meta = useMockDiscogs
+    ? mockResolveRecordFromUrl(trimmedUrl, note, { sellerUsername })
+    : await resolveRecordFromUrl(trimmedUrl, note, { sellerUsername });
 
   if (useMockAuth() && sessionId.startsWith("mock")) {
     const user = findUserById(req.session.userId);

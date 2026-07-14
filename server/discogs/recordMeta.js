@@ -2,6 +2,7 @@ import { toEurPrice } from "../../shared/currency.js";
 import { parseDiscogsRecordUrl } from "../../shared/parseRecordUrl.js";
 import { MOCK_INVENTORY } from "../mock.js";
 import { assertDiscogsAuth, buildAppDiscogsHeaders } from "./auth.js";
+import { fetchInventoryForReleaseIds } from "./client.js";
 import { runDiscogsRequest } from "./throttle.js";
 
 const API = "https://api.discogs.com";
@@ -96,7 +97,25 @@ function fromReleasePayload(data, url, note) {
   };
 }
 
-export async function resolveRecordFromUrl(url, note) {
+async function findSellerListingIdForRelease(sellerUsername, releaseId) {
+  if (!sellerUsername?.trim() || releaseId == null) return null;
+
+  const matched = await fetchInventoryForReleaseIds(
+    sellerUsername.trim(),
+    [releaseId],
+    null,
+    null
+  );
+  return matched[0]?.id ?? null;
+}
+
+function mockFindListingIdForRelease(releaseId) {
+  const listing = MOCK_INVENTORY.find((l) => l.release?.id === releaseId);
+  return listing?.id ?? null;
+}
+
+export async function resolveRecordFromUrl(url, note, options = {}) {
+  const { sellerUsername } = options;
   const parsed = parseDiscogsRecordUrl(url);
   if (!parsed.valid) {
     throw new Error("Neveljavna Discogs povezava.");
@@ -114,6 +133,21 @@ export async function resolveRecordFromUrl(url, note) {
   }
 
   if (parsed.releaseId != null) {
+    const listingId = sellerUsername
+      ? await findSellerListingIdForRelease(sellerUsername, parsed.releaseId)
+      : null;
+
+    if (listingId != null) {
+      const data = await discogsGet(
+        `/marketplace/listings/${listingId}?curr_abbr=EUR`
+      );
+      return {
+        listingId,
+        releaseId: data.release?.id ?? parsed.releaseId,
+        ...fromListingPayload(data, url, note),
+      };
+    }
+
     const data = await discogsGet(`/releases/${parsed.releaseId}`);
     return {
       listingId: null,
@@ -127,7 +161,7 @@ export async function resolveRecordFromUrl(url, note) {
   );
 }
 
-export function mockResolveRecordFromUrl(url, note) {
+export function mockResolveRecordFromUrl(url, note, options = {}) {
   const parsed = parseDiscogsRecordUrl(url);
   if (!parsed.valid) {
     throw new Error("Neveljavna Discogs povezava.");
@@ -160,11 +194,12 @@ export function mockResolveRecordFromUrl(url, note) {
   }
 
   if (parsed.releaseId != null) {
-    const want = MOCK_INVENTORY.find((l) => l.release?.id === parsed.releaseId);
-    if (want) {
+    const listingId = mockFindListingIdForRelease(parsed.releaseId);
+    if (listingId != null) {
       return mockResolveRecordFromUrl(
-        `https://www.discogs.com/sell/item/${want.id}`,
-        note
+        `https://www.discogs.com/sell/item/${listingId}`,
+        note,
+        options
       );
     }
     return {
