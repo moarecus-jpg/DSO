@@ -67,7 +67,7 @@ export function OrderStickyFooter({
             }
           >
             <ChevronUp
-              size={20}
+              size={22}
               className={`order-sticky-footer-chevron${
                 expanded ? " order-sticky-footer-chevron--open" : ""
               }`}
@@ -75,16 +75,17 @@ export function OrderStickyFooter({
             />
           </button>
 
-          <p className="order-sticky-footer-meta muted">
-            {recordsLabel(count ?? 0)} · {formatPrice(itemsTotal, currency)}
-            {hasUnknown && t("common.someWithoutPrice")}
-          </p>
-
-          <div className="order-sticky-footer-total-block">
-            <span className="order-sticky-footer-total-label">{t("common.total")}</span>
-            <strong className="order-sticky-footer-total-price order-total-value">
-              {formatPrice(total, currency)}
-            </strong>
+          <div className="order-sticky-footer-main">
+            <div className="order-sticky-footer-total-block">
+              <span className="order-sticky-footer-total-label">{t("common.total")}</span>
+              <strong className="order-sticky-footer-total-price order-total-value">
+                {formatPrice(total, currency)}
+              </strong>
+            </div>
+            <p className="order-sticky-footer-meta muted">
+              {recordsLabel(count ?? 0)} · {formatPrice(itemsTotal, currency)}
+              {hasUnknown && t("common.someWithoutPrice")}
+            </p>
           </div>
         </div>
       </div>
