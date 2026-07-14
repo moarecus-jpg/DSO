@@ -2,11 +2,9 @@ import { useState } from "react";
 import { ChevronUp } from "lucide-react";
 import { formatPrice } from "../../shared/orderTotals.js";
 import { useLocale } from "../hooks/useLocale.jsx";
-import { MemberChips } from "./MemberChips.jsx";
 import { OrderSummary } from "./OrderSummary.jsx";
 
 export function OrderStickyFooter({
-  members = [],
   memberTotals = [],
   orderGrandTotal,
   shippingValue,
@@ -42,12 +40,6 @@ export function OrderStickyFooter({
       >
         {expanded && (
           <div className="order-sticky-footer-panel" id="order-sticky-details">
-            {members.length > 0 && (
-              <div className="order-sticky-footer-members">
-                <span className="label">{t("session.participants")}</span>
-                <MemberChips members={members} />
-              </div>
-            )}
             <OrderSummary
               embedded
               memberTotals={memberTotals}
