@@ -178,6 +178,9 @@ export default {
   },
   items: {
     addItem: "Dodaj Item",
+    addFor: "Dodaj za",
+    addForMe: "Jaz",
+    addForMeSuffix: " (jaz)",
     add: "Dodaj",
     adding: "Dodajam {{current}}/{{total}}…",
     addOne: "Dodaj 1 item",
@@ -204,8 +207,8 @@ export default {
     removeFromOrder: "Odstrani iz naročila",
     removeFromOrderHint: "Odstrani ta item samo iz naročila v DSO.",
     removing: "Odstranjujem…",
-    addAllToCart: "Dodaj vse v košarico ({{count}})",
-    addAllToCartProgress: "Dodajam {{current}}/{{total}}…",
+    addAllToCart: "Ustvari Discogs košarico ({{count}})",
+    addAllToCartProgress: "Ustvarjam košarico {{current}}/{{total}}…",
     addAllToCartHint:
       "Vsak listing se doda v Discogs košarico posebej, na koncu se odpre košarica. Dovoli pojavna okna in ostani prijavljen na discogs.com.",
     addAllToCartPopupBlocked:

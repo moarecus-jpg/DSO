@@ -3,7 +3,12 @@ import { ShoppingCart } from "lucide-react";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { addAllListingsToDiscogsCart, uniqueListingIds } from "../utils/discogsCartQueue.js";
 
-export function DiscogsAddAllToCartButton({ links, className = "", disabled = false }) {
+export function DiscogsAddAllToCartButton({
+  links,
+  className = "",
+  disabled = false,
+  variant = "ghost",
+}) {
   const { t } = useLocale();
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState(null);
@@ -40,15 +45,18 @@ export function DiscogsAddAllToCartButton({ links, className = "", disabled = fa
       })
     : t("items.addAllToCart", { count });
 
+  const btnClass =
+    variant === "outline" ? "" : "btn btn-ghost discogs-add-all-to-cart";
+
   return (
     <button
       type="button"
-      className={`btn btn-ghost discogs-add-all-to-cart ${className}`.trim()}
+      className={`${btnClass} ${className}`.trim()}
       onClick={handleClick}
       disabled={disabled || running}
       title={t("items.addAllToCartHint")}
     >
-      <ShoppingCart size={18} aria-hidden />
+      <ShoppingCart size={16} aria-hidden />
       {label}
     </button>
   );

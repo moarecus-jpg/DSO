@@ -907,6 +907,22 @@ export function listUsersForAdmin() {
     }));
 }
 
+export function listUsersForAssignment() {
+  return db
+    .prepare(
+      `SELECT id, username, name, discogs_username
+       FROM users
+       ORDER BY COALESCE(name, username, email) COLLATE NOCASE ASC`
+    )
+    .all()
+    .map((row) => ({
+      id: row.id,
+      name: row.name ?? null,
+      username: row.username ?? null,
+      discogsUsername: row.discogs_username ?? null,
+    }));
+}
+
 export function adminSetUserPassword(userId, newPassword) {
   if (!newPassword || newPassword.length < 6) {
     throw new Error("Geslo mora imeti vsaj 6 znakov.");

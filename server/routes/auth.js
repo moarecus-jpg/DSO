@@ -8,6 +8,7 @@ import {
   findUserByEmail,
   findUserById,
   isDeliverableEmail,
+  listUsersForAssignment,
   publicUser,
   updateDiscogsAvatar,
   updateHideMyRecords,
@@ -81,6 +82,13 @@ router.get("/me", async (req, res) => {
   }
   user = await ensureUserDiscogsAvatar(user);
   res.json({ user: withAdminFlag(user) });
+});
+
+router.get("/users", (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Prijavi se v aplikacijo." });
+  }
+  res.json({ users: listUsersForAssignment() });
 });
 
 router.patch("/me/privacy", (req, res) => {

@@ -7,6 +7,7 @@ export function AppSelect({
   options,
   ariaLabel,
   className = "",
+  disabled = false,
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
@@ -47,11 +48,12 @@ export function AppSelect({
       <button
         type="button"
         className="app-select-trigger"
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => !disabled && setOpen((current) => !current)}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listId}
         aria-label={ariaLabel}
+        disabled={disabled}
       >
         <span className="app-select-value">{selected?.label}</span>
         <ChevronDown className="app-select-chevron" size={16} aria-hidden />

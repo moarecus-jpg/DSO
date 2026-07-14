@@ -743,7 +743,7 @@ router.patch("/:id/links/:linkId", requireUser, (req, res) => {
   }
 });
 
-async function createSessionLink(req, sessionId, trimmedUrl, note) {
+async function createSessionLink(req, sessionId, trimmedUrl, note, rawForUserId) {
   const sellerUsername = resolveSessionSeller(sessionId);
   const useMockDiscogs =
     useMockAuth() &&
@@ -755,12 +755,19 @@ async function createSessionLink(req, sessionId, trimmedUrl, note) {
     : await resolveRecordFromUrl(trimmedUrl, note, { sellerUsername });
 
   if (useMockAuth() && sessionId.startsWith("mock")) {
-    const user = findUserById(req.session.userId);
+    const idx = mockSessions.findIndex((s) => s.id === sessionId);
+    if (idx === -1) {
+      throw new Error("Session not found");
+    }
+
+    const targetUserId = resolveLinkTargetUserId(req.session.userId, rawForUserId);
+    const targetUser = findUserById(targetUserId);
+
     const link = {
       id: `link-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       url: trimmedUrl,
-      user_id: req.session.userId,
-      user_name: user?.name ?? MOCK_USER.name,
+      user_id: targetUserId,
+      user_name: targetUser?.name ?? MOCK_USER.name,
       listing_id: meta.listingId,
       release_id: meta.releaseId,
       label: meta.label,
@@ -773,19 +780,14 @@ async function createSessionLink(req, sessionId, trimmedUrl, note) {
       sleeve_condition: meta.sleeveCondition,
     };
 
-    const idx = mockSessions.findIndex((s) => s.id === sessionId);
-    if (idx === -1) {
-      throw new Error("Session not found");
-    }
-
     const existing = (mockSessions[idx].links ?? []).find(
       (item) =>
-        item.user_id === req.session.userId &&
+        item.user_id === targetUserId &&
         ((meta.listingId != null && item.listing_id === meta.listingId) ||
           item.url?.trim().toLowerCase() === trimmedUrl.toLowerCase())
     );
     if (existing) {
-      throw new Error("Ta listing si že dodal v tem naročilu.");
+      throw new Error("Ta listing je za tega udeleženca že v tem naročilu.");
     }
 
     const links = [...(mockSessions[idx].links ?? []), link];
@@ -803,17 +805,19 @@ async function createSessionLink(req, sessionId, trimmedUrl, note) {
     throw new Error("Session not found");
   }
 
-  const duplicate = findDuplicateSessionLink(sessionId, req.session.userId, {
+  const targetUserId = resolveLinkTargetUserId(req.session.userId, rawForUserId);
+
+  const duplicate = findDuplicateSessionLink(sessionId, targetUserId, {
     listingId: meta.listingId,
     url: trimmedUrl,
   });
   if (duplicate) {
-    throw new Error("Ta listing si že dodal v tem naročilu.");
+    throw new Error("Ta listing je za tega udeleženca že v tem naročilu.");
   }
 
   return addSessionLink({
     sessionId,
-    userId: req.session.userId,
+    userId: targetUserId,
     url: trimmedUrl,
     releaseId: meta.releaseId,
     listingId: meta.listingId,
@@ -829,8 +833,29 @@ async function createSessionLink(req, sessionId, trimmedUrl, note) {
   });
 }
 
+function resolveLinkTargetUserId(requestUserId, rawForUserId) {
+  const forUserId =
+    typeof rawForUserId === "string" && rawForUserId.trim()
+      ? rawForUserId.trim()
+      : requestUserId;
+
+  if (findUserById(forUserId)) {
+    return forUserId;
+  }
+
+  if (
+    useMockAuth() &&
+    (forUserId === MOCK_USER.id || forUserId === MOCK_USER_2.id)
+  ) {
+    return forUserId;
+  }
+
+  throw new Error("Uporabnik ne obstaja.");
+}
+
 router.post("/:id/links/batch", requireUser, async (req, res) => {
   const note = req.body?.note?.trim() ?? "";
+  const forUserId = req.body?.forUserId ?? req.body?.userId;
   const raw = req.body?.urls ?? req.body?.url ?? "";
   const text = Array.isArray(raw) ? raw.join("\n") : String(raw);
   const { valid: urls, invalid } = parseDiscogsUrlList(text);
@@ -854,7 +879,7 @@ router.post("/:id/links/batch", requireUser, async (req, res) => {
 
   for (const trimmedUrl of urls) {
     try {
-      const link = await createSessionLink(req, req.params.id, trimmedUrl, note);
+      const link = await createSessionLink(req, req.params.id, trimmedUrl, note, forUserId);
       links.push(link);
     } catch (err) {
       errors.push({ url: trimmedUrl, error: err.message ?? "Napaka" });
@@ -872,7 +897,7 @@ router.post("/:id/links/batch", requireUser, async (req, res) => {
 });
 
 router.post("/:id/links", requireUser, async (req, res) => {
-  const { url, note } = req.body;
+  const { url, note, forUserId, userId } = req.body;
   if (!url?.trim()) {
     return res.status(400).json({ error: "URL is required" });
   }
@@ -880,7 +905,13 @@ router.post("/:id/links", requireUser, async (req, res) => {
   const trimmedUrl = url.trim();
 
   try {
-    const link = await createSessionLink(req, req.params.id, trimmedUrl, note?.trim());
+    const link = await createSessionLink(
+      req,
+      req.params.id,
+      trimmedUrl,
+      note?.trim(),
+      forUserId ?? userId
+    );
     res.status(201).json({ link });
   } catch (err) {
     console.error(err);

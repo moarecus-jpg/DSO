@@ -14,11 +14,14 @@ export function OrderStickyFooter({
   readOnly = false,
   onSaveShipping,
   savingShipping = false,
+  footerActions = null,
+  footerLeadingActions = null,
 }) {
   const { t } = useLocale();
   const [expanded, setExpanded] = useState(false);
 
-  if (!memberTotals.length) return null;
+  const hasTotals = memberTotals.length > 0;
+  if (!hasTotals && !footerActions && !footerLeadingActions) return null;
 
   const { total, currency } = orderGrandTotal ?? {};
   const priceLabel = formatPrice(total, currency);
@@ -39,7 +42,7 @@ export function OrderStickyFooter({
           expanded ? " order-sticky-footer--expanded" : ""
         }`}
       >
-        {expanded && (
+        {expanded && hasTotals && (
           <div className="order-sticky-footer-panel" id="order-sticky-details">
             <OrderSummary
               embedded
@@ -57,33 +60,42 @@ export function OrderStickyFooter({
         )}
 
         <div className="order-sticky-footer-bar">
-          <div className="order-sticky-footer-row">
-            <button
-              type="button"
-              className="btn btn-primary order-sticky-footer-cell order-sticky-footer-toggle"
-              onClick={() => setExpanded((open) => !open)}
-              aria-expanded={expanded}
-              aria-controls="order-sticky-details"
-              aria-label={
-                expanded
-                  ? t("summary.hideDetails")
-                  : `${t("summary.showDetails")} (${priceLabel})`
-              }
-            >
-              <ChevronUp
-                size={24}
-                className={`order-sticky-footer-chevron${
-                  expanded ? " order-sticky-footer-chevron--open" : ""
-                }`}
-                aria-hidden
-              />
-            </button>
+          <div className="order-sticky-footer-bar-inner">
+            <div className="order-sticky-footer-cluster">
+              {footerLeadingActions}
+              {footerActions}
 
-            <div
-              className="order-sticky-footer-cell order-sticky-footer-price order-total-value"
-              aria-label={priceLabel}
-            >
-              {priceLabel}
+              {hasTotals && (
+                <div className="order-sticky-footer-total-group">
+                  <button
+                    type="button"
+                    className="order-sticky-footer-toggle"
+                    onClick={() => setExpanded((open) => !open)}
+                    aria-expanded={expanded}
+                    aria-controls="order-sticky-details"
+                    aria-label={
+                      expanded
+                        ? t("summary.hideDetails")
+                        : `${t("summary.showDetails")} (${priceLabel})`
+                    }
+                  >
+                    <ChevronUp
+                      size={20}
+                      strokeWidth={2.5}
+                      className={`order-sticky-footer-chevron${
+                        expanded ? " order-sticky-footer-chevron--open" : ""
+                      }`}
+                      aria-hidden
+                    />
+                  </button>
+                  <div
+                    className="order-sticky-footer-price order-total-value"
+                    aria-label={priceLabel}
+                  >
+                    {priceLabel}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

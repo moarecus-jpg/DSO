@@ -176,6 +176,9 @@ export default {
   },
   items: {
     addItem: "Add item",
+    addFor: "Add for",
+    addForMe: "Me",
+    addForMeSuffix: " (me)",
     add: "Add",
     adding: "Adding {{current}}/{{total}}…",
     addOne: "Add 1 item",
@@ -202,8 +205,8 @@ export default {
     removeFromOrder: "Remove from order",
     removeFromOrderHint: "Removes this item from the order in DSO only.",
     removing: "Removing…",
-    addAllToCart: "Add all to cart ({{count}})",
-    addAllToCartProgress: "Adding {{current}}/{{total}}…",
+    addAllToCart: "Create a Discogs cart ({{count}})",
+    addAllToCartProgress: "Creating cart {{current}}/{{total}}…",
     addAllToCartHint:
       "Adds each listing to your Discogs cart one by one, then opens the cart. Allow pop-ups and stay logged in on discogs.com.",
     addAllToCartPopupBlocked:

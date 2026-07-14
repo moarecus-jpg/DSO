@@ -115,10 +115,11 @@ export function Session() {
     }
   }
 
-  async function handleAddRecord({ urls, onProgress }) {
+  async function handleAddRecord({ urls, forUserId, onProgress }) {
     setAddingRecord(true);
     const errors = [];
     let added = 0;
+    const targetUserId = forUserId ?? user?.id;
 
     try {
       for (let i = 0; i < urls.length; i++) {
@@ -126,7 +127,7 @@ export function Session() {
         try {
           await api(`/api/sessions/${id}/links`, {
             method: "POST",
-            body: JSON.stringify({ url: urls[i] }),
+            body: JSON.stringify({ url: urls[i], forUserId: targetUserId }),
           });
           added += 1;
         } catch (err) {
@@ -210,39 +211,48 @@ export function Session() {
   const isClosed = session.status === "closed";
   const recordCount = session.links?.length ?? 0;
   const canManageOrder = session.canManageOrder;
+  const showOrderFooter = recordCount > 0 || (canManageOrder && !isClosed);
 
-  const orderActions =
+  const footerLeadingActions =
+    canManageOrder && !isClosed ? (
+      <button
+        type="button"
+        className="order-sticky-footer-action-btn order-sticky-footer-action-btn--destructive"
+        onClick={handleCancel}
+        disabled={cancelling}
+        title={t("session.cancelOrder")}
+        aria-label={t("session.cancelOrder")}
+      >
+        <X size={14} strokeWidth={2.5} aria-hidden />
+        <span className="order-sticky-footer-action-label">
+          {cancelling ? t("session.cancelling") : t("session.cancelOrder")}
+        </span>
+      </button>
+    ) : null;
+
+  const footerActions =
     canManageOrder && (recordCount > 0 || !isClosed) ? (
-      <div className="order-session-actions">
+      <>
+        {recordCount > 0 && (
+          <DiscogsAddAllToCartButton
+            links={session.links}
+            disabled={isClosed}
+            variant="outline"
+            className="order-sticky-footer-action-btn order-sticky-footer-action-btn--secondary"
+          />
+        )}
         {!isClosed && (
           <button
             type="button"
-            className="btn btn-cancel-order"
-            onClick={handleCancel}
-            disabled={cancelling}
-            title={t("session.cancelOrder")}
+            className="order-sticky-footer-action-btn order-sticky-footer-action-btn--primary"
+            onClick={handleClose}
+            disabled={closing}
           >
-            <X size={18} strokeWidth={2.5} />
-            {cancelling ? t("session.cancelling") : t("session.cancelOrder")}
+            <Archive size={16} aria-hidden />
+            {closing ? t("session.closing") : t("session.closeOrder")}
           </button>
         )}
-        <div className="order-session-actions-end">
-          {recordCount > 0 && (
-            <DiscogsAddAllToCartButton links={session.links} disabled={isClosed} />
-          )}
-          {!isClosed && (
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={handleClose}
-              disabled={closing}
-            >
-              <Archive size={16} />
-              {closing ? t("session.closing") : t("session.closeOrder")}
-            </button>
-          )}
-        </div>
-      </div>
+      </>
     ) : null;
 
   return (
@@ -296,6 +306,7 @@ export function Session() {
         onSubmit={handleAddRecord}
         submitting={addingRecord}
         sellerUsername={session.seller_username}
+        currentUserId={user?.id}
       />
 
       <div className="members card">
@@ -337,12 +348,11 @@ export function Session() {
           posting={postingNote}
           onPostNote={handlePostNote}
         />
-        {orderActions}
       </section>
 
-      {recordCount > 0 && (
+      {showOrderFooter && (
         <OrderStickyFooter
-          memberTotals={session.memberTotals}
+          memberTotals={session.memberTotals ?? []}
           orderGrandTotal={session.orderGrandTotal}
           shippingValue={session.shipping_value}
           shippingCurrency={session.shipping_currency}
@@ -351,6 +361,8 @@ export function Session() {
           readOnly={isClosed || !session.canManageShipping}
           onSaveShipping={session.canManageShipping ? handleSaveShipping : undefined}
           savingShipping={savingShipping}
+          footerActions={footerActions}
+          footerLeadingActions={footerLeadingActions}
         />
       )}
     </div>
