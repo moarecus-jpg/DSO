@@ -145,7 +145,7 @@ export function Settings() {
         </label>
       </div>
 
-      <div className="card settings-card">
+      <div className="card settings-card" id="settings-email">
         <h2>{t("settings.emailTitle")}</h2>
         <p className="muted settings-privacy-hint">{t("settings.emailHint")}</p>
         {user?.hasRealEmail ? (
@@ -153,7 +153,14 @@ export function Settings() {
             <strong>{user.email}</strong>
           </p>
         ) : (
-          <form
+          <>
+            {user?.email && (
+              <p className="settings-placeholder-email muted">
+                {t("settings.currentPlaceholderEmail")}{" "}
+                <code>{user.email}</code>
+              </p>
+            )}
+            <form
             className="settings-email-form"
             onSubmit={async (e) => {
               e.preventDefault();
@@ -188,6 +195,7 @@ export function Settings() {
               {t("settings.saveEmail")}
             </button>
           </form>
+          </>
         )}
       </div>
 
@@ -259,7 +267,43 @@ export function Settings() {
         <h2>{t("settings.notificationsTitle")}</h2>
         <p className="muted settings-privacy-hint">{t("settings.notificationsHint")}</p>
         {!user?.hasRealEmail && (
-          <p className="fine-print muted">{t("settings.notificationsNeedEmail")}</p>
+          <div className="settings-notifications-email-prompt">
+            <p>{t("settings.notificationsNeedEmail")}</p>
+            <form
+              className="settings-email-form"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const form = e.currentTarget;
+                const email = form.email.value.trim();
+                try {
+                  await api("/auth/me/email", {
+                    method: "PATCH",
+                    body: JSON.stringify({ email }),
+                  });
+                  await refresh();
+                  setMessageType("ok");
+                  setMessage(t("settings.emailSaved"));
+                } catch (err) {
+                  setMessageType("warn");
+                  setMessage(err.message ?? t("common.error"));
+                }
+              }}
+            >
+              <label className="settings-email-field">
+                <span>{t("auth.email")}</span>
+                <input
+                  type="email"
+                  name="email"
+                  placeholder={t("auth.emailPlaceholder")}
+                  required
+                  autoComplete="email"
+                />
+              </label>
+              <button type="submit" className="btn btn-primary">
+                {t("settings.saveEmail")}
+              </button>
+            </form>
+          </div>
         )}
         <label className="settings-theme-toggle">
           <span>{t("settings.notifyNewOrder")}</span>

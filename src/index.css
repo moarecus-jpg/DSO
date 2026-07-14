@@ -1077,6 +1077,34 @@ code {
   box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.45);
 }
 
+.settings-placeholder-email {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+}
+
+.settings-notifications-email-prompt {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  background: rgba(251, 191, 36, 0.08);
+}
+
+.settings-notifications-email-prompt p {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  color: rgba(253, 230, 138, 0.95);
+}
+
+[data-theme="light"] .settings-notifications-email-prompt {
+  border-color: #fcd34d;
+  background: #fffbeb;
+}
+
+[data-theme="light"] .settings-notifications-email-prompt p {
+  color: #92400e;
+}
+
 .login-error {
   margin: 1rem 0 0;
   padding: 0.65rem 0.85rem;

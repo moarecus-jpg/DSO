@@ -290,7 +290,9 @@ export default {
     notificationsTitle: "E-poštna obvestila",
     notificationsHint:
       "Prejmi e-pošto, ko se v DSO kaj zgodi. Vsako obvestilo lahko vklopiš ali izklopiš.",
-    notificationsNeedEmail: "Za obvestila najprej vnesi e-poštni naslov zgoraj.",
+    notificationsNeedEmail:
+      "Za vklop obvestil vnesi pravi e-poštni naslov. Na placeholder naslove ne moremo pošiljati.",
+    currentPlaceholderEmail: "Trenutni placeholder:",
     notificationsSaved: "Nastavitve obvestil so shranjene.",
     notifyNewOrder: "Odprto novo naročilo",
     notifyOrderNote: "Komentar v naročilu, kjer sodelujem",

@@ -286,7 +286,9 @@ export default {
     notificationsTitle: "Email notifications",
     notificationsHint:
       "Receive emails when something happens in DSO. You can turn each type on or off.",
-    notificationsNeedEmail: "Add your email above to enable notifications.",
+    notificationsNeedEmail:
+      "Add your real email address to turn on notifications. We cannot send emails to placeholder addresses.",
+    currentPlaceholderEmail: "Current placeholder:",
     notificationsSaved: "Notification preferences saved.",
     notifyNewOrder: "New order opened",
     notifyOrderNote: "Note posted in an order I'm in",
