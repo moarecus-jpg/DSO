@@ -15,12 +15,13 @@ export function OrderStickyFooter({
   onSaveShipping,
   savingShipping = false,
 }) {
-  const { t, recordsLabel } = useLocale();
+  const { t } = useLocale();
   const [expanded, setExpanded] = useState(false);
 
   if (!memberTotals.length) return null;
 
-  const { total, currency, hasUnknown, count } = orderGrandTotal ?? {};
+  const { total, currency } = orderGrandTotal ?? {};
+  const priceLabel = formatPrice(total, currency);
 
   return (
     <>
@@ -56,41 +57,34 @@ export function OrderStickyFooter({
         )}
 
         <div className="order-sticky-footer-bar">
-          <div className="order-sticky-footer-main">
-            <div className="order-sticky-footer-row">
-              <button
-                type="button"
-                className="btn btn-primary order-sticky-footer-toggle"
-                onClick={() => setExpanded((open) => !open)}
-                aria-expanded={expanded}
-                aria-controls="order-sticky-details"
-                aria-label={
-                  expanded ? t("summary.hideDetails") : t("summary.showDetails")
-                }
-              >
-                <ChevronUp
-                  size={22}
-                  className={`order-sticky-footer-chevron${
-                    expanded ? " order-sticky-footer-chevron--open" : ""
-                  }`}
-                  aria-hidden
-                />
-              </button>
+          <div className="order-sticky-footer-row">
+            <button
+              type="button"
+              className="btn btn-primary order-sticky-footer-cell order-sticky-footer-toggle"
+              onClick={() => setExpanded((open) => !open)}
+              aria-expanded={expanded}
+              aria-controls="order-sticky-details"
+              aria-label={
+                expanded
+                  ? t("summary.hideDetails")
+                  : `${t("summary.showDetails")} (${priceLabel})`
+              }
+            >
+              <ChevronUp
+                size={24}
+                className={`order-sticky-footer-chevron${
+                  expanded ? " order-sticky-footer-chevron--open" : ""
+                }`}
+                aria-hidden
+              />
+            </button>
 
-              <span className="order-sticky-footer-total-label">{t("common.total")}</span>
-
-              <strong className="order-sticky-footer-total-price order-total-value">
-                {formatPrice(total, currency)}
-              </strong>
+            <div
+              className="order-sticky-footer-cell order-sticky-footer-price order-total-value"
+              aria-label={priceLabel}
+            >
+              {priceLabel}
             </div>
-
-            <p className="order-sticky-footer-meta muted">
-              {t("summary.footerMeta", {
-                total: t("common.total"),
-                items: recordsLabel(count ?? 0),
-              })}
-              {hasUnknown && t("common.someWithoutPrice")}
-            </p>
           </div>
         </div>
       </div>
