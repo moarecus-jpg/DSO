@@ -7,6 +7,7 @@ import {
   Moon,
   Package,
   Plus,
+  BarChart3,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
@@ -65,6 +66,13 @@ export function Sidebar() {
           >
             <Package size={18} />
             {t("nav.myItems")}
+          </NavLink>
+          <NavLink
+            to="/my-statistics"
+            className={({ isActive }) => `sidebar-link-v2${isActive ? " active" : ""}`}
+          >
+            <BarChart3 size={18} />
+            {t("nav.myStatistics")}
           </NavLink>
         </nav>
       </div>

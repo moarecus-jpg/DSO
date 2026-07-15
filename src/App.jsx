@@ -8,6 +8,7 @@ import { ResetPassword } from "./pages/ResetPassword.jsx";
 import { Home } from "./pages/Home.jsx";
 import { ClosedOrders } from "./pages/ClosedOrders.jsx";
 import { MyItems } from "./pages/MyItems.jsx";
+import { MyStatistics } from "./pages/MyStatistics.jsx";
 import { Session } from "./pages/Session.jsx";
 import { Settings } from "./pages/Settings.jsx";
 import { AdminUsers } from "./pages/AdminUsers.jsx";
@@ -35,6 +36,7 @@ function AppRoutes() {
         <Route path="/" element={<Home />} />
         <Route path="/closed" element={<ClosedOrders />} />
         <Route path="/my-items" element={<MyItems />} />
+        <Route path="/my-statistics" element={<MyStatistics />} />
         <Route path="/session/:id" element={<Session />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/admin/users" element={<AdminUsers />} />

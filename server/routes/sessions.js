@@ -19,6 +19,7 @@ import {
   listAllGroupSessions,
   listGroupSessions,
   listUserOrderedItems,
+  listUserStatisticsRows,
   publicUser,
   removeSessionLink,
 } from "../db.js";
@@ -36,6 +37,7 @@ import { parseDiscogsUrlList } from "../../shared/parseRecordUrl.js";
 import { DISPLAY_CURRENCY, toEurAmount } from "../../shared/currency.js";
 import { enrichSessionOrder, recordTitle } from "../../shared/orderTotals.js";
 import { sessionForViewer } from "../../shared/sessionPrivacy.js";
+import { computeUserStatistics } from "../../shared/userStatistics.js";
 import { resolveSellerInput } from "../discogs/resolveSeller.js";
 import { googleConfigured } from "../auth/google.js";
 import { discogsAppConfigured } from "../discogs/auth.js";
@@ -250,6 +252,13 @@ function listStatus(req) {
   return "open";
 }
 
+function statisticsStatus(req) {
+  const raw = req.query.status;
+  if (raw === "open") return "open";
+  if (raw === "closed") return "closed";
+  return "all";
+}
+
 async function fetchSellerAvatarUrl(username) {
   if (!discogsAppConfigured()) return null;
   try {
@@ -336,6 +345,37 @@ router.get("/my-items", requireUser, (req, res) => {
   }
   const rows = listUserOrderedItems(req.session.userId);
   res.json({ items: rows.map(serializeOrderedItem) });
+});
+
+function mockUserStatisticsRows(userId, status = "all") {
+  const rows = [];
+  for (const session of mockSessions) {
+    if (status !== "all" && (session.status ?? "open") !== status) continue;
+    for (const link of session.links ?? []) {
+      if (link.user_id !== userId) continue;
+      rows.push({
+        id: link.id,
+        price_value: link.price_value,
+        price_currency: link.price_currency,
+        created_at: link.created_at ?? session.created_at,
+        session_id: session.id,
+        session_status: session.status ?? "open",
+        session_created_at: session.created_at,
+        shipping_value: session.shipping_value,
+        shipping_currency: session.shipping_currency,
+        shipping_split_count: session.shipping_split_count,
+      });
+    }
+  }
+  return rows;
+}
+
+router.get("/my-statistics", requireUser, (req, res) => {
+  const status = statisticsStatus(req);
+  const rows = useMockSessions(req)
+    ? mockUserStatisticsRows(req.session.userId, status)
+    : listUserStatisticsRows(req.session.userId, status);
+  res.json(computeUserStatistics(rows));
 });
 
 router.post("/", requireUser, async (req, res) => {

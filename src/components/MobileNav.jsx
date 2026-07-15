@@ -1,5 +1,5 @@
 import { NavLink, useSearchParams } from "react-router-dom";
-import { Folder, Lock, Package, Plus, Settings } from "lucide-react";
+import { BarChart3, Folder, Lock, Package, Plus, Settings } from "lucide-react";
 import { useLocale } from "../hooks/useLocale.jsx";
 
 export function MobileNav() {
@@ -42,6 +42,14 @@ export function MobileNav() {
       >
         <Package size={20} strokeWidth={2} />
         <span>{t("nav.mobileItems")}</span>
+      </NavLink>
+
+      <NavLink
+        to="/my-statistics"
+        className={({ isActive }) => `mobile-nav-link${isActive ? " active" : ""}`}
+      >
+        <BarChart3 size={20} strokeWidth={2} />
+        <span>{t("nav.mobileStatistics")}</span>
       </NavLink>
 
       <NavLink

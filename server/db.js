@@ -778,6 +778,7 @@ export function listUserOrderedItems(userId) {
     .prepare(
       `SELECT sl.*, gs.id as session_id, gs.seller_username, gs.status as session_status,
               gs.order_number, gs.created_at as session_created_at,
+              gs.shipping_value, gs.shipping_currency, gs.shipping_split_count,
               ${EFFECTIVE_ORDERER_NAME_SQL} as user_name
        FROM session_links sl
        JOIN group_sessions gs ON gs.id = sl.session_id
@@ -788,6 +789,26 @@ export function listUserOrderedItems(userId) {
        ORDER BY gs.created_at DESC, sl.created_at DESC`
     )
     .all(userId);
+}
+
+export function listUserStatisticsRows(userId, status = "all") {
+  let statusClause = "";
+  if (status === "open" || status === "closed") {
+    statusClause = " AND gs.status = @status";
+  }
+
+  return db
+    .prepare(
+      `SELECT sl.id, sl.price_value, sl.price_currency, sl.created_at,
+              gs.id as session_id, gs.status as session_status,
+              gs.created_at as session_created_at,
+              gs.shipping_value, gs.shipping_currency, gs.shipping_split_count
+       FROM session_links sl
+       JOIN group_sessions gs ON gs.id = sl.session_id
+       WHERE sl.user_id = @userId${statusClause}
+       ORDER BY sl.created_at DESC`
+    )
+    .all({ userId, status });
 }
 
 export function updateMemberDisplayName(sessionId, memberUserId, displayName) {
