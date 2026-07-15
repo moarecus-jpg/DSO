@@ -50,29 +50,37 @@ export function Sidebar() {
               `sidebar-link-v2${isActive && !newOrderOpen ? " active" : ""}`
             }
           >
-            <Folder size={18} />
-            {t("nav.openOrders")}
+            <span className="sidebar-link-icon sidebar-link-icon--open" aria-hidden>
+              <Folder size={18} strokeWidth={2.1} />
+            </span>
+            <span className="sidebar-link-label">{t("nav.openOrders")}</span>
           </NavLink>
           <NavLink
             to="/closed"
             className={({ isActive }) => `sidebar-link-v2${isActive ? " active" : ""}`}
           >
-            <Lock size={18} />
-            {t("nav.closedOrders")}
+            <span className="sidebar-link-icon sidebar-link-icon--closed" aria-hidden>
+              <Lock size={18} strokeWidth={2.1} />
+            </span>
+            <span className="sidebar-link-label">{t("nav.closedOrders")}</span>
           </NavLink>
           <NavLink
             to="/my-items"
             className={({ isActive }) => `sidebar-link-v2${isActive ? " active" : ""}`}
           >
-            <Package size={18} />
-            {t("nav.myItems")}
+            <span className="sidebar-link-icon sidebar-link-icon--items" aria-hidden>
+              <Package size={18} strokeWidth={2.1} />
+            </span>
+            <span className="sidebar-link-label">{t("nav.myItems")}</span>
           </NavLink>
           <NavLink
             to="/my-statistics"
             className={({ isActive }) => `sidebar-link-v2${isActive ? " active" : ""}`}
           >
-            <BarChart3 size={18} />
-            {t("nav.myStatistics")}
+            <span className="sidebar-link-icon sidebar-link-icon--stats" aria-hidden>
+              <BarChart3 size={18} strokeWidth={2.1} />
+            </span>
+            <span className="sidebar-link-label">{t("nav.myStatistics")}</span>
           </NavLink>
         </nav>
       </div>
