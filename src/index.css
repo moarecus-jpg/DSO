@@ -1929,9 +1929,20 @@ code {
   font-weight: 600;
 }
 
+.order-summary-table th:last-child,
+.order-summary-table td.order-summary-amount {
+  text-align: right;
+}
+
 .order-summary-table tfoot td {
   border-bottom: none;
   padding-top: 0.75rem;
+  vertical-align: middle;
+}
+
+.order-summary-table tfoot td:nth-child(2) {
+  width: 3.5rem;
+  text-align: center;
 }
 
 .order-summary-subtotal td {
@@ -1947,6 +1958,8 @@ code {
   align-items: center;
   gap: 0.4rem;
   justify-content: flex-end;
+  margin-left: auto;
+  width: fit-content;
 }
 
 .order-summary-shipping-input {
@@ -1970,6 +1983,8 @@ code {
   flex-direction: column;
   align-items: flex-end;
   gap: 0.25rem;
+  margin-left: auto;
+  width: fit-content;
 }
 
 .order-summary-split-input {

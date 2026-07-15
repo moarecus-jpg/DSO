@@ -227,12 +227,13 @@ function requireUser(req, res, next) {
 
 function withOrderPermissions(session, userId) {
   const isAdmin = isOrderAdmin(session, userId);
+  const isCreator = isOrderCreator(session, userId);
   const viewed = sessionForViewer(session, userId, isAdmin);
   return {
     ...viewed,
     canManageMembers: isAdmin,
-    canManageShipping: isAdmin,
-    canManageOrder: isOrderCreator(session, userId),
+    canManageShipping: isCreator || isAdmin,
+    canManageOrder: isCreator,
   };
 }
 
@@ -408,8 +409,8 @@ router.patch("/:id/shipping", requireUser, (req, res) => {
   if (!existingSession) {
     return res.status(404).json({ error: "Session not found" });
   }
-  if (!isOrderAdmin(existingSession, req.session.userId)) {
-    return res.status(403).json({ error: "Samo admin lahko spreminja poštnino." });
+  if (!isOrderCreator(existingSession, req.session.userId) && !isOrderAdmin(existingSession, req.session.userId)) {
+    return res.status(403).json({ error: "Samo odpravitelj naročila lahko spreminja poštnino." });
   }
 
   const raw = req.body?.shippingValue;

@@ -368,8 +368,12 @@ export function Session() {
           shippingCurrency={session.shipping_currency}
           shippingSplitCount={session.shipping_split_count}
           memberCount={session.members?.length ?? 0}
-          readOnly={!session.canManageShipping}
-          onSaveShipping={session.canManageShipping ? handleSaveShipping : undefined}
+          readOnly={!(session.canManageShipping || session.canManageOrder)}
+          onSaveShipping={
+            session.canManageShipping || session.canManageOrder
+              ? handleSaveShipping
+              : undefined
+          }
           savingShipping={savingShipping}
           footerActions={footerActions}
           footerLeadingActions={footerLeadingActions}

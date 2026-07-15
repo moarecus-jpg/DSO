@@ -120,7 +120,7 @@ export function OrderSummary({
             <tr key={`${row.userId ?? ""}-${row.name}`}>
               <td>{row.name}</td>
               <td>{row.count}</td>
-              <td>
+              <td className="order-summary-amount">
                 {formatPrice(row.total, row.currency)}
                 {row.hasUnknownPrice && (
                   <span className="muted fine">{t("common.withoutPrice")}</span>
@@ -137,7 +137,7 @@ export function OrderSummary({
             <td>
               <strong>{count ?? 0}</strong>
             </td>
-            <td>
+            <td className="order-summary-amount">
               <strong>{formatPrice(itemsTotal, currency)}</strong>
               {hasUnknown && (
                 <span className="muted fine">{t("common.someWithoutPrice")}</span>
@@ -145,13 +145,14 @@ export function OrderSummary({
             </td>
           </tr>
           <tr className="order-summary-shipping">
-            <td colSpan={2}>
+            <td>
               <strong>{t("summary.shipping")}</strong>
               {!readOnly && (
                 <span className="muted fine">{t("summary.shippingHint")}</span>
               )}
             </td>
-            <td>
+            <td />
+            <td className="order-summary-amount">
               {readOnly ? (
                 <strong>{formatPrice(shipping, shipCur)}</strong>
               ) : (
@@ -179,13 +180,14 @@ export function OrderSummary({
             </td>
           </tr>
           <tr className="order-summary-shipping-split">
-            <td colSpan={2}>
+            <td>
               <strong>{t("summary.splitShipping")}</strong>
               {!readOnly && (
                 <span className="muted fine">{t("summary.peopleCount")}</span>
               )}
             </td>
-            <td>
+            <td />
+            <td className="order-summary-amount">
               {readOnly ? (
                 <span>
                   {t("summary.people", { count: computedSplit ?? "—" })}
@@ -229,10 +231,11 @@ export function OrderSummary({
             </td>
           </tr>
           <tr className="order-summary-grand">
-            <td colSpan={2}>
+            <td>
               <strong>{t("summary.totalWithShipping")}</strong>
             </td>
-            <td>
+            <td />
+            <td className="order-summary-amount">
               <strong className="order-total-value">
                 {formatPrice(total, currency)}
               </strong>
