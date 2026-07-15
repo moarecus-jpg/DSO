@@ -2063,7 +2063,11 @@ code {
   }
 
   .order-sticky-footer-panel {
-    padding-inline: 2.5rem;
+    padding-inline: 1.25rem;
+  }
+
+  .order-summary--embedded {
+    max-width: 34rem;
   }
 
   .order-sticky-footer-cluster {
@@ -2079,6 +2083,8 @@ code {
   padding: 1rem 1.25rem 0.5rem;
   background: var(--surface-1);
   border-top: 1px solid var(--border-strong);
+  display: flex;
+  justify-content: center;
 }
 
 .order-sticky-footer-members {
@@ -2096,8 +2102,10 @@ code {
 }
 
 .order-summary--embedded {
-  margin: 0;
+  margin: 0 auto;
   padding: 0;
+  width: 100%;
+  max-width: 32rem;
   background: transparent;
   border: none;
   box-shadow: none;
