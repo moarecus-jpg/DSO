@@ -14,6 +14,7 @@ import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { sellerMywantsUrl } from "../../shared/discogsUrls.js";
 import { displayOrderTitle } from "../../shared/orderTitle.js";
+import { orderPageTitle } from "../../shared/orderShare.js";
 
 export function Session() {
   const { id } = useParams();
@@ -45,6 +46,14 @@ export function Session() {
     setAddRecordOpen(false);
     loadSession().catch(console.error).finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!session) return undefined;
+    document.title = orderPageTitle(session);
+    return () => {
+      document.title = "DSO — Discogs Slovenia Orders";
+    };
+  }, [session]);
 
   useEffect(() => {
     if (searchParams.get("add") === "1") {

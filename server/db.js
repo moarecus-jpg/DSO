@@ -436,6 +436,21 @@ export function getGroupSession(id) {
   return withOrderTitle({ ...session, members, links, notes });
 }
 
+export function getGroupSessionShareMeta(id) {
+  const session = db
+    .prepare(
+      `SELECT gs.*,
+        (SELECT COUNT(*) FROM session_links WHERE session_id = gs.id) AS link_count,
+        (SELECT COUNT(DISTINCT sl.user_id)
+           FROM session_links sl
+          WHERE sl.session_id = gs.id) AS participant_count
+       FROM group_sessions gs
+       WHERE gs.id = ?`
+    )
+    .get(id);
+  return withOrderTitle(session);
+}
+
 export function listSessionNotes(sessionId) {
   return db
     .prepare(

@@ -3,10 +3,12 @@ import {
   listUsersForNewOrderNotifications,
   listSessionMembersForNotifications,
 } from "../db.js";
-
-function orderUrl(baseUrl, sessionId) {
-  return `${baseUrl.replace(/\/$/, "")}/session/${sessionId}`;
-}
+import { displayOrderTitle } from "../../shared/orderTitle.js";
+import {
+  orderEmailLinkLabel,
+  orderShareDescription,
+  orderShareUrl,
+} from "../../shared/orderShare.js";
 
 async function notifyUsers(users, { subject, text, html }) {
   for (const user of users) {
@@ -23,13 +25,15 @@ export async function notifyNewOrderOpened({ baseUrl, session, excludeUserId }) 
   const users = listUsersForNewOrderNotifications(excludeUserId);
   if (!users.length) return;
 
-  const title = session.title ?? session.seller_username;
-  const url = orderUrl(baseUrl, session.id);
+  const title = displayOrderTitle(session);
+  const url = orderShareUrl(baseUrl, session.id);
+  const linkLabel = orderEmailLinkLabel(session, { locale: "en", action: "open" });
+  const summary = orderShareDescription(session, "en");
   const subject = `DSO: New order opened — ${title}`;
-  const text = `A new group order was opened: ${title}\n\nSeller: @${session.seller_username}\n\nOpen order: ${url}`;
+  const text = `A new group order was opened: ${title}\n\n${summary}\n\n${linkLabel}: ${url}`;
   const html = `<p>A new group order was opened: <strong>${title}</strong></p>
-<p>Seller: @${session.seller_username}</p>
-<p><a href="${url}">Open order</a></p>`;
+<p>${summary}</p>
+<p><a href="${url}">${linkLabel}</a></p>`;
 
   await notifyUsers(users, { subject, text, html });
 }
@@ -44,15 +48,16 @@ export async function notifyOrderNotePosted({
   const users = listSessionMembersForNotifications(session.id, "note", excludeUserId);
   if (!users.length) return;
 
-  const title = session.title ?? session.seller_username;
-  const url = orderUrl(baseUrl, session.id);
+  const title = displayOrderTitle(session);
+  const url = orderShareUrl(baseUrl, session.id);
+  const linkLabel = orderEmailLinkLabel(session, { locale: "en", action: "view" });
   const preview =
     note.body.length > 200 ? `${note.body.slice(0, 200)}…` : note.body;
   const subject = `DSO: New note on ${title}`;
-  const text = `${authorName} posted a note on ${title}:\n\n"${preview}"\n\nView order: ${url}`;
+  const text = `${authorName} posted a note on ${title}:\n\n"${preview}"\n\n${linkLabel}: ${url}`;
   const html = `<p><strong>${authorName}</strong> posted a note on <strong>${title}</strong>:</p>
 <blockquote>${preview.replace(/\n/g, "<br>")}</blockquote>
-<p><a href="${url}">View order</a></p>`;
+<p><a href="${url}">${linkLabel}</a></p>`;
 
   await notifyUsers(users, { subject, text, html });
 }
@@ -61,12 +66,13 @@ export async function notifyOrderClosed({ baseUrl, session, excludeUserId }) {
   const users = listSessionMembersForNotifications(session.id, "closed", excludeUserId);
   if (!users.length) return;
 
-  const title = session.title ?? session.seller_username;
-  const url = orderUrl(baseUrl, session.id);
+  const title = displayOrderTitle(session);
+  const url = orderShareUrl(baseUrl, session.id);
+  const linkLabel = orderEmailLinkLabel(session, { locale: "en", action: "view" });
   const subject = `DSO: Order closed — ${title}`;
-  const text = `The group order ${title} has been closed.\n\nView order: ${url}`;
+  const text = `The group order ${title} has been closed.\n\n${linkLabel}: ${url}`;
   const html = `<p>The group order <strong>${title}</strong> has been closed.</p>
-<p><a href="${url}">View order</a></p>`;
+<p><a href="${url}">${linkLabel}</a></p>`;
 
   await notifyUsers(users, { subject, text, html });
 }

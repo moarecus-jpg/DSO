@@ -9,10 +9,16 @@ import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.js";
 import adminRoutes from "./routes/admin.js";
 import sessionRoutes from "./routes/sessions.js";
-import { getDatabaseInfo } from "./db.js";
+import { getDatabaseInfo, getGroupSessionShareMeta } from "./db.js";
 import { sessionStore } from "./sessionStore.js";
-import { discogsCallbackUrl } from "./appUrl.js";
+import { appBaseUrl, discogsCallbackUrl } from "./appUrl.js";
 import { googleCallbackUrl, googleConfigured } from "./auth/google.js";
+import { injectShareMeta } from "./shareHtml.js";
+import {
+  orderPageTitle,
+  orderShareDescription,
+  orderShareUrl,
+} from "../shared/orderShare.js";
 
 dotenv.config();
 
@@ -78,12 +84,35 @@ app.use("/auth/admin", adminRoutes);
 app.use("/api/sessions", sessionRoutes);
 
 if (serveClient) {
+  const indexHtmlPath = path.join(distDir, "index.html");
+  let indexHtmlTemplate = fs.readFileSync(indexHtmlPath, "utf8");
+
   app.use(express.static(distDir));
+
+  app.get("/session/:id", (req, res, next) => {
+    const session = getGroupSessionShareMeta(req.params.id);
+    if (!session) {
+      return res.sendFile(indexHtmlPath, (err) => {
+        if (err) next(err);
+      });
+    }
+
+    const baseUrl = appBaseUrl(req);
+    const pageUrl = orderShareUrl(baseUrl, session.id);
+    const html = injectShareMeta(indexHtmlTemplate, {
+      title: orderPageTitle(session),
+      description: orderShareDescription(session),
+      url: pageUrl,
+      imageUrl: `${baseUrl}/dso-icon.png`,
+    });
+    res.type("html").send(html);
+  });
+
   app.get("*", (req, res, next) => {
     if (req.path.startsWith("/api") || req.path.startsWith("/auth")) {
       return next();
     }
-    res.sendFile(path.join(distDir, "index.html"), (err) => {
+    res.sendFile(indexHtmlPath, (err) => {
       if (err) next(err);
     });
   });
