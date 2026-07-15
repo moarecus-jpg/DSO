@@ -1,5 +1,6 @@
 import sl from "./locales/sl.js";
 import en from "./locales/en.js";
+import { isTechnicalError } from "../utils/sanitizeError.js";
 
 export const LOCALES = ["sl", "en"];
 export const DEFAULT_LOCALE = "sl";
@@ -50,6 +51,8 @@ const SERVER_ERROR_MAP = {
   "Neveljaven ciljni datum.": "errors.invalidTargetDate",
   "Samo odpravitelj naročila lahko nastavi ciljni datum.":
     "errors.creatorTargetDateOnly",
+  "Samo odpravitelj naročila lahko spreminja poštnino.":
+    "errors.creatorShippingOnly",
   "Ciljnega datuma ni bilo mogoče shraniti.": "errors.saveTargetDateFailed",
   "Session not found": "errors.sessionNotFound",
   "URL is required": "errors.urlRequired",
@@ -98,6 +101,11 @@ export function t(key, params = {}, locale = activeLocale) {
 
 export function translateApiError(message, locale = activeLocale) {
   if (!message) return t("common.error", {}, locale);
+
+  if (isTechnicalError(message)) {
+    console.error("[API] Technical error hidden from user:", message);
+    return t("common.error", {}, locale);
+  }
 
   const mapped = SERVER_ERROR_MAP[message];
   if (mapped) return t(mapped, {}, locale);

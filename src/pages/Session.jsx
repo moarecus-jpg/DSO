@@ -31,6 +31,8 @@ export function Session() {
   const [removingLinkId, setRemovingLinkId] = useState(null);
   const [postingNote, setPostingNote] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [footerExpanded, setFooterExpanded] = useState(false);
+  const [shippingError, setShippingError] = useState(null);
 
   function loadSession() {
     return api(`/api/sessions/${id}`).then((d) => {
@@ -83,6 +85,7 @@ export function Session() {
     shippingSplitCount,
   }) {
     setSavingShipping(true);
+    setShippingError(null);
     try {
       const { session: updated } = await api(`/api/sessions/${id}/shipping`, {
         method: "PATCH",
@@ -94,7 +97,8 @@ export function Session() {
       });
       setSession(updated);
     } catch (err) {
-      alert(err.message);
+      setShippingError(err.message ?? t("errors.saveShippingFailed"));
+      setFooterExpanded(true);
     } finally {
       setSavingShipping(false);
     }
@@ -266,7 +270,11 @@ export function Session() {
     ) : null;
 
   return (
-    <div className="page page-detail page-session-with-footer">
+    <div
+      className={`page page-detail page-session-with-footer${
+        footerExpanded ? " page-session-with-footer--expanded" : ""
+      }`}
+    >
       <Link to={isClosed ? "/closed" : "/"} className="back-link">
         <ArrowLeft size={16} />{" "}
         {isClosed ? t("nav.closedOrders") : t("nav.openOrders")}
@@ -377,6 +385,8 @@ export function Session() {
           savingShipping={savingShipping}
           footerActions={footerActions}
           footerLeadingActions={footerLeadingActions}
+          onExpandedChange={setFooterExpanded}
+          shippingError={shippingError}
         />
       )}
     </div>

@@ -360,6 +360,7 @@ export default {
     linkNotInOrder: "Vnos ni v tem naročilu.",
     saveNameFailed: "Imena ni bilo mogoče shraniti.",
     saveShippingFailed: "Poštnine ni bilo mogoče shraniti.",
+    creatorShippingOnly: "Poštnino lahko spreminja samo odpravitelj naročila.",
     noLinksAdded: "Nobena povezava ni bila dodana.",
     enterAtLeastOneLink: "Vnesi vsaj eno Discogs povezavo.",
     invalidDiscogsLink: "Neveljavna Discogs povezava.",

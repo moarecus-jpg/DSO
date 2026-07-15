@@ -41,6 +41,7 @@ import { googleConfigured } from "../auth/google.js";
 import { discogsAppConfigured } from "../discogs/auth.js";
 import { discogsOAuthConfigured } from "../discogs/oauth.js";
 import { canRemoveSessionLink, isOrderAdmin, isOrderCreator } from "../auth/orderAdmin.js";
+import { publicErrorMessage } from "../utils/publicError.js";
 import { appBaseUrl } from "../appUrl.js";
 import {
   notifyNewOrderOpened,
@@ -229,8 +230,13 @@ function withOrderPermissions(session, userId) {
   const isAdmin = isOrderAdmin(session, userId);
   const isCreator = isOrderCreator(session, userId);
   const viewed = sessionForViewer(session, userId, isAdmin);
+  const shippingValue =
+    viewed.shipping_value != null && Number.isNaN(Number(viewed.shipping_value))
+      ? null
+      : viewed.shipping_value;
   return {
     ...viewed,
+    shipping_value: shippingValue,
     canManageMembers: isAdmin,
     canManageShipping: isCreator || isAdmin,
     canManageOrder: isCreator,
@@ -467,7 +473,10 @@ router.patch("/:id/shipping", requireUser, (req, res) => {
     if (!updated) return res.status(404).json({ error: "Session not found" });
     res.json({ session: withOrderPermissions(updated, req.session.userId) });
   } catch (err) {
-    res.status(400).json({ error: err.message ?? "Poštnine ni bilo mogoče shraniti." });
+    console.error("Shipping update failed:", err);
+    res.status(400).json({
+      error: publicErrorMessage(err, "Poštnine ni bilo mogoče shraniti."),
+    });
   }
 });
 

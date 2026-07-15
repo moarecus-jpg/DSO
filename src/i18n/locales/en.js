@@ -355,6 +355,7 @@ export default {
     linkNotInOrder: "Entry is not in this order.",
     saveNameFailed: "Could not save the name.",
     saveShippingFailed: "Could not save shipping.",
+    creatorShippingOnly: "Only the person who opened the order can edit shipping.",
     noLinksAdded: "No links were added.",
     enterAtLeastOneLink: "Enter at least one Discogs link.",
     invalidDiscogsLink: "Invalid Discogs link.",
