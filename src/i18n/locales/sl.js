@@ -144,6 +144,16 @@ export default {
     closeOrderShort: "Zaključi",
     closing: "Zaključujem…",
     openWantlist: "Odpri Wantlisto",
+    wantlistTitle: "Iz tvoje wantliste pri tem sellerju",
+    wantlistLoading: "Nalagam ujemanja z wantlisto…",
+    wantlistEmpty:
+      "Noben item z tvoje wantliste pri tem sellerju trenutno ni naprodaj.",
+    wantlistConnect:
+      "Poveži Discogs račun v Nastavitvah, da tukaj vidiš ujemajoče listinge.",
+    wantlistCount: "{{count}} listingov iz tvoje wantliste",
+    wantlistAdd: "Dodaj v naročilo",
+    wantlistAdding: "Dodajam…",
+    openListing: "Odpri",
     addItem: "Dodaj Item",
     emptyTitle: "Naročilo je prazno",
     emptyBodyBefore: "Dodaj Item s ",
