@@ -5,7 +5,7 @@ import { api } from "../api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
 
-export function NotificationToggle({ className = "" }) {
+export function NotificationToggle({ className = "", variant = "sidebar" }) {
   const { user, refresh } = useAuth();
   const { t } = useLocale();
   const [saving, setSaving] = useState(false);
@@ -37,6 +37,19 @@ export function NotificationToggle({ className = "" }) {
   }
 
   if (!canNotify) {
+    if (variant === "icon") {
+      return (
+        <Link
+          to="/settings"
+          className={`mobile-topbar-icon-btn${className ? ` ${className}` : ""}`}
+          aria-label={t("nav.notifications")}
+          title={t("settings.notificationsNeedEmail")}
+        >
+          <Bell size={18} aria-hidden />
+        </Link>
+      );
+    }
+
     return (
       <Link
         to="/settings"
@@ -51,6 +64,24 @@ export function NotificationToggle({ className = "" }) {
         </span>
         <span className="sidebar-theme-toggle-track" aria-hidden />
       </Link>
+    );
+  }
+
+  if (variant === "icon") {
+    return (
+      <button
+        type="button"
+        className={`mobile-topbar-icon-btn${
+          active ? " mobile-topbar-icon-btn--active" : ""
+        }${className ? ` ${className}` : ""}`}
+        onClick={() => handleChange(!active)}
+        disabled={saving}
+        aria-label={t("nav.notifications")}
+        aria-pressed={active}
+        title={t("settings.notificationsHint")}
+      >
+        <Bell size={18} aria-hidden />
+      </button>
     );
   }
 

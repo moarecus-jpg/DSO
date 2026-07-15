@@ -1,7 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Settings, Sun } from "lucide-react";
 import { BrandMark } from "./BrandMark.jsx";
 import { LanguageToggle } from "./LanguageToggle.jsx";
+import { NotificationToggle } from "./NotificationToggle.jsx";
 import { StealthModeToggle } from "./StealthModeToggle.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { useTheme } from "../hooks/useTheme.jsx";
@@ -25,6 +26,19 @@ export function MobileTopBar() {
         <LanguageToggle compact hideLabel className="mobile-topbar-lang" />
 
         <StealthModeToggle variant="icon" />
+
+        <NotificationToggle variant="icon" />
+
+        <Link
+          to="/settings"
+          className={`mobile-topbar-icon-btn${
+            pathname === "/settings" ? " mobile-topbar-icon-btn--active" : ""
+          }`}
+          aria-label={t("settings.title")}
+          title={t("settings.title")}
+        >
+          <Settings size={18} />
+        </Link>
 
         <button
           type="button"
