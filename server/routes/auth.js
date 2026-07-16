@@ -53,14 +53,10 @@ function clientUrl(req) {
   return appBaseUrl(req);
 }
 
-function discogsErrorRedirect(req, res, reason = "unknown", detail) {
-  const url = new URL("/settings", clientUrl(req));
-  url.searchParams.set("discogs", "error");
-  url.searchParams.set("reason", reason);
-  if (detail) {
-    url.searchParams.set("detail", String(detail).slice(0, 200));
-  }
-  return res.redirect(`${url.pathname}${url.search}`);
+function discogsErrorRedirect(req, res, reason = "unknown") {
+  return res.redirect(
+    `${clientUrl(req)}/settings?discogs=error&reason=${encodeURIComponent(reason)}`
+  );
 }
 
 async function ensureUserDiscogsAvatar(user) {
@@ -360,7 +356,7 @@ router.get("/discogs", async (req, res) => {
       return res.redirect(url);
     } catch (err) {
       console.error("Discogs OAuth start:", err);
-      return discogsErrorRedirect(req, res, "start", err.message);
+      return discogsErrorRedirect(req, res, "start");
     }
   }
 
@@ -415,7 +411,7 @@ router.get("/discogs/callback", async (req, res) => {
     res.redirect(`${clientUrl(req)}/settings?discogs=connected`);
   } catch (err) {
     console.error("Discogs OAuth callback:", err);
-    return discogsErrorRedirect(req, res, "callback", err.message);
+    return discogsErrorRedirect(req, res, "callback");
   }
 });
 

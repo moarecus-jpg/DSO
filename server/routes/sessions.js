@@ -28,10 +28,6 @@ import {
   getDiscogsUserProfile,
   getUserWantlist,
 } from "../discogs/client.js";
-import {
-  fetchSellerMywantsListings,
-  marketplaceScraperEnabled,
-} from "../discogs/marketplaceScraper.js";
 import { sellerMywantsUrl } from "../../shared/discogsUrls.js";
 import { matchWantlistToInventory, parseDiscogsUrl } from "../discogs/match.js";
 import { MOCK_INVENTORY, MOCK_SESSION, MOCK_USER, MOCK_USER_2, MOCK_WANTLIST } from "../mock.js";
@@ -152,9 +148,8 @@ async function wantlistMatchesForUser(user, seller) {
     seller,
     user?.discogs_username ?? null
   );
-  const discogsUsername = user?.discogs_username?.trim().replace(/^@/, "");
 
-  if (!discogsUsername) {
+  if (!user?.discogs_token || !user.discogs_username) {
     return {
       connected: false,
       matches: [],
@@ -163,69 +158,47 @@ async function wantlistMatchesForUser(user, seller) {
     };
   }
 
-  if (useMockDiscogs) {
-    return {
-      connected: true,
-      matches: matchWantlistToInventory(MOCK_WANTLIST, MOCK_INVENTORY),
-      inventoryCount: null,
-      discogsMywantsUrl,
-      scanNote:
-        "Isti izbor kot na Discogs /seller/…/mywants — demo podatki.",
-    };
-  }
-
-  if (marketplaceScraperEnabled()) {
-    try {
-      const matches = await fetchSellerMywantsListings(seller, discogsUsername);
-      return {
-        connected: true,
-        matches,
-        inventoryCount: null,
-        discogsMywantsUrl,
-        scanNote:
-          "Seller mywants prek Discogs Marketplace (enako kot /seller/…/mywants?user=…).",
-      };
-    } catch (err) {
-      console.warn("Discogs marketplace scraper:", err.message);
-      const canFallback =
-        user?.discogs_token &&
-        user.discogs_token !== "mock" &&
-        discogsAppConfigured();
-      if (!canFallback) {
-        throw err;
-      }
-    }
-  }
-
-  if (!discogsAppConfigured()) {
+  if (!useMockDiscogs && !discogsAppConfigured()) {
     throw new Error(
       "V .env manjkata DISCOGS_CONSUMER_KEY in DISCOGS_CONSUMER_SECRET (Discogs Developer aplikacija)."
     );
   }
 
-  const wantlist = await getUserWantlist(
-    discogsUsername,
-    user.discogs_token,
-    user.discogs_token_secret
-  );
+  let wantlist;
+  if (useMockDiscogs) {
+    wantlist = MOCK_WANTLIST;
+  } else {
+    wantlist = await getUserWantlist(
+      user.discogs_username,
+      user.discogs_token,
+      user.discogs_token_secret
+    );
+  }
 
-  const releaseIds = wantlist
-    .map((w) => w.id ?? w.basic_information?.id)
-    .filter((id) => id != null);
-  const inventory = await fetchInventoryForReleaseIds(
-    seller,
-    releaseIds,
-    user.discogs_token,
-    user.discogs_token_secret
-  );
+  let inventory;
+  let scanNote = null;
+  if (useMockDiscogs) {
+    inventory = MOCK_INVENTORY;
+  } else {
+    const releaseIds = wantlist
+      .map((w) => w.id ?? w.basic_information?.id)
+      .filter((id) => id != null);
+    inventory = await fetchInventoryForReleaseIds(
+      seller,
+      releaseIds,
+      user.discogs_token,
+      user.discogs_token_secret
+    );
+    scanNote =
+      "Isti izbor kot na Discogs /seller/…/mywants — prek API (tvoja wantlist + zaloga sellerja).";
+  }
 
   return {
     connected: true,
     matches: matchWantlistToInventory(wantlist, inventory),
     inventoryCount: null,
     discogsMywantsUrl,
-    scanNote:
-      "Isti izbor kot na Discogs /seller/…/mywants — prek uradnega Discogs API.",
+    scanNote,
   };
 }
 

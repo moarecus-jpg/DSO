@@ -9,7 +9,6 @@ import { OrderStickyFooter } from "../components/OrderStickyFooter.jsx";
 import { OrderTargetDate } from "../components/OrderTargetDate.jsx";
 import { OrderNotes } from "../components/OrderNotes.jsx";
 import { RecordList } from "../components/RecordList.jsx";
-import { WantlistPicks } from "../components/WantlistPicks.jsx";
 import { api } from "../api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
@@ -35,7 +34,6 @@ export function Session() {
   const [loading, setLoading] = useState(true);
   const [footerExpanded, setFooterExpanded] = useState(false);
   const [shippingError, setShippingError] = useState(null);
-  const [addingWantlistListingId, setAddingWantlistListingId] = useState(null);
 
   function loadSession() {
     return api(`/api/sessions/${id}`).then((d) => {
@@ -127,18 +125,6 @@ export function Session() {
       alert(err.message);
     } finally {
       setSavingTargetDate(false);
-    }
-  }
-
-  async function handleAddWantlistListing(url, listingId) {
-    setAddingWantlistListingId(listingId);
-    try {
-      await handleAddRecord({
-        urls: [url],
-        forUserId: user?.id,
-      });
-    } finally {
-      setAddingWantlistListingId(null);
     }
   }
 
@@ -360,14 +346,6 @@ export function Session() {
         readOnly={isClosed || !canManageOrder}
         saving={savingTargetDate}
         onSave={canManageOrder ? handleSaveTargetDate : undefined}
-      />
-
-      <WantlistPicks
-        sessionId={session.id}
-        sellerUsername={session.seller_username}
-        isClosed={isClosed}
-        onAddListing={!isClosed ? handleAddWantlistListing : undefined}
-        addingListingId={addingWantlistListingId}
       />
 
       <section>

@@ -1354,41 +1354,6 @@ code {
   margin-top: 0.25rem;
 }
 
-.wantlist-picks-list {
-  max-height: none;
-}
-
-.wantlist-pick-price {
-  font-size: 0.88rem;
-  font-weight: 600;
-}
-
-.wantlist-pick-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.35rem;
-  flex-shrink: 0;
-}
-
-.wantlist-pick-actions .btn,
-.wantlist-pick-actions .discogs-add-to-cart {
-  justify-content: center;
-  white-space: nowrap;
-}
-
-@media (max-width: 768px) {
-  .modal-wantlist-pick {
-    flex-wrap: wrap;
-  }
-
-  .wantlist-pick-actions {
-    width: 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-}
-
 .inline-code {
   font-size: 0.85em;
   padding: 0.1rem 0.35rem;

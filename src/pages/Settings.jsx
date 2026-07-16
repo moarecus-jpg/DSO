@@ -49,19 +49,15 @@ export function Settings() {
       if (reason === "session") {
         setMessage(t("settings.sessionError"));
       } else if (reason === "start") {
-        const detail = params.get("detail");
         setMessage(
           <>
             {t("settings.startError")} <code>{callback}</code>
-            {detail ? <> — {detail}</> : null}
           </>
         );
       } else if (reason === "callback") {
-        const detail = params.get("detail");
         setMessage(
           <>
             {t("settings.callbackError")} <code>{callback}</code>
-            {detail ? <> — {detail}</> : null}
           </>
         );
       } else {
