@@ -16,7 +16,10 @@ const Currency = requireFromPkg("./data/currency.data.js").default;
 const extractLegacy = requireFromPkg("./scrapers/extractors/legacy.extractor.js")
   .default;
 
-const MAX_PAGES = 40;
+/** Cap pages so the order page does not hang on huge mywants result sets. */
+const MAX_PAGES = 3;
+const PAGE_TIMEOUT_MS = 15_000;
+const TOTAL_TIMEOUT_MS = 25_000;
 
 function parseMarketplacePrice(raw) {
   if (!raw) return { value: null, currency: null };
@@ -68,6 +71,19 @@ function buildMywantsUrl(seller, username, page, limit = 100) {
   return `${base}?${params.toString()}`;
 }
 
+function withTimeout(promise, ms, label) {
+  let timer;
+  return Promise.race([
+    promise.finally(() => clearTimeout(timer)),
+    new Promise((_, reject) => {
+      timer = setTimeout(
+        () => reject(new Error(`${label} timed out after ${ms}ms`)),
+        ms
+      );
+    }),
+  ]);
+}
+
 async function scrapeMywantsPage(browser, seller, username, page) {
   const url = buildMywantsUrl(seller, username, page);
   const context = await browser.newContext({
@@ -83,7 +99,10 @@ async function scrapeMywantsPage(browser, seller, username, page) {
       Object.assign(globalThis, globals);
     }, { Country, Currency });
 
-    const response = await browserPage.goto(url, { waitUntil: "domcontentloaded" });
+    const response = await browserPage.goto(url, {
+      waitUntil: "domcontentloaded",
+      timeout: PAGE_TIMEOUT_MS,
+    });
     await browserPage.evaluate(() => {
       window.__name ??= (func) => func;
     });
@@ -104,12 +123,18 @@ async function scrapeMywantsPage(browser, seller, username, page) {
   }
 }
 
+let stealthInstalled = false;
+
 async function launchBrowser() {
-  chromium.use(StealthPlugin());
+  if (!stealthInstalled) {
+    chromium.use(StealthPlugin());
+    stealthInstalled = true;
+  }
   return chromium.launch({
     headless: true,
     chromiumSandbox: false,
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    timeout: 15_000,
   });
 }
 
@@ -120,29 +145,52 @@ export async function fetchSellerMywantsListings(seller, username) {
     throw new Error("Seller in Discogs uporabniško ime sta obvezna.");
   }
 
-  const browser = await launchBrowser();
+  let browser;
+  const closeBrowser = async () => {
+    if (browser) {
+      await browser.close().catch(() => {});
+      browser = null;
+    }
+  };
 
   try {
-    const allItems = [];
-    let page = 1;
-    let totalPages = 1;
+    return await withTimeout(
+      (async () => {
+        try {
+          browser = await launchBrowser();
+        } catch (err) {
+          throw new Error(
+            `Playwright Chromium ni na voljo (${err.message}). Preveri Docker/Playwright namestitev ali nastavi DISCOGS_MARKETPLACE_DISABLED=true.`
+          );
+        }
 
-    while (page <= totalPages && page <= MAX_PAGES) {
-      const { items, total } = await scrapeMywantsPage(
-        browser,
-        cleanSeller,
-        cleanUser,
-        page
-      );
-      allItems.push(...items);
-      totalPages = Math.max(Math.ceil(total / 100), 1);
-      page += 1;
-      if (!items.length) break;
-    }
+        const allItems = [];
+        let page = 1;
+        let totalPages = 1;
 
-    return allItems.map(mapMarketplaceItemToMatch);
+        while (page <= totalPages && page <= MAX_PAGES) {
+          const { items, total } = await scrapeMywantsPage(
+            browser,
+            cleanSeller,
+            cleanUser,
+            page
+          );
+          allItems.push(...items);
+          totalPages = Math.max(Math.ceil(Number(total) / 100) || 1, 1);
+          page += 1;
+          if (!items.length) break;
+        }
+
+        return allItems.map(mapMarketplaceItemToMatch);
+      })(),
+      TOTAL_TIMEOUT_MS,
+      "Discogs marketplace scrape"
+    );
+  } catch (err) {
+    await closeBrowser();
+    throw err;
   } finally {
-    await browser.close();
+    await closeBrowser();
   }
 }
 

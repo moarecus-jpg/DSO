@@ -15,7 +15,12 @@ export async function api(path, options = {}) {
         ...options.headers,
       },
     });
-  } catch {
+  } catch (err) {
+    if (err?.name === "AbortError" || options.signal?.aborted) {
+      const abortErr = new Error(t("common.networkError", {}, locale));
+      abortErr.name = "AbortError";
+      throw abortErr;
+    }
     throw new Error(t("common.networkError", {}, locale));
   }
 

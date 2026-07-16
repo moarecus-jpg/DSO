@@ -40,9 +40,12 @@ export function WantlistPicks({
 
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30_000);
+
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
-    api(`/api/sessions/${sessionId}/my-matches`)
+    api(`/api/sessions/${sessionId}/my-matches`, { signal: controller.signal })
       .then((data) => {
         if (cancelled) return;
         setState({
@@ -56,6 +59,7 @@ export function WantlistPicks({
       })
       .catch((err) => {
         if (cancelled) return;
+        const aborted = err?.name === "AbortError" || controller.signal.aborted;
         setState({
           loading: false,
           connected: false,
@@ -65,12 +69,17 @@ export function WantlistPicks({
             user?.discogsUsername
           ),
           scanNote: null,
-          error: err.message ?? t("common.error"),
+          error: aborted
+            ? t("session.wantlistTimeout")
+            : err.message ?? t("common.error"),
         });
-      });
+      })
+      .finally(() => clearTimeout(timeoutId));
 
     return () => {
       cancelled = true;
+      clearTimeout(timeoutId);
+      controller.abort();
     };
   }, [sessionId, sellerUsername, user?.discogsUsername, t]);
 

@@ -146,6 +146,8 @@ export default {
     openWantlist: "Odpri Wantlisto",
     wantlistTitle: "Iz tvoje wantliste pri tem sellerju",
     wantlistLoading: "Nalagam ujemanja z wantlisto…",
+    wantlistTimeout:
+      "Wantlista je trajala predolgo (Discogs marketplace scrape). Poskusi znova ali odpri Discogs wantlist spodaj.",
     wantlistEmpty:
       "Noben item z tvoje wantliste pri tem sellerju trenutno ni naprodaj.",
     wantlistConnect:

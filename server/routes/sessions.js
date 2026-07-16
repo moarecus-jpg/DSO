@@ -187,7 +187,11 @@ async function wantlistMatchesForUser(user, seller) {
       };
     } catch (err) {
       console.warn("Discogs marketplace scraper:", err.message);
-      if (!user?.discogs_token || !discogsAppConfigured()) {
+      const canFallback =
+        user?.discogs_token &&
+        user.discogs_token !== "mock" &&
+        discogsAppConfigured();
+      if (!canFallback) {
         throw err;
       }
     }

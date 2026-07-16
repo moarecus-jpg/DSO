@@ -145,6 +145,8 @@ export default {
     openWantlist: "Open wantlist",
     wantlistTitle: "From your wantlist at this seller",
     wantlistLoading: "Loading wantlist matches…",
+    wantlistTimeout:
+      "Wantlist took too long (Discogs marketplace scrape). Try again, or open the Discogs wantlist link below.",
     wantlistEmpty: "None of your wantlist items are listed for sale by this seller.",
     wantlistConnect:
       "Connect your Discogs account in Settings to see matching listings here (Discogs username required).",
