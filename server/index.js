@@ -9,6 +9,7 @@ import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.js";
 import adminRoutes from "./routes/admin.js";
 import sessionRoutes from "./routes/sessions.js";
+import usersRoutes from "./routes/users.js";
 import { getDatabaseInfo, getGroupSessionShareMeta } from "./db.js";
 import { sessionStore } from "./sessionStore.js";
 import { appBaseUrl, discogsCallbackUrl } from "./appUrl.js";
@@ -82,6 +83,7 @@ app.get("/api/health", (req, res) => {
 app.use("/auth", authRoutes);
 app.use("/auth/admin", adminRoutes);
 app.use("/api/sessions", sessionRoutes);
+app.use("/api/users", usersRoutes);
 
 if (serveClient) {
   const indexHtmlPath = path.join(distDir, "index.html");
