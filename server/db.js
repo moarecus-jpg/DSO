@@ -959,6 +959,25 @@ export function listUsersForAssignment() {
     }));
 }
 
+export function listPublicUsers() {
+  return db
+    .prepare(
+      `SELECT id, email, name, username, picture, created_at, discogs_username
+       FROM users
+       ORDER BY datetime(created_at) DESC, name ASC`
+    )
+    .all()
+    .map((row) => ({
+      id: row.id,
+      email: row.email,
+      name: row.name ?? null,
+      username: row.username ?? null,
+      picture: row.picture ?? null,
+      createdAt: row.created_at,
+      discogsUsername: row.discogs_username ?? null,
+    }));
+}
+
 export function adminSetUserPassword(userId, newPassword) {
   if (!newPassword || newPassword.length < 6) {
     throw new Error("Geslo mora imeti vsaj 6 znakov.");
