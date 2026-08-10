@@ -3567,8 +3567,31 @@ code {
   background: transparent;
 }
 
+.app-main-v2:has(.orders-split--preview) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 1.5rem;
+}
+
 .page-orders {
   max-width: none;
+}
+
+.page-orders:has(.orders-split--preview) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.page-orders:has(.orders-split--preview) .orders-page-header {
+  flex-shrink: 0;
+}
+
+.page-orders:has(.orders-split--preview) > :not(.orders-split) {
+  flex-shrink: 0;
 }
 
 .sidebar-v2 {
@@ -4357,16 +4380,22 @@ code {
   grid-template-columns: minmax(0, 1fr) minmax(32rem, 46rem);
   gap: 1.35rem;
   align-items: stretch;
+  flex: 1;
+  min-height: 0;
 }
 
 .orders-split-list {
   min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
+  padding-right: 0.15rem;
 }
 
 .orders-split-list .order-list-v2 {
-  flex: 1;
+  flex: 0 0 auto;
 }
 
 .order-card-v2 {
@@ -4466,15 +4495,15 @@ code {
 }
 
 .order-preview {
-  position: relative;
-  top: auto;
+  position: sticky;
+  top: 0;
   align-self: stretch;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
   height: 100%;
-  min-height: 100%;
-  max-height: none;
+  min-height: 0;
+  max-height: 100%;
   overflow: auto;
   padding: 1.35rem 1.35rem 1.25rem;
   border-radius: 1.5rem;
