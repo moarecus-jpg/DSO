@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { NewOrderForm } from "../components/NewOrderForm.jsx";
+import { OrderDetailPreview } from "../components/OrderDetailPreview.jsx";
 import { OrderList } from "../components/OrderList.jsx";
 import { OrdersPageHeader } from "../components/OrdersPageHeader.jsx";
 import { filterSessions } from "../../shared/filterOrders.js";
 import { api } from "../api.js";
 import { useLocale } from "../hooks/useLocale.jsx";
+import { useOrderPreview } from "../hooks/useOrderPreview.js";
 
 export function Home() {
   const navigate = useNavigate();
@@ -20,19 +22,26 @@ export function Home() {
 
   const showForm = searchParams.get("new") === "1";
 
-  async function loadSessions() {
+  const loadSessions = useCallback(async () => {
     const d = await api("/api/sessions");
     setSessions(d.sessions);
-  }
+  }, []);
 
   useEffect(() => {
     loadSessions().catch(console.error).finally(() => setLoading(false));
-  }, []);
+  }, [loadSessions]);
 
   const filteredSessions = useMemo(
     () => filterSessions(sessions, { query, searchMode }),
     [sessions, query, searchMode]
   );
+
+  const preview = useOrderPreview(filteredSessions, {
+    onClosed: async () => {
+      await loadSessions();
+      navigate("/closed");
+    },
+  });
 
   async function handleCreate(sellerInput) {
     setCreateError(null);
@@ -69,13 +78,32 @@ export function Home() {
         onSearchModeChange={setSearchMode}
       />
 
-      <OrderList
-        sessions={filteredSessions}
-        loading={loading}
-        emptyMessage={
-          query.trim() ? t("common.noSearchResults") : t("orders.emptyOpen")
-        }
-      />
+      <div className={`orders-split${preview.previewMode ? " orders-split--preview" : ""}`}>
+        <div className="orders-split-list">
+          <OrderList
+            sessions={filteredSessions}
+            loading={loading}
+            emptyMessage={
+              query.trim() ? t("common.noSearchResults") : t("orders.emptyOpen")
+            }
+            selectedId={preview.selectedId}
+            onSelect={preview.selectSession}
+            previewMode={preview.previewMode}
+          />
+        </div>
+        {preview.previewMode && (
+          <OrderDetailPreview
+            session={preview.selectedSession}
+            detail={preview.detail}
+            loading={preview.loading}
+            error={preview.error}
+            canClose={preview.canClose}
+            closing={preview.closing}
+            onClose={preview.clearSelection}
+            onCloseOrder={preview.closeOrder}
+          />
+        )}
+      </div>
     </div>
   );
 }
