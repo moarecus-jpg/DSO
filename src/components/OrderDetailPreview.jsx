@@ -163,11 +163,7 @@ export function OrderDetailPreview({
                   <span className="order-preview-member-name">{member.name}</span>
                   {member.discogs_username ? (
                     <small>@{member.discogs_username}</small>
-                  ) : (
-                    <small className="order-preview-member-muted">
-                      {t("session.discogsNotConnected")}
-                    </small>
-                  )}
+                  ) : null}
                 </div>
               </li>
             ))}

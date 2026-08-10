@@ -59,6 +59,8 @@ export function Home() {
     }
   }
 
+  const showPreview = preview.previewMode && !loading && filteredSessions.length > 0;
+
   return (
     <div className="page page-orders">
       {showForm && (
@@ -78,7 +80,7 @@ export function Home() {
         onSearchModeChange={setSearchMode}
       />
 
-      <div className={`orders-split${preview.previewMode ? " orders-split--preview" : ""}`}>
+      <div className={`orders-split${showPreview ? " orders-split--preview" : ""}`}>
         <div className="orders-split-list">
           <OrderList
             sessions={filteredSessions}
@@ -88,10 +90,10 @@ export function Home() {
             }
             selectedId={preview.selectedId}
             onSelect={preview.selectSession}
-            previewMode={preview.previewMode}
+            previewMode={showPreview}
           />
         </div>
-        {preview.previewMode && (
+        {showPreview && (
           <OrderDetailPreview
             session={preview.selectedSession}
             detail={preview.detail}

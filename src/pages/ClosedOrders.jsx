@@ -29,6 +29,7 @@ export function ClosedOrders() {
   );
 
   const preview = useOrderPreview(filteredSessions);
+  const showPreview = preview.previewMode && !loading && filteredSessions.length > 0;
 
   return (
     <div className="page page-orders">
@@ -41,7 +42,7 @@ export function ClosedOrders() {
         onSearchModeChange={setSearchMode}
       />
 
-      <div className={`orders-split${preview.previewMode ? " orders-split--preview" : ""}`}>
+      <div className={`orders-split${showPreview ? " orders-split--preview" : ""}`}>
         <div className="orders-split-list">
           <OrderList
             sessions={filteredSessions}
@@ -51,10 +52,10 @@ export function ClosedOrders() {
             }
             selectedId={preview.selectedId}
             onSelect={preview.selectSession}
-            previewMode={preview.previewMode}
+            previewMode={showPreview}
           />
         </div>
-        {preview.previewMode && (
+        {showPreview && (
           <OrderDetailPreview
             session={preview.selectedSession}
             detail={preview.detail}
