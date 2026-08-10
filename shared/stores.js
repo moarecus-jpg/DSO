@@ -16,6 +16,8 @@ export const STORES = {
     id: STORE_DISCOGS,
     label: "Discogs",
     kind: "marketplace",
+    logoDomain: "discogs.com",
+    logoUrl: shopLogoUrl("discogs.com"),
   },
   [STORE_HHV]: {
     id: STORE_HHV,

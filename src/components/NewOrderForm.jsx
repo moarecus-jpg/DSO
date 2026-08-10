@@ -10,6 +10,7 @@ import {
   shopSellerUsername,
 } from "../../shared/stores.js";
 import { useLocale } from "../hooks/useLocale.jsx";
+import { StoreAvatar } from "./OrderStoreAvatar.jsx";
 
 const STORE_OPTIONS = Object.values(STORES);
 
@@ -64,7 +65,12 @@ export function NewOrderForm({ onSubmit, creating, error }) {
             onClick={() => setStore(option.id)}
             disabled={creating}
           >
-            {option.label}
+            <StoreAvatar
+              store={option.id}
+              className="store-tab-icon"
+              size={16}
+            />
+            <span>{option.label}</span>
           </button>
         ))}
       </div>

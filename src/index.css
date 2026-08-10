@@ -1877,6 +1877,36 @@ code {
   flex-wrap: wrap;
 }
 
+.store-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.store-tab-icon {
+  width: 1rem;
+  height: 1rem;
+  min-width: 1rem;
+  min-height: 1rem;
+  border-radius: 0.28rem;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: none;
+}
+
+.store-tab-icon .store-avatar-img {
+  width: 80%;
+  height: 80%;
+}
+
+.store-tab-icon.store-avatar--fallback {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.store-tab-icon .store-avatar-initials {
+  font-size: 0.55rem;
+}
+
 .store-badge {
   display: inline-flex;
   align-items: center;
