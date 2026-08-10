@@ -10,6 +10,7 @@ export function OrderStickyFooter({
   shippingValue,
   shippingCurrency,
   shippingSplitCount,
+  shippingMode = "equal",
   memberCount = 0,
   readOnly = false,
   onSaveShipping,
@@ -18,6 +19,9 @@ export function OrderStickyFooter({
   footerLeadingActions = null,
   onExpandedChange,
   shippingError = null,
+  onToggleSettle,
+  settlingUserId = null,
+  canManageSettle = false,
 }) {
   const { t } = useLocale();
   const [expanded, setExpanded] = useState(false);
@@ -71,11 +75,15 @@ export function OrderStickyFooter({
                 shippingValue={shippingValue}
                 shippingCurrency={shippingCurrency}
                 shippingSplitCount={shippingSplitCount}
+                shippingMode={shippingMode}
                 memberCount={memberCount}
                 readOnly={readOnly}
                 onSaveShipping={onSaveShipping}
                 savingShipping={savingShipping}
                 shippingError={shippingError}
+                onToggleSettle={onToggleSettle}
+                settlingUserId={settlingUserId}
+                canManageSettle={canManageSettle}
               />
             </div>
           )}

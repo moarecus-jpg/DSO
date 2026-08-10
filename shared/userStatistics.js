@@ -1,4 +1,5 @@
 import { DISPLAY_CURRENCY, toEurAmount } from "./currency.js";
+import { resolveShippingMode } from "./orderTotals.js";
 
 function round2(value) {
   return Math.round(Number(value) * 100) / 100;
@@ -38,18 +39,36 @@ function bumpBucket(map, key, { items = 0, shipping = 0, itemCount = 0, orderCou
   bucket.orderCount += orderCount;
 }
 
-export function shippingShareForSession(session) {
+/**
+ * Shipping share for the current user's participation in a session.
+ * For by_items, pass userItemCount (and sessionItemCount on the row).
+ */
+export function shippingShareForSession(session, userItemCount = null) {
   const shipping =
     toEurAmount(
       session.shipping_value ?? session.shippingValue,
       session.shipping_currency ?? session.shippingCurrency
     ) ?? 0;
+  if (shipping <= 0) return 0;
+
+  const mode = resolveShippingMode(session);
+  if (mode === "by_items") {
+    const sessionItems = Number(
+      session.session_item_count ?? session.sessionItemCount ?? 0
+    );
+    const userItems = Number(
+      userItemCount ?? session.user_item_count ?? session.userItemCount ?? 0
+    );
+    if (!(sessionItems > 0) || !(userItems > 0)) return 0;
+    return round2((shipping * userItems) / sessionItems);
+  }
+
   const splitRaw = session.shipping_split_count ?? session.shippingSplitCount;
   const splitCount =
     splitRaw != null && splitRaw !== "" && Number(splitRaw) >= 1
       ? Math.floor(Number(splitRaw))
       : null;
-  if (!splitCount || shipping <= 0) return 0;
+  if (!splitCount) return 0;
   return round2(shipping / splitCount);
 }
 
@@ -66,11 +85,13 @@ export function computeUserStatistics(rows = []) {
     const sessionId = row.session_id ?? row.sessionId;
     if (!sessionMeta.has(sessionId)) {
       sessionMeta.set(sessionId, {
-        share: shippingShareForSession(row),
+        row,
+        userItemCount: 0,
         month: monthKey(row.session_created_at ?? row.sessionCreatedAt),
         year: yearKey(row.session_created_at ?? row.sessionCreatedAt),
       });
     }
+    sessionMeta.get(sessionId).userItemCount += 1;
 
     const eur = toEurAmount(row.price_value ?? row.priceValue, row.price_currency ?? row.priceCurrency);
     const itemMonth = monthKey(row.created_at ?? row.item_created_at ?? row.orderedAt);
@@ -89,7 +110,8 @@ export function computeUserStatistics(rows = []) {
   }
 
   let shippingTotal = 0;
-  for (const { share, month, year } of sessionMeta.values()) {
+  for (const { row, userItemCount, month, year } of sessionMeta.values()) {
+    const share = shippingShareForSession(row, userItemCount);
     shippingTotal = round2(shippingTotal + share);
     bumpBucket(monthBuckets, month, { shipping: share, orderCount: 1 });
     bumpBucket(yearBuckets, year, { shipping: share, orderCount: 1 });

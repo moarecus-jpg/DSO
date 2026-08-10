@@ -146,6 +146,8 @@ for (const sql of [
   "ALTER TABLE users ADD COLUMN notify_new_order INTEGER NOT NULL DEFAULT 0",
   "ALTER TABLE users ADD COLUMN notify_order_note INTEGER NOT NULL DEFAULT 0",
   "ALTER TABLE users ADD COLUMN notify_order_closed INTEGER NOT NULL DEFAULT 0",
+  "ALTER TABLE group_sessions ADD COLUMN shipping_mode TEXT DEFAULT 'equal'",
+  "ALTER TABLE session_members ADD COLUMN settled_at TEXT",
 ]) {
   try {
     db.exec(sql);
@@ -405,7 +407,8 @@ export function getGroupSession(id) {
   const members = db
     .prepare(
       `SELECT u.id, u.name as account_name, ${MEMBER_DISPLAY_NAME_SQL} as name,
-              sm.display_name, u.email, u.picture, u.discogs_username, sm.joined_at
+              sm.display_name, u.email, u.picture, u.discogs_username, sm.joined_at,
+              sm.settled_at
        FROM session_members sm
        JOIN users u ON u.id = sm.user_id
        WHERE sm.session_id = ?
@@ -539,7 +542,8 @@ export function updateSessionShipping(
   id,
   shippingValue,
   shippingCurrency,
-  shippingSplitCount
+  shippingSplitCount,
+  shippingMode = "equal"
 ) {
   const existing = db
     .prepare("SELECT id FROM group_sessions WHERE id = ?")
@@ -562,13 +566,28 @@ export function updateSessionShipping(
     }
   }
 
+  const mode = shippingMode === "by_items" ? "by_items" : "equal";
+
   db.prepare(
     `UPDATE group_sessions
-     SET shipping_value = ?, shipping_currency = ?, shipping_split_count = ?
+     SET shipping_value = ?, shipping_currency = ?, shipping_split_count = ?,
+         shipping_mode = ?
      WHERE id = ?`
-  ).run(value, shippingCurrency ?? null, split, id);
+  ).run(value, shippingCurrency ?? null, split, mode, id);
 
   return getGroupSession(id);
+}
+
+export function updateMemberSettled(sessionId, memberUserId, settled) {
+  const settledAt = settled ? new Date().toISOString() : null;
+  const result = db
+    .prepare(
+      `UPDATE session_members SET settled_at = ?
+       WHERE session_id = ? AND user_id = ?`
+    )
+    .run(settledAt, sessionId, memberUserId);
+  if (result.changes === 0) return null;
+  return getGroupSession(sessionId);
 }
 
 function parseTargetDate(value) {
@@ -779,6 +798,8 @@ export function listUserOrderedItems(userId) {
       `SELECT sl.*, gs.id as session_id, gs.seller_username, gs.status as session_status,
               gs.order_number, gs.created_at as session_created_at,
               gs.shipping_value, gs.shipping_currency, gs.shipping_split_count,
+              COALESCE(gs.shipping_mode, 'equal') as shipping_mode,
+              (SELECT COUNT(*) FROM session_links WHERE session_id = gs.id) as session_item_count,
               ${EFFECTIVE_ORDERER_NAME_SQL} as user_name
        FROM session_links sl
        JOIN group_sessions gs ON gs.id = sl.session_id
@@ -802,7 +823,9 @@ export function listUserStatisticsRows(userId, status = "all") {
       `SELECT sl.id, sl.price_value, sl.price_currency, sl.created_at,
               gs.id as session_id, gs.status as session_status,
               gs.created_at as session_created_at,
-              gs.shipping_value, gs.shipping_currency, gs.shipping_split_count
+              gs.shipping_value, gs.shipping_currency, gs.shipping_split_count,
+              COALESCE(gs.shipping_mode, 'equal') as shipping_mode,
+              (SELECT COUNT(*) FROM session_links WHERE session_id = gs.id) as session_item_count
        FROM session_links sl
        JOIN group_sessions gs ON gs.id = sl.session_id
        WHERE sl.user_id = @userId${statusClause}

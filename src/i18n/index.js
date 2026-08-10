@@ -53,6 +53,8 @@ const SERVER_ERROR_MAP = {
     "errors.creatorTargetDateOnly",
   "Samo odpravitelj naročila lahko spreminja poštnino.":
     "errors.creatorShippingOnly",
+  "Samo odpiratelj naročila lahko doda iteme v imenu drugega.":
+    "errors.creatorAddForOthersOnly",
   "Ciljnega datuma ni bilo mogoče shraniti.": "errors.saveTargetDateFailed",
   "Session not found": "errors.sessionNotFound",
   "URL is required": "errors.urlRequired",

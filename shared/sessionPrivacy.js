@@ -44,7 +44,13 @@ export function sessionForViewer(session, viewerId, isOrderAdmin) {
   const enriched = enrichSessionOrder({ ...session, links: linksForTotals });
 
   if (!isOrderAdmin && enriched.orderGrandTotal) {
-    const share = enriched.orderGrandTotal.shippingPerPerson ?? 0;
+    const viewerRow = enriched.memberTotals?.find(
+      (row) => row.userId === viewerId
+    );
+    const share =
+      viewerRow?.shippingShare ??
+      enriched.orderGrandTotal.shippingPerPerson ??
+      0;
     enriched.orderGrandTotal = {
       ...enriched.orderGrandTotal,
       shipping: share,

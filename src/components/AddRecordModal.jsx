@@ -39,6 +39,7 @@ export function AddRecordModal({
   submitting,
   sellerUsername,
   currentUserId,
+  canAddForOthers = false,
 }) {
   const { t } = useLocale();
   const [urlsText, setUrlsText] = useState("");
@@ -52,6 +53,17 @@ export function AddRecordModal({
       setUrlsText("");
       setProgress(null);
       setForUserId(currentUserId ?? "");
+      return undefined;
+    }
+
+    if (!canAddForOthers) {
+      setOrdererOptions(
+        currentUserId
+          ? [{ value: currentUserId, label: t("items.addForMe") }]
+          : []
+      );
+      setForUserId(currentUserId ?? "");
+      setLoadingUsers(false);
       return undefined;
     }
 
@@ -92,7 +104,7 @@ export function AddRecordModal({
     return () => {
       cancelled = true;
     };
-  }, [open, currentUserId, t]);
+  }, [open, currentUserId, canAddForOthers, t]);
 
   const { valid: validUrls, invalid: invalidUrls } = useMemo(
     () => parseDiscogsUrlList(urlsText),
@@ -163,21 +175,25 @@ export function AddRecordModal({
         </div>
 
         <form onSubmit={handleSubmit} className="modal-link-form">
-          <div className="modal-field-row">
-            <span className="modal-field-label">{t("items.addFor")}</span>
-            <AppSelect
-              className="modal-orderer-select"
-              value={forUserId}
-              onChange={setForUserId}
-              options={
-                ordererOptions.length > 0
-                  ? ordererOptions
-                  : [{ value: "", label: t("common.loading") }]
-              }
-              ariaLabel={t("items.addFor")}
-              disabled={busy || ordererOptions.length === 0}
-            />
-          </div>
+          {canAddForOthers ? (
+            <div className="modal-field-row">
+              <span className="modal-field-label">{t("items.addFor")}</span>
+              <AppSelect
+                className="modal-orderer-select"
+                value={forUserId}
+                onChange={setForUserId}
+                options={
+                  ordererOptions.length > 0
+                    ? ordererOptions
+                    : [{ value: "", label: t("common.loading") }]
+                }
+                ariaLabel={t("items.addFor")}
+                disabled={busy || ordererOptions.length === 0}
+              />
+            </div>
+          ) : (
+            <p className="muted fine modal-add-for-self">{t("items.addForSelfOnly")}</p>
+          )}
 
           <p className="muted fine">{t("items.linksHint", { seller: sellerUsername })}</p>
           <label>
