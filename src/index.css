@@ -2863,9 +2863,14 @@ code {
   left: 0;
   right: 0;
   width: 100%;
-  max-height: min(16rem, 40vh);
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  max-height: min(18rem, 44vh);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-orderer-select .app-select-options {
+  max-height: min(14rem, 34vh);
 }
 
 .modal-add-record-wide {
@@ -4190,6 +4195,48 @@ code {
   backdrop-filter: blur(20px);
 }
 
+.app-select-search-wrap {
+  padding: 0.15rem 0.15rem 0.35rem;
+  margin-bottom: 0.15rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.app-select-search {
+  display: block;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.app-select-search:focus {
+  border-color: rgba(139, 92, 246, 0.55);
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.35);
+}
+
+.app-select-search::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+.app-select-options {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.app-select-empty {
+  padding: 0.65rem 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+}
+
 .app-select-option {
   display: block;
   width: 100%;
@@ -4214,6 +4261,15 @@ code {
 .app-select-option.active {
   background: linear-gradient(90deg, rgba(99, 102, 241, 0.28), rgba(124, 58, 237, 0.32));
   color: #fff;
+}
+
+.app-select-option.highlighted {
+  background: rgba(139, 92, 246, 0.14);
+  color: #fff;
+}
+
+.app-select-option.active.highlighted {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.36), rgba(124, 58, 237, 0.4));
 }
 
 .orders-search-filter {
@@ -5292,6 +5348,20 @@ code {
   box-shadow:
     0 16px 40px rgba(0, 0, 0, 0.12),
     0 0 24px rgba(124, 58, 237, 0.1);
+}
+
+[data-theme="light"] .app-select-search-wrap {
+  border-bottom-color: #e4e4e7;
+}
+
+[data-theme="light"] .app-select-search {
+  background: #fafafa;
+  border-color: #e4e4e7;
+  color: #18181b;
+}
+
+[data-theme="light"] .app-select-empty {
+  color: #71717a;
 }
 
 [data-theme="light"] .app-select-option {
