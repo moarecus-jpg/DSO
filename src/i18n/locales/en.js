@@ -141,7 +141,6 @@ export default {
     previewTarget: "Target",
     previewCreated: "Created",
     previewNoMembers: "No participants with items yet.",
-    previewViewItems: "View items ({{count}})",
   },
   session: {
     notFound: "Order not found",

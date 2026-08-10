@@ -216,7 +216,7 @@ export function OrderDetailPreview({
           </button>
         )}
         <Link to={`/session/${session.id}`} className="btn btn-primary order-preview-view-btn">
-          {t("orders.previewViewItems", { count: itemCount })}
+          {t("orders.openOrder")}
           <ChevronRight size={18} aria-hidden />
         </Link>
       </div>

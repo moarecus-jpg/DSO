@@ -142,7 +142,6 @@ export default {
     previewTarget: "Ciljni datum",
     previewCreated: "Ustvarjeno",
     previewNoMembers: "Še ni sodelujočih z itemi.",
-    previewViewItems: "Prikaži iteme ({{count}})",
   },
   session: {
     notFound: "Naročilo ni najdeno",
