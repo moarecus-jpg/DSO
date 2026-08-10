@@ -4391,7 +4391,15 @@ code {
   overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
-  padding-right: 0.15rem;
+  padding-right: 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.orders-split-list::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 .orders-split-list .order-list-v2 {
