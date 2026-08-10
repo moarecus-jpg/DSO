@@ -9,6 +9,7 @@ import {
   updateSessionTargetDate,
   updateSessionSellerAvatar,
   updateMemberDisplayName,
+  updateMemberSettled,
   updateLinkOrdererDisplayName,
   createGroupSession,
   findUserById,
@@ -364,6 +365,8 @@ function mockUserStatisticsRows(userId, status = "all") {
         shipping_value: session.shipping_value,
         shipping_currency: session.shipping_currency,
         shipping_split_count: session.shipping_split_count,
+        shipping_mode: session.shipping_mode ?? "equal",
+        session_item_count: (session.links ?? []).length,
       });
     }
   }
@@ -480,6 +483,15 @@ router.patch("/:id/shipping", requireUser, (req, res) => {
     }
   }
 
+  const rawMode = req.body?.shippingMode;
+  let shippingMode = existingSession.shipping_mode ?? "equal";
+  if (rawMode != null && rawMode !== "") {
+    if (rawMode !== "equal" && rawMode !== "by_items") {
+      return res.status(400).json({ error: "Neveljaven način delitve poštnine." });
+    }
+    shippingMode = rawMode;
+  }
+
   const shippingEur =
     shippingValue == null
       ? null
@@ -495,6 +507,7 @@ router.patch("/:id/shipping", requireUser, (req, res) => {
       shipping_value: shippingEur,
       shipping_currency: shippingEur == null ? null : DISPLAY_CURRENCY,
       shipping_split_count: shippingSplitCount,
+      shipping_mode: shippingMode,
     };
     return res.json({
       session: withOrderPermissions(mockSessionDetail(mockSessions[idx]), req.session.userId),
@@ -508,7 +521,8 @@ router.patch("/:id/shipping", requireUser, (req, res) => {
       req.params.id,
       shippingEur,
       shippingEur == null ? null : DISPLAY_CURRENCY,
-      shippingSplitCount
+      shippingSplitCount,
+      shippingMode
     );
     if (!updated) return res.status(404).json({ error: "Session not found" });
     res.json({ session: withOrderPermissions(updated, req.session.userId) });
@@ -675,6 +689,75 @@ router.get("/:id", requireUser, async (req, res) => {
   res.json({ session: withOrderPermissions(session, req.session.userId) });
 });
 
+router.patch("/:id/members/:userId/settle", requireUser, (req, res) => {
+  const { id, userId: memberUserId } = req.params;
+  const settled = req.body?.settled;
+  if (typeof settled !== "boolean") {
+    return res.status(400).json({ error: "Neveljavna vrednost poravnave." });
+  }
+
+  if (useMockAuth() && id.startsWith("mock")) {
+    const summary = mockSessions.find((s) => s.id === id);
+    if (!summary) {
+      return res.status(404).json({ error: "Session not found" });
+    }
+    if (
+      !isOrderCreator(summary, req.session.userId) &&
+      !isOrderAdmin(summary, req.session.userId)
+    ) {
+      return res.status(403).json({
+        error: "Samo odpravitelj naročila lahko označi poravnavo.",
+      });
+    }
+    const detail = mockSessionDetail(summary);
+    if (!detail.members?.some((m) => m.id === memberUserId)) {
+      return res.status(404).json({ error: "Sodelujoč ni v tem naročilu." });
+    }
+    const members = detail.members.map((m) =>
+      m.id === memberUserId
+        ? { ...m, settled_at: settled ? new Date().toISOString() : null }
+        : m
+    );
+    const idx = mockSessions.findIndex((s) => s.id === id);
+    if (idx !== -1) {
+      mockSessions[idx] = { ...mockSessions[idx], members };
+    }
+    return res.json({
+      session: withOrderPermissions(
+        { ...summary, members, links: detail.links },
+        req.session.userId
+      ),
+    });
+  }
+
+  const session = getGroupSession(id);
+  if (!session) return res.status(404).json({ error: "Session not found" });
+  if (
+    !isOrderCreator(session, req.session.userId) &&
+    !isOrderAdmin(session, req.session.userId)
+  ) {
+    return res.status(403).json({
+      error: "Samo odpravitelj naročila lahko označi poravnavo.",
+    });
+  }
+  if (!session.members?.some((m) => m.id === memberUserId)) {
+    return res.status(404).json({ error: "Sodelujoč ni v tem naročilu." });
+  }
+
+  try {
+    const updated = updateMemberSettled(id, memberUserId, settled);
+    if (!updated) {
+      return res.status(404).json({ error: "Sodelujoč ni v tem naročilu." });
+    }
+    res.json({ session: withOrderPermissions(updated, req.session.userId) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: err.message ?? "Poravnave ni bilo mogoče shraniti.",
+    });
+  }
+});
+
 router.patch("/:id/members/:userId", requireUser, (req, res) => {
   const { id, userId: memberUserId } = req.params;
   const raw = req.body?.displayName;
@@ -810,7 +893,11 @@ async function createSessionLink(req, sessionId, trimmedUrl, note, rawForUserId)
       throw new Error("Session not found");
     }
 
-    const targetUserId = resolveLinkTargetUserId(req.session.userId, rawForUserId);
+    const targetUserId = resolveLinkTargetUserId(
+      req.session.userId,
+      rawForUserId,
+      mockSessions[idx]
+    );
     const targetUser = findUserById(targetUserId);
 
     const link = {
@@ -855,7 +942,11 @@ async function createSessionLink(req, sessionId, trimmedUrl, note, rawForUserId)
     throw new Error("Session not found");
   }
 
-  const targetUserId = resolveLinkTargetUserId(req.session.userId, rawForUserId);
+  const targetUserId = resolveLinkTargetUserId(
+    req.session.userId,
+    rawForUserId,
+    session
+  );
 
   const duplicate = findDuplicateSessionLink(sessionId, targetUserId, {
     listingId: meta.listingId,
@@ -883,11 +974,19 @@ async function createSessionLink(req, sessionId, trimmedUrl, note, rawForUserId)
   });
 }
 
-function resolveLinkTargetUserId(requestUserId, rawForUserId) {
+function resolveLinkTargetUserId(requestUserId, rawForUserId, session) {
   const forUserId =
     typeof rawForUserId === "string" && rawForUserId.trim()
       ? rawForUserId.trim()
       : requestUserId;
+
+  if (forUserId !== requestUserId) {
+    if (!session || !isOrderCreator(session, requestUserId)) {
+      throw new Error(
+        "Samo odpiratelj naročila lahko doda iteme v imenu drugega."
+      );
+    }
+  }
 
   if (findUserById(forUserId)) {
     return forUserId;

@@ -34,6 +34,7 @@ export function Session() {
   const [loading, setLoading] = useState(true);
   const [footerExpanded, setFooterExpanded] = useState(false);
   const [shippingError, setShippingError] = useState(null);
+  const [settlingUserId, setSettlingUserId] = useState(null);
 
   function loadSession() {
     return api(`/api/sessions/${id}`).then((d) => {
@@ -92,6 +93,7 @@ export function Session() {
     shippingValue,
     shippingCurrency,
     shippingSplitCount,
+    shippingMode,
   }) {
     setSavingShipping(true);
     setShippingError(null);
@@ -102,6 +104,7 @@ export function Session() {
           shippingValue,
           shippingCurrency,
           shippingSplitCount,
+          shippingMode,
         }),
       });
       setSession(updated);
@@ -110,6 +113,27 @@ export function Session() {
       setFooterExpanded(true);
     } finally {
       setSavingShipping(false);
+    }
+  }
+
+  async function handleToggleSettle(userId, settled) {
+    if (!userId) return;
+    setSettlingUserId(userId);
+    setShippingError(null);
+    try {
+      const { session: updated } = await api(
+        `/api/sessions/${id}/members/${userId}/settle`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ settled }),
+        }
+      );
+      setSession(updated);
+    } catch (err) {
+      setShippingError(err.message ?? t("errors.settleFailed"));
+      setFooterExpanded(true);
+    } finally {
+      setSettlingUserId(null);
     }
   }
 
@@ -334,6 +358,7 @@ export function Session() {
         submitting={addingRecord}
         sellerUsername={session.seller_username}
         currentUserId={user?.id}
+        canAddForOthers={Boolean(canManageOrder)}
       />
 
       <div className="members card">
@@ -384,8 +409,12 @@ export function Session() {
           shippingValue={session.shipping_value}
           shippingCurrency={session.shipping_currency}
           shippingSplitCount={session.shipping_split_count}
+          shippingMode={session.shipping_mode ?? "equal"}
           memberCount={session.members?.length ?? 0}
-          readOnly={!(session.canManageShipping || session.canManageOrder)}
+          readOnly={
+            session.status === "closed" ||
+            !(session.canManageShipping || session.canManageOrder)
+          }
           onSaveShipping={
             session.canManageShipping || session.canManageOrder
               ? handleSaveShipping
@@ -396,6 +425,15 @@ export function Session() {
           footerLeadingActions={footerLeadingActions}
           onExpandedChange={setFooterExpanded}
           shippingError={shippingError}
+          canManageSettle={Boolean(
+            session.canManageShipping || session.canManageOrder
+          )}
+          onToggleSettle={
+            session.canManageShipping || session.canManageOrder
+              ? handleToggleSettle
+              : undefined
+          }
+          settlingUserId={settlingUserId}
         />
       )}
     </div>
