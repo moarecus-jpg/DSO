@@ -121,6 +121,11 @@ export default {
       "Še nisi dodal nobenega itema. Odpri naročilo in uporabi Dodaj Item.",
     createFailed: "Naročila ni bilo mogoče odpreti.",
     newOrder: "Novo naročilo",
+    storeLabel: "Trgovina",
+    shopHint:
+      "Odpre skupno {{store}} naročilo. Člani dodajo povezave do izdelkov ({{domain}}); poštnina in poravnava delujeta enako kot pri Discogs.",
+    hhvHint:
+      "Odpre skupno HHV naročilo. Člani dodajo povezave do izdelkov na hhv.de; poštnina in poravnava delujeta enako kot pri Discogs.",
     sellerUsername: "Seller uporabniško ime",
     sellerUrl: "Seller URL",
     tabUsername: "Uporabniško ime",
@@ -159,6 +164,10 @@ export default {
     emptyBodyLink: "povezavo",
     emptyBodyAfter:
       " do Discogs listinga (shop ali sell URL) — eno ali več naenkrat.",
+    emptyBodyAfterShop:
+      " do izdelka ({{domain}}) — eno ali več naenkrat.",
+    emptyBodyAfterHhv:
+      " do HHV izdelka (hhv.de/shop/…/item/…) — eno ali več naenkrat.",
     discogsNotConnected: "Discogs ni povezan",
     participantAria: "Ime sodelujočega",
     ordererAria: "Ime naročnika",
@@ -201,6 +210,12 @@ export default {
     linksLabel: "Povezave do itemov",
     linksHint:
       "Prilepi eno ali več povezav do listingov pri sellerju @{{seller}} — ena na vrstico.",
+    linksHintShop:
+      "Prilepi eno ali več {{store}} povezav ({{domain}}) — ena na vrstico.",
+    linksHintHhv:
+      "Prilepi eno ali več HHV povezav (hhv.de/shop/…/item/…) — ena na vrstico.",
+    skip: "Preskoči",
+    skipHint: "Iteme lahko dodaš kasneje z gumbom Dodaj Item.",
     validLinkOne: "1 veljavna povezava",
     validLinkMany: "{{count}} veljavnih povezav",
     invalidLineOne: "1 vrstica ni veljavna Discogs povezava",
@@ -217,6 +232,15 @@ export default {
     addToCart: "Dodaj v košarico",
     addToCartHint:
       "Odpre Discogs in doda ta listing v tvojo košarico. Prijavljen moraš biti na discogs.com.",
+    openOnHhv: "Odpri na HHV",
+    openOnHhvHint: "Odpre ta izdelek na hhv.de, da ga dodaš v HHV košarico.",
+    hhvOpenHint:
+      "HHV nima deep-linka za košarico — vsak izdelek odpri na hhv.de, ko si tam prijavljen.",
+    openOnShop: "Odpri na {{store}}",
+    openOnShopHint:
+      "Odpre ta izdelek na {{store}}, da ga dodaš v košarico tam.",
+    shopOpenHint:
+      "{{store}} nima deep-linka za košarico — vsak izdelek odpri v trgovini, ko si tam prijavljen.",
     removeFromOrder: "Odstrani iz naročila",
     removeFromOrderHint: "Odstrani ta item samo iz naročila v DSO.",
     removing: "Odstranjujem…",

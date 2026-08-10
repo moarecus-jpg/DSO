@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { displayOrderTitle } from "../../shared/orderTitle.js";
 import { useLocale } from "../hooks/useLocale.jsx";
-import { SellerAvatar } from "./SellerAvatar.jsx";
+import { OrderStoreAvatar } from "./OrderStoreAvatar.jsx";
 
 function formatCreatedAt(createdAt, localeTag) {
   if (!createdAt) return "—";
@@ -47,12 +47,17 @@ export function OrderDetailPreview({
   closing,
   onClose,
   onCloseOrder,
+  variant = "panel",
 }) {
   const { t, localeTag } = useLocale();
+  const rootClass =
+    variant === "sheet"
+      ? "order-preview order-preview--sheet"
+      : "order-preview";
 
   if (!session) {
     return (
-      <aside className="order-preview order-preview--empty" aria-label={t("orders.previewTitle")}>
+      <aside className={`${rootClass} order-preview--empty`} aria-label={t("orders.previewTitle")}>
         <div className="order-preview-empty">
           <Disc3 size={36} strokeWidth={1.2} aria-hidden />
           <p>{t("orders.previewSelect")}</p>
@@ -76,9 +81,10 @@ export function OrderDetailPreview({
   );
 
   return (
-    <aside className="order-preview" aria-label={t("orders.previewTitle")}>
+    <aside className={rootClass} aria-label={t("orders.previewTitle")}>
       <div className="order-preview-header">
-        <SellerAvatar
+        <OrderStoreAvatar
+          store={session.store}
           username={session.seller_username}
           avatarUrl={session.seller_avatar_url}
           className="order-preview-avatar"

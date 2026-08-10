@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { formatOrderTitle } from "../shared/orderTitle.js";
+import { normalizeStore } from "../shared/stores.js";
 import { hashPassword, verifyPassword } from "./auth/password.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -148,6 +149,7 @@ for (const sql of [
   "ALTER TABLE users ADD COLUMN notify_order_closed INTEGER NOT NULL DEFAULT 0",
   "ALTER TABLE group_sessions ADD COLUMN shipping_mode TEXT DEFAULT 'equal'",
   "ALTER TABLE session_members ADD COLUMN settled_at TEXT",
+  "ALTER TABLE group_sessions ADD COLUMN store TEXT DEFAULT 'discogs'",
 ]) {
   try {
     db.exec(sql);
@@ -383,15 +385,25 @@ export function createGroupSession({
   sellerUsername,
   createdBy,
   sellerAvatarUrl = null,
+  store = "discogs",
 }) {
   const id = randomUUID();
   const orderNumber = nextOrderNumber();
   const title = formatOrderTitle(orderNumber, sellerUsername);
+  const storeValue = normalizeStore(store);
   db.prepare(
     `INSERT INTO group_sessions (
-       id, title, seller_username, created_by, order_number, seller_avatar_url
-     ) VALUES (?, ?, ?, ?, ?, ?)`
-  ).run(id, title, sellerUsername, createdBy, orderNumber, sellerAvatarUrl);
+       id, title, seller_username, created_by, order_number, seller_avatar_url, store
+     ) VALUES (?, ?, ?, ?, ?, ?, ?)`
+  ).run(
+    id,
+    title,
+    sellerUsername,
+    createdBy,
+    orderNumber,
+    sellerAvatarUrl,
+    storeValue
+  );
   db.prepare(
     "INSERT INTO session_members (session_id, user_id) VALUES (?, ?)"
   ).run(id, createdBy);
@@ -797,6 +809,7 @@ export function listUserOrderedItems(userId) {
     .prepare(
       `SELECT sl.*, gs.id as session_id, gs.seller_username, gs.status as session_status,
               gs.order_number, gs.created_at as session_created_at,
+              gs.seller_avatar_url, COALESCE(gs.store, 'discogs') as store,
               gs.shipping_value, gs.shipping_currency, gs.shipping_split_count,
               COALESCE(gs.shipping_mode, 'equal') as shipping_mode,
               (SELECT COUNT(*) FROM session_links WHERE session_id = gs.id) as session_item_count,

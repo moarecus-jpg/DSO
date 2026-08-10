@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Disc3, X } from "lucide-react";
 import { parseDiscogsUrlList } from "../../shared/parseRecordUrl.js";
+import { parseShopUrlList } from "../../shared/parseShopUrl.js";
+import { getStoreConfig, isShopStore } from "../../shared/stores.js";
 import { api } from "../api.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { AppSelect } from "./AppSelect.jsx";
@@ -37,11 +39,15 @@ export function AddRecordModal({
   onClose,
   onSubmit,
   submitting,
+  store = "discogs",
   sellerUsername,
   currentUserId,
   canAddForOthers = false,
+  skippable = false,
 }) {
   const { t } = useLocale();
+  const storeConfig = getStoreConfig(store);
+  const isShop = isShopStore(store);
   const [urlsText, setUrlsText] = useState("");
   const [progress, setProgress] = useState(null);
   const [forUserId, setForUserId] = useState(currentUserId ?? "");
@@ -107,8 +113,8 @@ export function AddRecordModal({
   }, [open, currentUserId, canAddForOthers, t]);
 
   const { valid: validUrls, invalid: invalidUrls } = useMemo(
-    () => parseDiscogsUrlList(urlsText),
-    [urlsText]
+    () => (isShop ? parseShopUrlList(urlsText, store) : parseDiscogsUrlList(urlsText)),
+    [urlsText, isShop, store]
   );
 
   if (!open) return null;
@@ -177,7 +183,9 @@ export function AddRecordModal({
         <form onSubmit={handleSubmit} className="modal-link-form">
           {canAddForOthers ? (
             <div className="modal-field-row">
-              <span className="modal-field-label">{t("items.addFor")}</span>
+              <label className="modal-field-label" htmlFor="add-record-orderer">
+                {t("items.addFor")}
+              </label>
               <AppSelect
                 className="modal-orderer-select"
                 value={forUserId}
@@ -196,7 +204,17 @@ export function AddRecordModal({
             <p className="muted fine modal-add-for-self">{t("items.addForSelfOnly")}</p>
           )}
 
-          <p className="muted fine">{t("items.linksHint", { seller: sellerUsername })}</p>
+          <p className="muted fine">
+            {isShop
+              ? t("items.linksHintShop", {
+                  store: storeConfig.label,
+                  domain: storeConfig.urlHint,
+                })
+              : t("items.linksHint", { seller: sellerUsername })}
+          </p>
+          {skippable && (
+            <p className="muted fine">{t("items.skipHint")}</p>
+          )}
           <label>
             {t("items.linksLabel")}
             <textarea
@@ -204,7 +222,9 @@ export function AddRecordModal({
               value={urlsText}
               onChange={(e) => setUrlsText(e.target.value)}
               placeholder={
-                "https://www.discogs.com/sell/item/123\nhttps://www.discogs.com/shop/item/456"
+                isShop
+                  ? storeConfig.exampleUrl
+                  : "https://www.discogs.com/sell/item/123\nhttps://www.discogs.com/shop/item/456"
               }
               rows={6}
               autoFocus
@@ -227,7 +247,7 @@ export function AddRecordModal({
           )}
           <div className="modal-actions">
             <button type="button" className="btn btn-ghost" onClick={onClose} disabled={busy}>
-              {t("common.cancel")}
+              {skippable ? t("items.skip") : t("common.cancel")}
             </button>
             <button
               type="submit"

@@ -120,6 +120,11 @@ export default {
     emptyMyItems: "You haven't added any items yet. Open an order and use Add item.",
     createFailed: "Could not open the order.",
     newOrder: "New order",
+    storeLabel: "Store",
+    shopHint:
+      "Opens a shared {{store}} order. Members add {{domain}} product links; postage and settle work the same as Discogs.",
+    hhvHint:
+      "Opens a shared HHV order. Members add hhv.de product links; postage and settle work the same as Discogs.",
     sellerUsername: "Seller username",
     sellerUrl: "Seller URL",
     tabUsername: "Username",
@@ -158,6 +163,10 @@ export default {
     emptyBodyLink: "link",
     emptyBodyAfter:
       " to a Discogs listing (shop or sell URL) — one or more at a time.",
+    emptyBodyAfterShop:
+      " to a {{domain}} product page — one or more at a time.",
+    emptyBodyAfterHhv:
+      " to an HHV product page (hhv.de/shop/…/item/…) — one or more at a time.",
     discogsNotConnected: "Discogs not connected",
     participantAria: "Participant name",
     ordererAria: "Orderer name",
@@ -199,6 +208,12 @@ export default {
     linksLabel: "Item links",
     linksHint:
       "Paste one or more listing links for seller @{{seller}} — one per line.",
+    linksHintShop:
+      "Paste one or more {{store}} product links ({{domain}}) — one per line.",
+    linksHintHhv:
+      "Paste one or more HHV product links (hhv.de/shop/…/item/…) — one per line.",
+    skip: "Skip",
+    skipHint: "You can add items later with Add item.",
     validLinkOne: "1 valid link",
     validLinkMany: "{{count}} valid links",
     invalidLineOne: "1 line is not a valid Discogs link",
@@ -215,6 +230,15 @@ export default {
     addToCart: "Add to cart",
     addToCartHint:
       "Opens Discogs in a new tab and adds this listing to your cart. You must be logged in on discogs.com.",
+    openOnHhv: "Open on HHV",
+    openOnHhvHint: "Opens this product on hhv.de so you can add it to your HHV cart.",
+    hhvOpenHint:
+      "HHV has no cart deep-link — open each product on hhv.de while logged in there.",
+    openOnShop: "Open on {{store}}",
+    openOnShopHint:
+      "Opens this product on {{store}} so you can add it to your cart there.",
+    shopOpenHint:
+      "{{store}} has no cart deep-link — open each product on the shop site while logged in there.",
     removeFromOrder: "Remove from order",
     removeFromOrderHint: "Removes this item from the order in DSO only.",
     removing: "Removing…",

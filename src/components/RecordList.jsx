@@ -5,15 +5,19 @@ import {
   listingIdFor,
   recordTitle,
 } from "../../shared/orderTotals.js";
+import { getStoreConfig, isShopStore } from "../../shared/stores.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 
 export function RecordList({
   links = [],
+  store = "discogs",
   onRemoveLink,
   removingLinkId,
   canRemoveLink,
 }) {
   const { t } = useLocale();
+  const isShop = isShopStore(store);
+  const storeConfig = getStoreConfig(store);
 
   if (!links.length) return null;
 
@@ -71,6 +75,7 @@ export function RecordList({
                     )}
                     <DiscogsCartActions
                       link={link}
+                      store={store}
                       onRemove={
                         canRemoveLink?.(link)
                           ? () => onRemoveLink?.(link)
@@ -82,12 +87,19 @@ export function RecordList({
                 )}
               </td>
               <td className="col-price">
-                {link.blurred ? "—" : formatPrice(link.price_value, link.price_currency)}
+                {link.blurred
+                  ? "—"
+                  : formatPrice(link.price_value, link.price_currency)}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      {isShop && (
+        <p className="muted fine order-items-shop-hint">
+          {t("items.shopOpenHint", { store: storeConfig.label })}
+        </p>
+      )}
     </div>
   );
 }

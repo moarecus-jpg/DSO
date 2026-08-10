@@ -34,7 +34,18 @@ import { matchWantlistToInventory, parseDiscogsUrl } from "../discogs/match.js";
 import { MOCK_INVENTORY, MOCK_SESSION, MOCK_USER, MOCK_USER_2, MOCK_WANTLIST } from "../mock.js";
 import { formatOrderTitle } from "../../shared/orderTitle.js";
 import { resolveRecordFromUrl, mockResolveRecordFromUrl } from "../discogs/recordMeta.js";
+import {
+  resolveShopRecordFromUrl,
+  mockResolveShopRecordFromUrl,
+} from "../shops/recordMeta.js";
 import { parseDiscogsUrlList } from "../../shared/parseRecordUrl.js";
+import { parseShopUrlList } from "../../shared/parseShopUrl.js";
+import {
+  getStoreConfig,
+  isShopStore,
+  normalizeStore,
+  shopSellerUsername,
+} from "../../shared/stores.js";
 import { DISPLAY_CURRENCY, toEurAmount } from "../../shared/currency.js";
 import { enrichSessionOrder, recordTitle } from "../../shared/orderTotals.js";
 import { sessionForViewer } from "../../shared/sessionPrivacy.js";
@@ -128,6 +139,25 @@ function resolveSessionSeller(sessionId) {
     return summary?.seller_username ?? null;
   }
   return getGroupSession(sessionId)?.seller_username ?? null;
+}
+
+function resolveSessionStore(sessionId) {
+  if (useMockAuth() && sessionId.startsWith("mock")) {
+    const summary = mockSessions.find((s) => s.id === sessionId);
+    return normalizeStore(summary?.store);
+  }
+  return normalizeStore(getGroupSession(sessionId)?.store);
+}
+
+async function resolveLinkMeta(trimmedUrl, note, { store, sellerUsername, useMockDiscogs }) {
+  if (isShopStore(store)) {
+    return useMockDiscogs
+      ? mockResolveShopRecordFromUrl(trimmedUrl, note, store)
+      : await resolveShopRecordFromUrl(trimmedUrl, note, store);
+  }
+  return useMockDiscogs
+    ? mockResolveRecordFromUrl(trimmedUrl, note, { sellerUsername })
+    : await resolveRecordFromUrl(trimmedUrl, note, { sellerUsername });
 }
 
 function resolveUserForMatches(userId) {
@@ -272,6 +302,7 @@ async function fetchSellerAvatarUrl(username) {
 
 async function ensureSellerAvatar(session) {
   if (!session?.seller_username || session.seller_avatar_url) return session;
+  if (isShopStore(session.store)) return session;
   const url = await fetchSellerAvatarUrl(session.seller_username);
   if (!url) return session;
   if (session.id && !String(session.id).startsWith("mock")) {
@@ -282,7 +313,7 @@ async function ensureSellerAvatar(session) {
 }
 
 async function ensureSellerAvatars(sessions) {
-  return Promise.all(sessions.map((s) => ensureSellerAvatar(s)));
+  return Promise.all(sessions.map((session) => ensureSellerAvatar(session)));
 }
 
 router.get("/", requireUser, async (req, res) => {
@@ -314,6 +345,8 @@ function serializeOrderedItem(row) {
     sleeveCondition: row.sleeve_condition,
     orderedAt: row.created_at,
     sellerUsername: row.seller_username,
+    sellerAvatarUrl: row.seller_avatar_url ?? null,
+    store: row.store ?? "discogs",
     sessionStatus: row.session_status,
     orderNumber: row.order_number,
     orderTitle: formatOrderTitle(row.order_number ?? 1, row.seller_username),
@@ -330,6 +363,8 @@ function mockUserOrderedItems(userId) {
           ...link,
           session_id: session.id,
           seller_username: session.seller_username,
+          seller_avatar_url: session.seller_avatar_url ?? null,
+          store: session.store ?? "discogs",
           session_status: session.status ?? "open",
           order_number: session.order_number,
           created_at: link.created_at ?? session.created_at,
@@ -382,16 +417,26 @@ router.get("/my-statistics", requireUser, (req, res) => {
 });
 
 router.post("/", requireUser, async (req, res) => {
+  const store = normalizeStore(req.body.store);
   const raw = req.body.sellerUsername ?? req.body.seller ?? "";
 
   try {
-    const cleanSeller = await resolveSellerInput(raw, { mock: useMockAuth() });
+    let cleanSeller;
+    let sellerAvatarUrl = null;
 
-    if (!cleanSeller) {
-      return res.status(400).json({
-        error:
-          "Vnesi seller uporabniško ime, povezavo do seller profila (discogs.com/seller/…) ali listinga (discogs.com/sell/item/…).",
-      });
+    if (isShopStore(store)) {
+      cleanSeller = shopSellerUsername(store);
+    } else {
+      cleanSeller = await resolveSellerInput(raw, { mock: useMockAuth() });
+
+      if (!cleanSeller) {
+        return res.status(400).json({
+          error:
+            "Vnesi seller uporabniško ime, povezavo do seller profila (discogs.com/seller/…) ali listinga (discogs.com/sell/item/…).",
+        });
+      }
+
+      sellerAvatarUrl = await fetchSellerAvatarUrl(cleanSeller);
     }
 
     if (useMockSessions(req)) {
@@ -402,6 +447,8 @@ router.post("/", requireUser, async (req, res) => {
         order_number: mockOrderSeq,
         title: formatOrderTitle(mockOrderSeq, cleanSeller),
         seller_username: cleanSeller,
+        seller_avatar_url: sellerAvatarUrl,
+        store,
         status: "open",
         member_count: 1,
         link_count: 0,
@@ -417,11 +464,11 @@ router.post("/", requireUser, async (req, res) => {
       return res.status(401).json({ error: "Prijavi se v aplikacijo." });
     }
 
-    const sellerAvatarUrl = await fetchSellerAvatarUrl(cleanSeller);
     const session = createGroupSession({
       sellerUsername: cleanSeller,
       createdBy: userId,
       sellerAvatarUrl,
+      store,
     });
 
     notifyNewOrderOpened({
@@ -877,15 +924,18 @@ router.patch("/:id/links/:linkId", requireUser, (req, res) => {
 });
 
 async function createSessionLink(req, sessionId, trimmedUrl, note, rawForUserId) {
+  const store = resolveSessionStore(sessionId);
   const sellerUsername = resolveSessionSeller(sessionId);
   const useMockDiscogs =
     useMockAuth() &&
     sessionId.startsWith("mock") &&
     (!discogsOAuthConfigured() || findUserById(req.session.userId)?.discogs_token === "mock");
 
-  const meta = useMockDiscogs
-    ? mockResolveRecordFromUrl(trimmedUrl, note, { sellerUsername })
-    : await resolveRecordFromUrl(trimmedUrl, note, { sellerUsername });
+  const meta = await resolveLinkMeta(trimmedUrl, note, {
+    store,
+    sellerUsername,
+    useMockDiscogs,
+  });
 
   if (useMockAuth() && sessionId.startsWith("mock")) {
     const idx = mockSessions.findIndex((s) => s.id === sessionId);
@@ -1007,23 +1057,38 @@ router.post("/:id/links/batch", requireUser, async (req, res) => {
   const forUserId = req.body?.forUserId ?? req.body?.userId;
   const raw = req.body?.urls ?? req.body?.url ?? "";
   const text = Array.isArray(raw) ? raw.join("\n") : String(raw);
-  const { valid: urls, invalid } = parseDiscogsUrlList(text);
+  const store = resolveSessionStore(req.params.id);
+  const shop = isShopStore(store);
+  const config = getStoreConfig(store);
+  const { valid: urls, invalid } = shop
+    ? parseShopUrlList(text, store)
+    : parseDiscogsUrlList(text);
+
+  const invalidHint = shop
+    ? `Nobena povezava ni veljavna. Uporabi ${config.urlHint}.`
+    : "Nobena povezava ni veljavna. Uporabi /sell/item/… ali /shop/item/…";
+  const emptyHint = shop
+    ? `Vnesi vsaj eno ${config.label} povezavo.`
+    : "Vnesi vsaj eno Discogs povezavo.";
+  const invalidLabel = shop
+    ? `Neveljavna ${config.label} povezava`
+    : "Neveljavna Discogs povezava";
 
   if (invalid.length && !urls.length) {
     return res.status(400).json({
-      error: "Nobena povezava ni veljavna. Uporabi /sell/item/… ali /shop/item/…",
+      error: invalidHint,
       invalid,
     });
   }
 
   if (!urls.length) {
-    return res.status(400).json({ error: "Vnesi vsaj eno Discogs povezavo." });
+    return res.status(400).json({ error: emptyHint });
   }
 
   const links = [];
   const errors = invalid.map((url) => ({
     url,
-    error: "Neveljavna Discogs povezava",
+    error: invalidLabel,
   }));
 
   for (const trimmedUrl of urls) {

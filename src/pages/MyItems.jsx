@@ -12,8 +12,9 @@ function groupItemsBySession(items) {
         sessionId: item.sessionId,
         orderTitle: item.orderTitle,
         sellerUsername: item.sellerUsername,
+        sellerAvatarUrl: item.sellerAvatarUrl ?? null,
+        store: item.store ?? "discogs",
         sessionStatus: item.sessionStatus,
-        sellerAvatarUrl: null,
         items: [],
       });
     }

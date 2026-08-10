@@ -25,6 +25,7 @@ export const MOCK_SESSION = {
   title: "vinyl_japan_tokyo#0001",
   order_number: 1,
   seller_username: "vinyl_japan_tokyo",
+  store: "discogs",
   created_by: MOCK_USER.id,
   status: "open",
   created_at: new Date().toISOString(),

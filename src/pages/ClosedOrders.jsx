@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { OrderDetailPreview } from "../components/OrderDetailPreview.jsx";
 import { OrderList } from "../components/OrderList.jsx";
 import { OrdersPageHeader } from "../components/OrdersPageHeader.jsx";
@@ -8,6 +9,7 @@ import { useLocale } from "../hooks/useLocale.jsx";
 import { useOrderPreview } from "../hooks/useOrderPreview.js";
 
 export function ClosedOrders() {
+  const navigate = useNavigate();
   const { t } = useLocale();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,8 +30,16 @@ export function ClosedOrders() {
     [sessions, query, searchMode]
   );
 
-  const preview = useOrderPreview(filteredSessions);
-  const showPreview = preview.previewMode && !loading && filteredSessions.length > 0;
+  const preview = useOrderPreview(filteredSessions, {
+    onClosed: async () => {
+      await loadSessions();
+      navigate("/closed");
+    },
+  });
+
+  const hasOrders = !loading && filteredSessions.length > 0;
+  const showDesktopPreview = preview.isDesktop && hasOrders;
+  const showMobileSheet = !preview.isDesktop && Boolean(preview.selectedSession);
 
   return (
     <div className="page page-orders">
@@ -42,7 +52,7 @@ export function ClosedOrders() {
         onSearchModeChange={setSearchMode}
       />
 
-      <div className={`orders-split${showPreview ? " orders-split--preview" : ""}`}>
+      <div className={`orders-split${showDesktopPreview ? " orders-split--preview" : ""}`}>
         <div className="orders-split-list">
           <OrderList
             sessions={filteredSessions}
@@ -52,10 +62,10 @@ export function ClosedOrders() {
             }
             selectedId={preview.selectedId}
             onSelect={preview.selectSession}
-            previewMode={showPreview}
+            previewMode={hasOrders}
           />
         </div>
-        {showPreview && (
+        {showDesktopPreview && (
           <OrderDetailPreview
             session={preview.selectedSession}
             detail={preview.detail}
@@ -68,6 +78,28 @@ export function ClosedOrders() {
           />
         )}
       </div>
+
+      {showMobileSheet && (
+        <div className="order-preview-sheet-root">
+          <button
+            type="button"
+            className="order-preview-sheet-backdrop"
+            aria-label={t("common.close")}
+            onClick={preview.clearSelection}
+          />
+          <OrderDetailPreview
+            variant="sheet"
+            session={preview.selectedSession}
+            detail={preview.detail}
+            loading={preview.loading}
+            error={preview.error}
+            canClose={false}
+            closing={false}
+            onClose={preview.clearSelection}
+            onCloseOrder={preview.closeOrder}
+          />
+        </div>
+      )}
     </div>
   );
 }

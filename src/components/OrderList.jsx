@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Calendar, ChevronRight, Disc3, UserRound, Users } from "lucide-react";
 import { displayOrderTitle } from "../../shared/orderTitle.js";
 import { useLocale } from "../hooks/useLocale.jsx";
-import { SellerAvatar } from "./SellerAvatar.jsx";
+import { OrderStoreAvatar } from "./OrderStoreAvatar.jsx";
 
 function formatOrderDate(createdAt, localeTag) {
   if (!createdAt) return null;
@@ -21,7 +21,8 @@ function OrderCardContent({ s, title, dateLabel, creatorLabel, t }) {
 
   return (
     <>
-      <SellerAvatar
+      <OrderStoreAvatar
+        store={s.store}
         username={s.seller_username}
         avatarUrl={s.seller_avatar_url}
         className="order-card-v2-avatar"

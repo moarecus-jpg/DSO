@@ -4,7 +4,7 @@ import { ArrowLeft, Archive, Disc3, ExternalLink, Heart, Plus, X } from "lucide-
 import { AddRecordModal } from "../components/AddRecordModal.jsx";
 import { DiscogsAddAllToCartButton } from "../components/DiscogsAddAllToCartButton.jsx";
 import { MemberChips } from "../components/MemberChips.jsx";
-import { SellerAvatar } from "../components/SellerAvatar.jsx";
+import { OrderStoreAvatar } from "../components/OrderStoreAvatar.jsx";
 import { OrderStickyFooter } from "../components/OrderStickyFooter.jsx";
 import { OrderTargetDate } from "../components/OrderTargetDate.jsx";
 import { OrderNotes } from "../components/OrderNotes.jsx";
@@ -15,6 +15,7 @@ import { useLocale } from "../hooks/useLocale.jsx";
 import { sellerMywantsUrl } from "../../shared/discogsUrls.js";
 import { displayOrderTitle } from "../../shared/orderTitle.js";
 import { orderPageTitle } from "../../shared/orderShare.js";
+import { getStoreConfig, isShopStore } from "../../shared/stores.js";
 
 export function Session() {
   const { id } = useParams();
@@ -26,6 +27,7 @@ export function Session() {
   const [closing, setClosing] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [addRecordOpen, setAddRecordOpen] = useState(false);
+  const [addRecordSkippable, setAddRecordSkippable] = useState(false);
   const [addingRecord, setAddingRecord] = useState(false);
   const [savingShipping, setSavingShipping] = useState(false);
   const [savingTargetDate, setSavingTargetDate] = useState(false);
@@ -59,9 +61,20 @@ export function Session() {
   useEffect(() => {
     if (searchParams.get("add") === "1") {
       setAddRecordOpen(true);
+      setAddRecordSkippable(true);
       setSearchParams({}, { replace: true });
     }
   }, [searchParams, setSearchParams]);
+
+  function openAddRecord() {
+    setAddRecordSkippable(false);
+    setAddRecordOpen(true);
+  }
+
+  function closeAddRecord() {
+    setAddRecordOpen(false);
+    setAddRecordSkippable(false);
+  }
 
   async function handleCancel() {
     if (!confirm(t("session.confirmCancel"))) return;
@@ -239,11 +252,14 @@ export function Session() {
   if (loading) return <p className="muted center page">{t("common.loadingOrder")}</p>;
   if (!session) return <p className="muted center page">{t("session.notFound")}</p>;
 
-  const sellerUrl = `https://www.discogs.com/seller/${session.seller_username}/profile`;
-  const wantlistUrl = sellerMywantsUrl(
-    session.seller_username,
-    user?.discogsUsername
-  );
+  const storeConfig = getStoreConfig(session.store);
+  const isShop = isShopStore(session.store);
+  const sellerUrl = isShop
+    ? storeConfig.shopUrl
+    : `https://www.discogs.com/seller/${session.seller_username}/profile`;
+  const wantlistUrl = isShop
+    ? null
+    : sellerMywantsUrl(session.seller_username, user?.discogsUsername);
   const isClosed = session.status === "closed";
   const recordCount = session.links?.length ?? 0;
   const canManageOrder = session.canManageOrder;
@@ -259,7 +275,7 @@ export function Session() {
         title={t("session.cancelOrder")}
         aria-label={t("session.cancelOrder")}
       >
-        <X size={14} strokeWidth={2.5} aria-hidden />
+        <X size={18} strokeWidth={2.5} aria-hidden />
         <span className="order-sticky-footer-action-label">
           {cancelling ? t("session.cancelling") : t("session.cancelOrder")}
         </span>
@@ -269,7 +285,7 @@ export function Session() {
   const footerActions =
     canManageOrder && (recordCount > 0 || !isClosed) ? (
       <>
-        {recordCount > 0 && (
+        {recordCount > 0 && !isShop && (
           <DiscogsAddAllToCartButton
             links={session.links}
             disabled={isClosed}
@@ -286,7 +302,7 @@ export function Session() {
             title={t("session.closeOrder")}
             aria-label={closing ? t("session.closing") : t("session.closeOrder")}
           >
-            <Archive size={16} aria-hidden />
+            <Archive size={18} aria-hidden />
             <span className="order-sticky-footer-action-label order-sticky-footer-action-label--long">
               {closing ? t("session.closing") : t("session.closeOrder")}
             </span>
@@ -316,14 +332,15 @@ export function Session() {
         <div>
           <h1>{displayOrderTitle(session)}</h1>
           <div className="session-seller-row">
-            <SellerAvatar
+            <OrderStoreAvatar
+              store={session.store}
               username={session.seller_username}
               avatarUrl={session.seller_avatar_url}
               className="session-seller-avatar"
               size={40}
             />
             <a href={sellerUrl} target="_blank" rel="noreferrer" className="seller-link">
-              @{session.seller_username}
+              {isShop ? storeConfig.label : `@${session.seller_username}`}
               <ExternalLink size={14} />
             </a>
           </div>
@@ -342,7 +359,7 @@ export function Session() {
             </a>
           )}
           {!isClosed && (
-            <button type="button" className="btn btn-primary" onClick={() => setAddRecordOpen(true)}>
+            <button type="button" className="btn btn-primary" onClick={openAddRecord}>
               <Plus size={18} />
               {t("session.addItem")}
             </button>
@@ -352,12 +369,14 @@ export function Session() {
 
       <AddRecordModal
         open={addRecordOpen}
-        onClose={() => setAddRecordOpen(false)}
+        onClose={closeAddRecord}
         onSubmit={handleAddRecord}
         submitting={addingRecord}
+        store={session.store}
         sellerUsername={session.seller_username}
         currentUserId={user?.id}
         canAddForOthers={Boolean(canManageOrder)}
+        skippable={addRecordSkippable}
       />
 
       <div className="members card">
@@ -380,13 +399,18 @@ export function Session() {
             <p className="muted">
               {t("session.emptyBodyBefore")}
               <strong>{t("session.emptyBodyLink")}</strong>
-              {t("session.emptyBodyAfter")}
+              {isShop
+                ? t("session.emptyBodyAfterShop", {
+                    domain: storeConfig.urlHint,
+                  })
+                : t("session.emptyBodyAfter")}
             </p>
           </div>
         ) : (
           <>
             <RecordList
               links={session.links}
+              store={session.store}
               onRemoveLink={handleRemoveLink}
               removingLinkId={removingLinkId}
               canRemoveLink={canRemoveLink}

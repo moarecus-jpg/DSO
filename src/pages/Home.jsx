@@ -43,13 +43,17 @@ export function Home() {
     },
   });
 
-  async function handleCreate(sellerInput) {
+  async function handleCreate({ store, sellerUsername }) {
     setCreateError(null);
     setCreating(true);
     try {
+      const body =
+        store && store !== "discogs"
+          ? { store }
+          : { store: "discogs", sellerUsername };
       const { session } = await api("/api/sessions", {
         method: "POST",
-        body: JSON.stringify({ sellerUsername: sellerInput }),
+        body: JSON.stringify(body),
       });
       navigate(`/session/${session.id}?add=1`, { replace: true });
     } catch (err) {
@@ -59,7 +63,9 @@ export function Home() {
     }
   }
 
-  const showPreview = preview.previewMode && !loading && filteredSessions.length > 0;
+  const hasOrders = !loading && filteredSessions.length > 0;
+  const showDesktopPreview = preview.isDesktop && hasOrders;
+  const showMobileSheet = !preview.isDesktop && Boolean(preview.selectedSession);
 
   return (
     <div className="page page-orders">
@@ -80,7 +86,7 @@ export function Home() {
         onSearchModeChange={setSearchMode}
       />
 
-      <div className={`orders-split${showPreview ? " orders-split--preview" : ""}`}>
+      <div className={`orders-split${showDesktopPreview ? " orders-split--preview" : ""}`}>
         <div className="orders-split-list">
           <OrderList
             sessions={filteredSessions}
@@ -90,10 +96,10 @@ export function Home() {
             }
             selectedId={preview.selectedId}
             onSelect={preview.selectSession}
-            previewMode={showPreview}
+            previewMode={hasOrders}
           />
         </div>
-        {showPreview && (
+        {showDesktopPreview && (
           <OrderDetailPreview
             session={preview.selectedSession}
             detail={preview.detail}
@@ -106,6 +112,28 @@ export function Home() {
           />
         )}
       </div>
+
+      {showMobileSheet && (
+        <div className="order-preview-sheet-root">
+          <button
+            type="button"
+            className="order-preview-sheet-backdrop"
+            aria-label={t("common.close")}
+            onClick={preview.clearSelection}
+          />
+          <OrderDetailPreview
+            variant="sheet"
+            session={preview.selectedSession}
+            detail={preview.detail}
+            loading={preview.loading}
+            error={preview.error}
+            canClose={preview.canClose}
+            closing={preview.closing}
+            onClose={preview.clearSelection}
+            onCloseOrder={preview.closeOrder}
+          />
+        </div>
+      )}
     </div>
   );
 }

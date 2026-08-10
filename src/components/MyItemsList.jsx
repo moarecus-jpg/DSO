@@ -2,8 +2,9 @@ import { Link } from "react-router-dom";
 import { Disc3, ExternalLink } from "lucide-react";
 import { DiscogsCartActions } from "./DiscogsCartActions.jsx";
 import { formatPrice, listingIdFor } from "../../shared/orderTotals.js";
+import { getStoreConfig, isShopStore } from "../../shared/stores.js";
 import { useLocale } from "../hooks/useLocale.jsx";
-import { SellerAvatar } from "./SellerAvatar.jsx";
+import { OrderStoreAvatar } from "./OrderStoreAvatar.jsx";
 
 export function MyItemsList({
   groups = [],
@@ -31,10 +32,14 @@ export function MyItemsList({
     <div className="my-items-list">
       {groups.map((group) => {
         const isClosed = group.sessionStatus === "closed";
+        const storeConfig = isShopStore(group.store)
+          ? getStoreConfig(group.store)
+          : null;
         return (
           <section key={group.sessionId} className="my-items-group">
             <header className="my-items-group-header">
-              <SellerAvatar
+              <OrderStoreAvatar
+                store={group.store}
                 username={group.sellerUsername}
                 avatarUrl={group.sellerAvatarUrl}
                 className="my-items-seller-avatar"
@@ -44,7 +49,9 @@ export function MyItemsList({
                 <Link to={`/session/${group.sessionId}`} className="my-items-order-link">
                   {group.orderTitle}
                 </Link>
-                <p className="my-items-seller">@{group.sellerUsername}</p>
+                <p className="my-items-seller">
+                  {storeConfig ? storeConfig.label : `@${group.sellerUsername}`}
+                </p>
               </div>
               <span
                 className={`status-pill-v2 ${isClosed ? "status-pill-v2-closed" : "status-pill-v2-open"}`}
@@ -77,6 +84,7 @@ export function MyItemsList({
                     )}
                     <DiscogsCartActions
                       link={{ listing_id: item.listingId, url: item.url }}
+                      store={group.store}
                       onRemove={
                         !isClosed && onRemoveItem
                           ? () => onRemoveItem(item)
