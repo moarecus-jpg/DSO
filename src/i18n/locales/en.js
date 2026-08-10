@@ -14,6 +14,7 @@ export default {
     closed: "Closed",
     total: "Total",
     noSearchResults: "No search results.",
+    selectSearch: "Search…",
     showPassword: "Show password",
     hidePassword: "Hide password",
     changeName: "Change name",

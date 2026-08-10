@@ -182,6 +182,7 @@ export function AddRecordModal({
                 className="modal-orderer-select"
                 value={forUserId}
                 onChange={setForUserId}
+                searchable
                 options={
                   ordererOptions.length > 0
                     ? ordererOptions

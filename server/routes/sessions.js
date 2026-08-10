@@ -242,7 +242,7 @@ function withOrderPermissions(session, userId) {
     shipping_value: shippingValue,
     canManageMembers: isAdmin,
     canManageShipping: isCreator || isAdmin,
-    canManageOrder: isCreator,
+    canManageOrder: isAdmin,
   };
 }
 
@@ -545,7 +545,7 @@ router.patch("/:id/target-date", requireUser, (req, res) => {
   if (!existingSession) {
     return res.status(404).json({ error: "Session not found" });
   }
-  if (!isOrderCreator(existingSession, userId)) {
+  if (!isOrderAdmin(existingSession, userId)) {
     return res.status(403).json({
       error: "Samo odpravitelj naročila lahko nastavi ciljni datum.",
     });
@@ -607,7 +607,7 @@ router.post("/:id/close", requireUser, (req, res) => {
     if (idx === -1) {
       return res.status(404).json({ error: "Session not found" });
     }
-    if (!isOrderCreator(mockSessions[idx], userId)) {
+    if (!isOrderAdmin(mockSessions[idx], userId)) {
       return res.status(403).json({
         error: "Samo odpravitelj naročila lahko zaključi naročilo.",
       });
@@ -620,7 +620,7 @@ router.post("/:id/close", requireUser, (req, res) => {
 
   const existing = getGroupSession(req.params.id);
   if (!existing) return res.status(404).json({ error: "Session not found" });
-  if (!isOrderCreator(existing, userId)) {
+  if (!isOrderAdmin(existing, userId)) {
     return res.status(403).json({
       error: "Samo odpravitelj naročila lahko zaključi naročilo.",
     });
@@ -646,7 +646,7 @@ router.post("/:id/cancel", requireUser, (req, res) => {
     if (idx === -1) {
       return res.status(404).json({ error: "Session not found" });
     }
-    if (!isOrderCreator(mockSessions[idx], userId)) {
+    if (!isOrderAdmin(mockSessions[idx], userId)) {
       return res.status(403).json({
         error: "Samo odpravitelj naročila lahko prekliče naročilo.",
       });
@@ -657,7 +657,7 @@ router.post("/:id/cancel", requireUser, (req, res) => {
 
   const existing = getGroupSession(req.params.id);
   if (!existing) return res.status(404).json({ error: "Session not found" });
-  if (!isOrderCreator(existing, userId)) {
+  if (!isOrderAdmin(existing, userId)) {
     return res.status(403).json({
       error: "Samo odpravitelj naročila lahko prekliče naročilo.",
     });
@@ -981,7 +981,7 @@ function resolveLinkTargetUserId(requestUserId, rawForUserId, session) {
       : requestUserId;
 
   if (forUserId !== requestUserId) {
-    if (!session || !isOrderCreator(session, requestUserId)) {
+    if (!session || !isOrderAdmin(session, requestUserId)) {
       throw new Error(
         "Samo odpiratelj naročila lahko doda iteme v imenu drugega."
       );

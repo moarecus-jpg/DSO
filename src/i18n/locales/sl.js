@@ -14,6 +14,7 @@ export default {
     closed: "Zaključeno",
     total: "Skupaj",
     noSearchResults: "Ni zadetkov za iskanje.",
+    selectSearch: "Išči…",
     showPassword: "Prikaži geslo",
     hidePassword: "Skrij geslo",
     changeName: "Spremeni ime",

@@ -232,9 +232,8 @@ export function Session() {
 
   function canRemoveLink(link) {
     if (session?.status === "closed") return false;
-    return (
-      link.user_id === user?.id || session?.created_by === user?.id
-    );
+    if (session?.canManageOrder) return true;
+    return link.user_id === user?.id;
   }
 
   if (loading) return <p className="muted center page">{t("common.loadingOrder")}</p>;
