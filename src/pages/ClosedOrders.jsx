@@ -39,7 +39,6 @@ export function ClosedOrders() {
 
   const hasOrders = !loading && filteredSessions.length > 0;
   const showDesktopPreview = preview.isDesktop && hasOrders;
-  const showMobileSheet = !preview.isDesktop && Boolean(preview.selectedSession);
 
   return (
     <div className="page page-orders">
@@ -62,7 +61,7 @@ export function ClosedOrders() {
             }
             selectedId={preview.selectedId}
             onSelect={preview.selectSession}
-            previewMode={hasOrders}
+            previewMode={showDesktopPreview}
           />
         </div>
         {showDesktopPreview && (
@@ -78,28 +77,6 @@ export function ClosedOrders() {
           />
         )}
       </div>
-
-      {showMobileSheet && (
-        <div className="order-preview-sheet-root">
-          <button
-            type="button"
-            className="order-preview-sheet-backdrop"
-            aria-label={t("common.close")}
-            onClick={preview.clearSelection}
-          />
-          <OrderDetailPreview
-            variant="sheet"
-            session={preview.selectedSession}
-            detail={preview.detail}
-            loading={preview.loading}
-            error={preview.error}
-            canClose={false}
-            closing={false}
-            onClose={preview.clearSelection}
-            onCloseOrder={preview.closeOrder}
-          />
-        </div>
-      )}
     </div>
   );
 }

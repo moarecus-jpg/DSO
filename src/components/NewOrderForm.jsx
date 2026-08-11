@@ -51,7 +51,7 @@ export function NewOrderForm({ onSubmit, creating, error }) {
   const exampleTitle = `${shopSellerUsername(store)}#0007`;
 
   return (
-    <form className="card form-card" onSubmit={handleCreate}>
+    <form className="card form-card form-card--new-order" onSubmit={handleCreate}>
       <h2>{t("orders.newOrder")}</h2>
 
       <div className="tabs store-tabs" role="tablist" aria-label={t("orders.storeLabel")}>
@@ -154,9 +154,11 @@ export function NewOrderForm({ onSubmit, creating, error }) {
 
       {error && <p className="form-error">{error}</p>}
 
-      <button className="btn btn-primary" type="submit" disabled={creating || !canSubmit}>
-        {creating ? t("orders.opening") : t("orders.openOrder")}
-      </button>
+      <div className="form-card-actions">
+        <button className="btn btn-primary" type="submit" disabled={creating || !canSubmit}>
+          {creating ? t("orders.opening") : t("orders.openOrder")}
+        </button>
+      </div>
     </form>
   );
 }
