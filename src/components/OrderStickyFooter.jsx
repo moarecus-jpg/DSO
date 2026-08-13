@@ -16,6 +16,7 @@ export function OrderStickyFooter({
   onSaveShipping,
   savingShipping = false,
   footerActions = null,
+  footerCartAction = null,
   footerLeadingActions = null,
   onExpandedChange,
   shippingError = null,
@@ -32,7 +33,7 @@ export function OrderStickyFooter({
   }
 
   const hasTotals = memberTotals.length > 0;
-  if (!hasTotals && !footerActions && !footerLeadingActions) return null;
+  if (!hasTotals && !footerActions && !footerCartAction && !footerLeadingActions) return null;
 
   function renderFooterSlot(node) {
     if (node == null || node === false) return null;
@@ -44,6 +45,7 @@ export function OrderStickyFooter({
   }
 
   const leading = renderFooterSlot(footerLeadingActions);
+  const cart = renderFooterSlot(footerCartAction);
   const trailing = renderFooterSlot(footerActions);
 
   const { total, currency } = orderGrandTotal ?? {};
@@ -91,15 +93,8 @@ export function OrderStickyFooter({
           <div className="order-sticky-footer-bar">
             <div className="order-sticky-footer-bar-inner">
               <div className="order-sticky-footer-cluster">
-                {(leading || trailing) && (
-                  <div className="order-sticky-footer-actions-row">
-                    {leading}
-                    {trailing ? (
-                      <div className="order-sticky-footer-actions-trailing">{trailing}</div>
-                    ) : null}
-                  </div>
-                )}
-
+                {leading}
+                {cart}
                 {hasTotals && (
                   <div className="order-sticky-footer-total-group">
                     <button
@@ -131,6 +126,7 @@ export function OrderStickyFooter({
                     </div>
                   </div>
                 )}
+                {trailing}
               </div>
             </div>
           </div>

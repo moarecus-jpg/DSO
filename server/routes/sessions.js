@@ -273,6 +273,7 @@ function withOrderPermissions(session, userId) {
     canManageMembers: isAdmin,
     canManageShipping: isCreator || isAdmin,
     canManageOrder: isAdmin,
+    canAddAllToCart: isCreator,
   };
 }
 

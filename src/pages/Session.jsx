@@ -282,39 +282,37 @@ export function Session() {
       </button>
     ) : null;
 
+  const footerCartAction =
+    session.canAddAllToCart && recordCount > 0 && !isShop ? (
+      <DiscogsAddAllToCartButton
+        links={session.links}
+        disabled={isClosed}
+        variant="outline"
+        className="order-sticky-footer-action-btn order-sticky-footer-action-btn--secondary"
+      />
+    ) : null;
+
   const footerActions =
-    canManageOrder && (recordCount > 0 || !isClosed) ? (
-      <>
-        {recordCount > 0 && !isShop && (
-          <DiscogsAddAllToCartButton
-            links={session.links}
-            disabled={isClosed}
-            variant="outline"
-            className="order-sticky-footer-action-btn order-sticky-footer-action-btn--secondary"
-          />
-        )}
-        {!isClosed && (
-          <button
-            type="button"
-            className="order-sticky-footer-action-btn order-sticky-footer-action-btn--primary"
-            onClick={handleClose}
-            disabled={closing}
-            title={t("session.closeOrder")}
-            aria-label={closing ? t("session.closing") : t("session.closeOrder")}
-          >
-            <Archive size={18} aria-hidden />
-            <span className="order-sticky-footer-action-label order-sticky-footer-action-label--long">
-              {closing ? t("session.closing") : t("session.closeOrder")}
-            </span>
-            <span
-              className="order-sticky-footer-action-label order-sticky-footer-action-label--short"
-              aria-hidden
-            >
-              {closing ? t("session.closing") : t("session.closeOrderShort")}
-            </span>
-          </button>
-        )}
-      </>
+    canManageOrder && !isClosed ? (
+      <button
+        type="button"
+        className="order-sticky-footer-action-btn order-sticky-footer-action-btn--primary"
+        onClick={handleClose}
+        disabled={closing}
+        title={t("session.closeOrder")}
+        aria-label={closing ? t("session.closing") : t("session.closeOrder")}
+      >
+        <Archive size={18} aria-hidden />
+        <span className="order-sticky-footer-action-label order-sticky-footer-action-label--long">
+          {closing ? t("session.closing") : t("session.closeOrder")}
+        </span>
+        <span
+          className="order-sticky-footer-action-label order-sticky-footer-action-label--short"
+          aria-hidden
+        >
+          {closing ? t("session.closing") : t("session.closeOrderShort")}
+        </span>
+      </button>
     ) : null;
 
   return (
@@ -445,6 +443,7 @@ export function Session() {
           }
           savingShipping={savingShipping}
           footerActions={footerActions}
+          footerCartAction={footerCartAction}
           footerLeadingActions={footerLeadingActions}
           onExpandedChange={setFooterExpanded}
           shippingError={shippingError}
