@@ -64,7 +64,7 @@ export function DiscogsAddAllToCartButton({
       title={t("items.addAllToCartHint")}
       aria-label={label}
     >
-      <ShoppingCart size={16} aria-hidden />
+      <ShoppingCart size={18} strokeWidth={2.25} aria-hidden />
       <span className="order-sticky-footer-action-label order-sticky-footer-action-label--long">
         {label}
       </span>

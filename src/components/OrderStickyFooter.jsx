@@ -94,7 +94,9 @@ export function OrderStickyFooter({
                 {(leading || trailing) && (
                   <div className="order-sticky-footer-actions-row">
                     {leading}
-                    {trailing}
+                    {trailing ? (
+                      <div className="order-sticky-footer-actions-trailing">{trailing}</div>
+                    ) : null}
                   </div>
                 )}
 
