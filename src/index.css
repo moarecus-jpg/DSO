@@ -2373,7 +2373,7 @@ code {
 @media (max-width: 768px) {
   .page-session-with-footer {
     /* Clear floating FABs + mobile tab bar */
-    padding-bottom: calc(8.75rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(9.5rem + env(safe-area-inset-bottom));
   }
 }
 
@@ -2409,7 +2409,7 @@ code {
 
 @media (max-width: 768px) {
   .order-sticky-footer {
-    --order-sticky-offset: calc(3.6rem + env(safe-area-inset-bottom));
+    --order-sticky-offset: calc(4.75rem + env(safe-area-inset-bottom));
   }
 }
 
@@ -3038,28 +3038,50 @@ code {
 
 .modal-overlay {
   position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: grid;
-  place-items: center;
-  padding: 1.5rem;
+  top: var(--app-vv-top, 0px);
+  left: 0;
+  right: 0;
+  bottom: auto;
+  height: var(--app-vvh, 100dvh);
+  max-height: var(--app-vvh, 100dvh);
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(1rem, env(safe-area-inset-top)) 1.25rem max(1rem, env(safe-area-inset-bottom));
   background: rgba(0, 0, 0, 0.72);
   backdrop-filter: blur(4px);
+  box-sizing: border-box;
+}
+
+body.modal-open .mobile-nav,
+body.modal-open .order-sticky-footer,
+body.modal-open .order-sticky-backdrop {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .modal {
   width: 100%;
   max-width: 480px;
   margin: 0;
+  min-height: 0;
 }
 
 .modal-add-record {
   max-width: 560px;
-  max-height: min(90vh, 720px);
-  overflow-y: auto;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .modal-add-record:has(.app-select--open) {
+  overflow: visible;
+}
+
+.modal-add-record:has(.app-select--open) .modal-link-form {
   overflow: visible;
 }
 
@@ -3184,7 +3206,29 @@ code {
 .modal-link-form {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  flex: 1;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
+  min-height: 0;
+  overflow-y: auto;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  gap: 0.65rem;
+  margin-top: 0.35rem;
+  padding-top: 0.85rem;
+  background: var(--surface-1);
 }
 
 .modal-link-form textarea,
@@ -3337,6 +3381,7 @@ code {
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 0.75rem;
+  flex-shrink: 0;
 }
 
 .modal-header h2 {
@@ -3363,13 +3408,6 @@ code {
 .modal-close:hover {
   color: var(--text);
   background: var(--surface-3);
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.65rem;
-  margin-top: 1rem;
 }
 
 .modal .form-card label,
@@ -5758,16 +5796,41 @@ code {
   }
 
   .modal-overlay {
-    padding: 0.75rem;
-    align-items: flex-end;
+    z-index: 80;
+    align-items: stretch;
+    justify-content: flex-end;
+    flex-direction: column;
+    padding: max(0.5rem, env(safe-area-inset-top)) 0 0;
   }
 
   .modal.card {
     width: 100%;
     max-width: none;
-    max-height: 92vh;
+    max-height: 100%;
     border-radius: 1.25rem 1.25rem 0 0;
-    margin-bottom: env(safe-area-inset-bottom);
+    margin-bottom: 0;
+    padding-bottom: max(0.9rem, env(safe-area-inset-bottom));
+  }
+
+  .modal-add-record {
+    max-height: 100%;
+  }
+
+  .modal-actions {
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+  }
+
+  .modal-actions .btn {
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+  }
+
+  .modal-urls-textarea {
+    min-height: 4.75rem;
+    max-height: 22vh;
+    resize: none;
   }
 
   .modal-add-record-wide {

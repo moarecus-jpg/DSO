@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Disc3, X } from "lucide-react";
 import { parseDiscogsUrlList } from "../../shared/parseRecordUrl.js";
 import { parseShopUrlList } from "../../shared/parseShopUrl.js";
@@ -112,6 +113,36 @@ export function AddRecordModal({
     };
   }, [open, currentUserId, canAddForOthers, t]);
 
+  useEffect(() => {
+    if (!open) return undefined;
+    document.body.classList.add("modal-open");
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const viewport = window.visualViewport;
+    function syncViewport() {
+      const height = viewport?.height ?? window.innerHeight;
+      const offsetTop = viewport?.offsetTop ?? 0;
+      document.documentElement.style.setProperty("--app-vvh", `${height}px`);
+      document.documentElement.style.setProperty("--app-vv-top", `${offsetTop}px`);
+    }
+
+    syncViewport();
+    viewport?.addEventListener("resize", syncViewport);
+    viewport?.addEventListener("scroll", syncViewport);
+    window.addEventListener("resize", syncViewport);
+
+    return () => {
+      document.body.classList.remove("modal-open");
+      document.body.style.overflow = previousOverflow;
+      viewport?.removeEventListener("resize", syncViewport);
+      viewport?.removeEventListener("scroll", syncViewport);
+      window.removeEventListener("resize", syncViewport);
+      document.documentElement.style.removeProperty("--app-vvh");
+      document.documentElement.style.removeProperty("--app-vv-top");
+    };
+  }, [open]);
+
   const { valid: validUrls, invalid: invalidUrls } = useMemo(
     () => (isShop ? parseShopUrlList(urlsText, store) : parseDiscogsUrlList(urlsText)),
     [urlsText, isShop, store]
@@ -157,7 +188,7 @@ export function AddRecordModal({
           ? t("items.addOne")
           : t("items.addMany", { count: validUrls.length });
 
-  return (
+  return createPortal(
     <div
       className="modal-overlay"
       onClick={busy ? undefined : onClose}
@@ -181,70 +212,72 @@ export function AddRecordModal({
         </div>
 
         <form onSubmit={handleSubmit} className="modal-link-form">
-          {canAddForOthers ? (
-            <div className="modal-field-row">
-              <label className="modal-field-label" htmlFor="add-record-orderer">
-                {t("items.addFor")}
-              </label>
-              <AppSelect
-                className="modal-orderer-select"
-                value={forUserId}
-                onChange={setForUserId}
-                searchable
-                options={
-                  ordererOptions.length > 0
-                    ? ordererOptions
-                    : [{ value: "", label: t("common.loading") }]
-                }
-                ariaLabel={t("items.addFor")}
-                disabled={busy || ordererOptions.length === 0}
-              />
-            </div>
-          ) : (
-            <p className="muted fine modal-add-for-self">{t("items.addForSelfOnly")}</p>
-          )}
+          <div className="modal-body">
+            {canAddForOthers ? (
+              <div className="modal-field-row">
+                <label className="modal-field-label" htmlFor="add-record-orderer">
+                  {t("items.addFor")}
+                </label>
+                <AppSelect
+                  className="modal-orderer-select"
+                  value={forUserId}
+                  onChange={setForUserId}
+                  searchable
+                  options={
+                    ordererOptions.length > 0
+                      ? ordererOptions
+                      : [{ value: "", label: t("common.loading") }]
+                  }
+                  ariaLabel={t("items.addFor")}
+                  disabled={busy || ordererOptions.length === 0}
+                />
+              </div>
+            ) : (
+              <p className="muted fine modal-add-for-self">{t("items.addForSelfOnly")}</p>
+            )}
 
-          <p className="muted fine">
-            {isShop
-              ? t("items.linksHintShop", {
-                  store: storeConfig.label,
-                  domain: storeConfig.urlHint,
-                })
-              : t("items.linksHint", { seller: sellerUsername })}
-          </p>
-          {skippable && (
-            <p className="muted fine">{t("items.skipHint")}</p>
-          )}
-          <label>
-            {t("items.linksLabel")}
-            <textarea
-              className="modal-urls-textarea"
-              value={urlsText}
-              onChange={(e) => setUrlsText(e.target.value)}
-              placeholder={
-                isShop
-                  ? storeConfig.exampleUrl
-                  : "https://www.discogs.com/sell/item/123\nhttps://www.discogs.com/shop/item/456"
-              }
-              rows={6}
-              autoFocus
-              disabled={busy}
-            />
-          </label>
-          {validUrls.length > 0 && (
             <p className="muted fine">
-              {validUrls.length === 1
-                ? t("items.validLinkOne")
-                : t("items.validLinkMany", { count: validUrls.length })}
+              {isShop
+                ? t("items.linksHintShop", {
+                    store: storeConfig.label,
+                    domain: storeConfig.urlHint,
+                  })
+                : t("items.linksHint", { seller: sellerUsername })}
             </p>
-          )}
-          {invalidUrls.length > 0 && (
-            <p className="form-error fine">
-              {invalidUrls.length === 1
-                ? t("items.invalidLineOne")
-                : t("items.invalidLineMany", { count: invalidUrls.length })}
-            </p>
-          )}
+            {skippable && (
+              <p className="muted fine">{t("items.skipHint")}</p>
+            )}
+            <label>
+              {t("items.linksLabel")}
+              <textarea
+                className="modal-urls-textarea"
+                value={urlsText}
+                onChange={(e) => setUrlsText(e.target.value)}
+                placeholder={
+                  isShop
+                    ? storeConfig.exampleUrl
+                    : "https://www.discogs.com/sell/item/123\nhttps://www.discogs.com/shop/item/456"
+                }
+                rows={4}
+                autoFocus={typeof window === "undefined" || window.innerWidth > 768}
+                disabled={busy}
+              />
+            </label>
+            {validUrls.length > 0 && (
+              <p className="muted fine">
+                {validUrls.length === 1
+                  ? t("items.validLinkOne")
+                  : t("items.validLinkMany", { count: validUrls.length })}
+              </p>
+            )}
+            {invalidUrls.length > 0 && (
+              <p className="form-error fine">
+                {invalidUrls.length === 1
+                  ? t("items.invalidLineOne")
+                  : t("items.invalidLineMany", { count: invalidUrls.length })}
+              </p>
+            )}
+          </div>
           <div className="modal-actions">
             <button type="button" className="btn btn-ghost" onClick={onClose} disabled={busy}>
               {skippable ? t("items.skip") : t("common.cancel")}
@@ -259,6 +292,7 @@ export function AddRecordModal({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
