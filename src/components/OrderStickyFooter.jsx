@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ChevronUp } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowLeft, ChevronUp } from "lucide-react";
 import { formatPrice } from "../../shared/orderTotals.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { OrderSummary } from "./OrderSummary.jsx";
@@ -18,6 +19,8 @@ export function OrderStickyFooter({
   footerActions = null,
   footerCartAction = null,
   footerLeadingActions = null,
+  backTo = null,
+  backLabel = "",
   onExpandedChange,
   shippingError = null,
   onToggleSettle,
@@ -33,7 +36,15 @@ export function OrderStickyFooter({
   }
 
   const hasTotals = memberTotals.length > 0;
-  if (!hasTotals && !footerActions && !footerCartAction && !footerLeadingActions) return null;
+  if (
+    !hasTotals &&
+    !footerActions &&
+    !footerCartAction &&
+    !footerLeadingActions &&
+    !backTo
+  ) {
+    return null;
+  }
 
   function renderFooterSlot(node) {
     if (node == null || node === false) return null;
@@ -93,6 +104,19 @@ export function OrderStickyFooter({
           <div className="order-sticky-footer-bar">
             <div className="order-sticky-footer-bar-inner">
               <div className="order-sticky-footer-cluster">
+                {backTo && (
+                  <Link
+                    to={backTo}
+                    className="order-sticky-footer-action-btn order-sticky-footer-action-btn--back"
+                    title={backLabel}
+                    aria-label={backLabel}
+                  >
+                    <ArrowLeft size={18} strokeWidth={2.5} aria-hidden />
+                    <span className="order-sticky-footer-action-label">
+                      {backLabel}
+                    </span>
+                  </Link>
+                )}
                 {leading}
                 {cart}
                 {hasTotals && (

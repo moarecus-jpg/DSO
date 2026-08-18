@@ -45,6 +45,7 @@ export default {
     mobileStatistics: "Stat.",
     mobileProfile: "Profil",
     mainNav: "Glavna navigacija",
+    back: "Nazaj",
   },
   auth: {
     login: "Prijava",

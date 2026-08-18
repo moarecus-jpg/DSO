@@ -45,6 +45,7 @@ export default {
     mobileStatistics: "Stats",
     mobileProfile: "Profile",
     mainNav: "Main navigation",
+    back: "Back",
   },
   auth: {
     login: "Sign in",

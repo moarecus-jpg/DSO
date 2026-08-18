@@ -249,8 +249,26 @@ export function Session() {
     return link.user_id === user?.id;
   }
 
-  if (loading) return <p className="muted center page">{t("common.loadingOrder")}</p>;
-  if (!session) return <p className="muted center page">{t("session.notFound")}</p>;
+  if (loading) {
+    return (
+      <div className="muted center page">
+        <Link to="/" className="back-link">
+          <ArrowLeft size={16} /> {t("nav.back")}
+        </Link>
+        <p>{t("common.loadingOrder")}</p>
+      </div>
+    );
+  }
+  if (!session) {
+    return (
+      <div className="muted center page">
+        <Link to="/" className="back-link">
+          <ArrowLeft size={16} /> {t("nav.back")}
+        </Link>
+        <p>{t("session.notFound")}</p>
+      </div>
+    );
+  }
 
   const storeConfig = getStoreConfig(session.store);
   const isShop = isShopStore(session.store);
@@ -263,7 +281,8 @@ export function Session() {
   const isClosed = session.status === "closed";
   const recordCount = session.links?.length ?? 0;
   const canManageOrder = session.canManageOrder;
-  const showOrderFooter = recordCount > 0 || (canManageOrder && !isClosed);
+  const showOrderFooter = true;
+  const backTo = isClosed ? "/closed" : "/";
 
   const footerLeadingActions =
     canManageOrder && !isClosed ? (
@@ -445,6 +464,8 @@ export function Session() {
           footerActions={footerActions}
           footerCartAction={footerCartAction}
           footerLeadingActions={footerLeadingActions}
+          backTo={backTo}
+          backLabel={t("nav.back")}
           onExpandedChange={setFooterExpanded}
           shippingError={shippingError}
           canManageSettle={Boolean(

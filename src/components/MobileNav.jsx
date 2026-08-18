@@ -1,11 +1,16 @@
-import { NavLink, useSearchParams } from "react-router-dom";
+import { NavLink, useLocation, useSearchParams } from "react-router-dom";
 import { BarChart3, Folder, Lock, Package, Plus } from "lucide-react";
 import { useLocale } from "../hooks/useLocale.jsx";
 
 export function MobileNav() {
+  const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
   const { t } = useLocale();
   const newOrderOpen = searchParams.get("new") === "1";
+
+  if (pathname.startsWith("/session/")) {
+    return null;
+  }
 
   return (
     <nav className="mobile-nav" aria-label={t("nav.mainNav")}>

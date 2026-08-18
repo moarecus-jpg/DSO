@@ -2375,6 +2375,18 @@ code {
     /* Clear floating FABs + mobile tab bar */
     padding-bottom: calc(9.5rem + env(safe-area-inset-bottom));
   }
+
+  .layout-dashboard--session .page-session-with-footer {
+    padding-bottom: calc(5.75rem + env(safe-area-inset-bottom));
+  }
+
+  .layout-dashboard--session .page-session-with-footer > .back-link {
+    display: none;
+  }
+
+  .layout-dashboard--session .app-main-v2 {
+    padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
+  }
 }
 
 @media (min-width: 769px) {
@@ -2410,6 +2422,11 @@ code {
 @media (max-width: 768px) {
   .order-sticky-footer {
     --order-sticky-offset: calc(4.75rem + env(safe-area-inset-bottom));
+  }
+
+  .layout-dashboard--session .order-sticky-footer {
+    --order-sticky-offset: 0px;
+    z-index: 30;
   }
 }
 
@@ -2449,6 +2466,10 @@ code {
   }
 
   .order-sticky-footer-action-btn .order-sticky-footer-action-label--short {
+    display: none;
+  }
+
+  .order-sticky-footer-action-btn--back {
     display: none;
   }
 }
@@ -2701,10 +2722,18 @@ code {
     );
   }
 
-  .order-sticky-footer:not(.order-sticky-footer--expanded) .order-sticky-footer-sheet {
-    background: transparent;
-    border-top: none;
-    box-shadow: none;
+  .layout-dashboard--session .order-sticky-footer-bar {
+    background: rgba(9, 9, 11, 0.94);
+    backdrop-filter: blur(24px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.45rem 0.75rem;
+    padding-bottom: max(0.45rem, env(safe-area-inset-bottom));
+  }
+
+  .layout-dashboard--session .order-sticky-footer:not(.order-sticky-footer--expanded)
+    .order-sticky-footer-sheet {
+    background: rgba(9, 9, 11, 0.94);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .order-sticky-footer-bar-inner {
@@ -2714,12 +2743,12 @@ code {
 
   .order-sticky-footer-cluster {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
     width: 100%;
-    max-width: 22.5rem;
+    max-width: 26rem;
     margin-inline: auto;
-    gap: clamp(0.45rem, 2.8vw, 0.8rem);
+    gap: clamp(0.4rem, 2.4vw, 0.75rem);
     flex-wrap: nowrap;
   }
 
@@ -2762,6 +2791,13 @@ code {
 
   .order-sticky-footer-action-btn--destructive {
     box-shadow: 0 10px 28px rgba(239, 68, 68, 0.42);
+  }
+
+  .order-sticky-footer-action-btn--back {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #fff;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
   }
 
   .order-sticky-footer-price {
@@ -5900,6 +5936,20 @@ body.modal-open .order-sticky-backdrop {
 [data-theme="light"] .mobile-nav {
   background: rgba(255, 255, 255, 0.94);
   border-color: #e4e4e7;
+}
+
+[data-theme="light"] .layout-dashboard--session .order-sticky-footer-bar,
+[data-theme="light"] .layout-dashboard--session
+  .order-sticky-footer:not(.order-sticky-footer--expanded)
+  .order-sticky-footer-sheet {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: #e4e4e7;
+}
+
+[data-theme="light"] .order-sticky-footer-action-btn--back {
+  background: #fff;
+  border-color: #d4d4d8;
+  color: #18181b;
 }
 
 [data-theme="light"] .mobile-topbar-icon-btn {
