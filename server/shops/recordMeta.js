@@ -84,6 +84,11 @@ function cleanTitleNoise(name, storeId) {
       /\s*kaufen\s*\|\s*decks\.de.*$/i,
     ],
     deejay: [/\s*[|\u2013\u2014-]\s*Vinyl\s*$/i, /\s*\|\s*deejay\.de.*$/i],
+    juno: [
+      /\s*[|\u2013\u2014-]\s*Juno Records.*$/i,
+      /\s+Vinyl at Juno Records\.?.*$/i,
+      /\s+Vinyl\s*$/i,
+    ],
   };
   for (const pattern of storeCleaners[storeId] ?? []) {
     cleaned = cleaned.replace(pattern, "").trim();
@@ -163,6 +168,10 @@ function fallbackTitle(parsed, storeId) {
     if (storeId === "deejay") {
       const split = splitArtistTitle(parsed.slug, storeId);
       if (split.title || split.artist) return split;
+    }
+    if (storeId === "juno" && parsed.slug) {
+      const slug = parsed.slug.replace(/-vinyl$/i, "");
+      return { artist: null, title: humanizeSlug(slug) };
     }
     return { artist: null, title: humanizeSlug(parsed.slug) };
   }

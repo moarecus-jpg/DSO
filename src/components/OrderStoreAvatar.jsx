@@ -38,7 +38,7 @@ export function StoreAvatar({ store, className = "order-icon", size }) {
   );
 }
 
-/** Discogs seller photo, or shop logo for HHV / Yoyaku / Decks / Deejay. */
+/** Discogs seller photo, or shop logo for HHV / Yoyaku / Decks / Deejay / Juno. */
 export function OrderStoreAvatar({
   store,
   username,

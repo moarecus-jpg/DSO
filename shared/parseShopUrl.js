@@ -1,4 +1,4 @@
-import { getStoreConfig, normalizeStore, STORE_DECKS, STORE_DEEJAY, STORE_HHV, STORE_YOYAKU } from "./stores.js";
+import { getStoreConfig, normalizeStore, STORE_DECKS, STORE_DEEJAY, STORE_HHV, STORE_JUNO, STORE_YOYAKU } from "./stores.js";
 
 function ensureUrl(url) {
   const trimmed = url?.trim();
@@ -146,11 +146,39 @@ export function parseDeejayRecordUrl(url) {
   }
 }
 
+export function parseJunoRecordUrl(url) {
+  try {
+    const href = ensureUrl(url);
+    if (!href) return { valid: false };
+    const u = new URL(href);
+    if (!u.hostname.includes("juno.co.uk")) return { valid: false };
+
+    const match = u.pathname.match(/\/products\/([^/?#]+)\/(\d+)(?:-\d+)?\/?$/i);
+    if (!match) return { valid: false };
+
+    const slug = decodeURIComponent(match[1]).replace(/\/+$/, "");
+    const productId = Number(match[2]);
+    if (!slug || !Number.isFinite(productId)) return { valid: false };
+
+    return {
+      valid: true,
+      store: STORE_JUNO,
+      productId,
+      listingId: productId,
+      slug,
+      canonicalUrl: `https://www.juno.co.uk/products/${slug}/${productId}-01/`,
+    };
+  } catch {
+    return { valid: false };
+  }
+}
+
 const PARSERS = {
   [STORE_HHV]: parseHhvRecordUrl,
   [STORE_YOYAKU]: parseYoyakuRecordUrl,
   [STORE_DECKS]: parseDecksRecordUrl,
   [STORE_DEEJAY]: parseDeejayRecordUrl,
+  [STORE_JUNO]: parseJunoRecordUrl,
 };
 
 export function parseShopRecordUrl(url, store) {

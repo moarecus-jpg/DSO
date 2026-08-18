@@ -3,6 +3,7 @@ export const STORE_HHV = "hhv";
 export const STORE_YOYAKU = "yoyaku";
 export const STORE_DECKS = "decks";
 export const STORE_DEEJAY = "deejay";
+export const STORE_JUNO = "juno";
 
 /** @typedef {{ id: string, label: string, kind: 'marketplace' | 'shop', sellerUsername?: string, shopUrl?: string, hostIncludes?: string[], exampleUrl?: string, urlHint?: string, logoDomain?: string, logoUrl?: string }} StoreConfig */
 
@@ -66,6 +67,19 @@ export const STORES = {
     urlHint: "deejay.de/…__123456",
     logoDomain: "deejay.de",
     logoUrl: shopLogoUrl("deejay.de"),
+  },
+  [STORE_JUNO]: {
+    id: STORE_JUNO,
+    label: "Juno",
+    kind: "shop",
+    sellerUsername: "juno",
+    shopUrl: "https://www.juno.co.uk/",
+    hostIncludes: ["juno.co.uk"],
+    exampleUrl:
+      "https://www.juno.co.uk/products/david-bowie-from-station-to-station-vinyl/1052372-01/",
+    urlHint: "juno.co.uk/products/…/…-01",
+    logoDomain: "juno.co.uk",
+    logoUrl: shopLogoUrl("juno.co.uk"),
   },
 };
 export const SHOP_STORE_IDS = Object.values(STORES)
