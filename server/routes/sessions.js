@@ -941,12 +941,47 @@ router.get("/:id", requireUser, async (req, res) => {
 
   joinSession(req.params.id, req.session.userId);
   session = await ensureSellerAvatar(getGroupSession(req.params.id));
+  res.json({ session: withOrderPermissions(session, req.session.userId) });
+});
+
+router.post("/:id/availability/refresh", requireUser, async (req, res) => {
+  const userId = req.session.userId;
+
+  if (useMockAuth() && req.params.id.startsWith("mock")) {
+    const summary = mockSessions.find((s) => s.id === req.params.id);
+    if (!summary) {
+      return res.status(404).json({ error: "Session not found" });
+    }
+    const detail = mockSessionDetail(summary);
+    const unavailable = (detail.links ?? []).filter((link) =>
+      link.availability === "unavailable"
+    );
+    return res.json({
+      session: withOrderPermissions(detail, userId),
+      becameUnavailable: unavailable,
+    });
+  }
+
+  let session = getGroupSession(req.params.id);
+  if (!session) return res.status(404).json({ error: "Session not found" });
+  if (session.status !== "open") {
+    return res.status(400).json({
+      error: "Razpoložljivost je mogoče osvežiti samo na odprtem naročilu.",
+    });
+  }
+
   try {
-    session = await refreshSessionAvailability(session);
+    const result = await refreshSessionAvailability(session, { force: true });
+    res.json({
+      session: withOrderPermissions(result.session, userId),
+      becameUnavailable: result.becameUnavailable ?? [],
+    });
   } catch (err) {
     console.warn("Availability refresh:", err?.message ?? err);
+    return res.status(500).json({
+      error: "Razpoložljivosti ni bilo mogoče osvežiti.",
+    });
   }
-  res.json({ session: withOrderPermissions(session, req.session.userId) });
 });
 
 router.patch("/:id/members/:userId/settle", requireUser, (req, res) => {

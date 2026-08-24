@@ -2997,6 +2997,21 @@ code {
   opacity: 0.55;
 }
 
+.order-unavailable-title {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 650;
+  color: #fca5a5;
+}
+
+.order-unavailable-note {
+  margin: 0.35rem 0 0.75rem;
+}
+
+.order-items--unavailable {
+  border-color: rgba(239, 68, 68, 0.28);
+}
+
 .session-owner-card .muted {
   margin: 0.35rem 0 0;
 }

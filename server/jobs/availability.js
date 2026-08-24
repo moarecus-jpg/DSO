@@ -7,8 +7,8 @@ import {
 import { resolveRecordFromUrl } from "../discogs/recordMeta.js";
 import { resolveShopRecordFromUrl } from "../shops/recordMeta.js";
 import { isShopStore } from "../../shared/stores.js";
+import { isLinkUnavailable } from "../../shared/orderTotals.js";
 
-const STALE_MS = 2 * 60 * 1000;
 const LINK_DELAY_MS = 350;
 
 function sleep(ms) {
@@ -38,7 +38,10 @@ async function resolveMeta(link, session) {
 }
 
 async function refreshSessionLinks(session) {
+  const becameUnavailableIds = [];
+
   for (const link of session.links ?? []) {
+    const wasUnavailable = isLinkUnavailable(link);
     try {
       const meta = await resolveMeta(link, session);
       const unavailable = listingUnavailable(meta);
@@ -56,12 +59,14 @@ async function refreshSessionLinks(session) {
         availability: unavailable ? "unavailable" : "available",
         availabilityNote: unavailable ? "Listing is no longer for sale." : null,
       });
+      if (unavailable && !wasUnavailable) becameUnavailableIds.push(link.id);
     } catch (err) {
       if (isNotFoundError(err)) {
         updateSessionLinkAvailability(link.id, {
           availability: "unavailable",
           availabilityNote: "Listing was not found.",
         });
+        if (!wasUnavailable) becameUnavailableIds.push(link.id);
       } else {
         console.warn(
           `[availability] skip ${link.id}:`,
@@ -73,18 +78,22 @@ async function refreshSessionLinks(session) {
   }
 
   updateSessionAvailabilityCheckedAt(session.id);
-  return getGroupSession(session.id);
+  const updated = getGroupSession(session.id);
+  const becameUnavailable = (updated?.links ?? []).filter((link) =>
+    becameUnavailableIds.includes(link.id)
+  );
+  return { session: updated, becameUnavailable };
 }
 
 export async function refreshSessionAvailability(session, { force = false } = {}) {
-  if (!session || session.status !== "open") return session;
-  if (!(session.links ?? []).length) return session;
-
-  const checkedAt = session.availability_checked_at
-    ? Date.parse(session.availability_checked_at)
-    : 0;
-  if (!force && Number.isFinite(checkedAt) && Date.now() - checkedAt < STALE_MS) {
-    return session;
+  if (!session || session.status !== "open") {
+    return { session, becameUnavailable: [] };
+  }
+  if (!(session.links ?? []).length) {
+    return { session, becameUnavailable: [] };
+  }
+  if (!force) {
+    return { session, becameUnavailable: [] };
   }
 
   return refreshSessionLinks(session);

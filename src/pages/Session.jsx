@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Archive, Disc3, ExternalLink, Heart, Plus, RotateCcw, X } from "lucide-react";
+import { ArrowLeft, Archive, Disc3, ExternalLink, Heart, Plus, RefreshCw, RotateCcw, X } from "lucide-react";
 import { AddRecordModal } from "../components/AddRecordModal.jsx";
 import { AppSelect } from "../components/AppSelect.jsx";
 import { CloseOrderDialog } from "../components/CloseOrderDialog.jsx";
@@ -55,6 +55,8 @@ export function Session() {
   const [transferring, setTransferring] = useState(false);
   const [statusId, setStatusId] = useState("");
   const [savingStatus, setSavingStatus] = useState(false);
+  const [refreshingAvailability, setRefreshingAvailability] = useState(false);
+  const [becameUnavailable, setBecameUnavailable] = useState([]);
 
   function loadSession() {
     return api(`/api/sessions/${id}`).then((d) => {
@@ -65,6 +67,7 @@ export function Session() {
 
   useEffect(() => {
     setAddRecordOpen(false);
+    setBecameUnavailable([]);
     loadSession().catch(console.error).finally(() => setLoading(false));
   }, [id]);
 
@@ -324,6 +327,21 @@ export function Session() {
     }
   }
 
+  async function handleRefreshAvailability() {
+    setRefreshingAvailability(true);
+    try {
+      const data = await api(`/api/sessions/${id}/availability/refresh`, {
+        method: "POST",
+      });
+      setSession(data.session);
+      setBecameUnavailable(data.becameUnavailable ?? []);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setRefreshingAvailability(false);
+    }
+  }
+
   function canRemoveLink(link) {
     if (!isOpenSession(session?.status)) return false;
     if (session?.canManageOrder) return true;
@@ -497,6 +515,23 @@ export function Session() {
             </a>
           )}
           {isOpen && (
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={handleRefreshAvailability}
+              disabled={refreshingAvailability || recordCount === 0}
+              title={t("session.refreshAvailabilityHint")}
+            >
+              <RefreshCw
+                size={18}
+                className={refreshingAvailability ? "spin" : undefined}
+              />
+              {refreshingAvailability
+                ? t("session.refreshingAvailability")
+                : t("session.refreshAvailability")}
+            </button>
+          )}
+          {isOpen && (
             <button type="button" className="btn btn-primary" onClick={openAddRecord}>
               <Plus size={18} />
               {t("session.addItem")}
@@ -608,6 +643,21 @@ export function Session() {
               onRemoveLink={handleRemoveLink}
               removingLinkId={removingLinkId}
               canRemoveLink={canRemoveLink}
+            />
+            {becameUnavailable.length > 0 && (
+              <p className="muted fine order-unavailable-note">
+                {t("items.unavailableAfterRefresh", {
+                  count: becameUnavailable.length,
+                })}
+              </p>
+            )}
+            <RecordList
+              links={session.links}
+              store={session.store}
+              onRemoveLink={handleRemoveLink}
+              removingLinkId={removingLinkId}
+              canRemoveLink={canRemoveLink}
+              unavailableOnly
             />
           </>
         )}

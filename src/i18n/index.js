@@ -55,6 +55,9 @@ const SERVER_ERROR_MAP = {
   "Samo app admin lahko spremeni status naročila.": "errors.statusAdminOnly",
   "Neveljaven status naročila.": "errors.invalidStatus",
   "Statusa ni bilo mogoče spremeniti.": "errors.statusChangeFailed",
+  "Razpoložljivost je mogoče osvežiti samo na odprtem naročilu.":
+    "errors.refreshOpenOnly",
+  "Razpoložljivosti ni bilo mogoče osvežiti.": "errors.refreshFailed",
   "Samo lastnik naročila lahko prenese lastništvo.": "errors.ownerTransferOnly",
   "Novi lastnik mora imeti vsaj en item v tem naročilu.": "errors.ownerMustHaveItem",
   "Lastnika je mogoče spremeniti samo na odprtem naročilu.": "errors.ownerOpenOnly",
