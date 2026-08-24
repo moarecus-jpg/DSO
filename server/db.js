@@ -738,6 +738,45 @@ export function cancelGroupSession(id) {
   return getGroupSession(id);
 }
 
+export function setGroupSessionStatus(id, status) {
+  const existing = db
+    .prepare("SELECT id, status, closed_at FROM group_sessions WHERE id = ?")
+    .get(id);
+  if (!existing) return null;
+
+  const allowed = ["open", "closed", "unplaced", "auto_closed", "canceled"];
+  if (!allowed.includes(status)) {
+    throw new Error("Neveljaven status naročila.");
+  }
+  if (existing.status === status) return getGroupSession(id);
+
+  if (status === "open") {
+    db.prepare(
+      `UPDATE group_sessions
+       SET status = 'open', closed_at = NULL, close_reason = NULL
+       WHERE id = ?`
+    ).run(id);
+    return getGroupSession(id);
+  }
+
+  const closeReason =
+    status === "unplaced"
+      ? "unplaced"
+      : status === "auto_closed"
+        ? "auto"
+        : status === "canceled"
+          ? "canceled"
+          : "manual";
+  const closedAt = existing.closed_at || new Date().toISOString();
+
+  db.prepare(
+    `UPDATE group_sessions
+     SET status = ?, closed_at = ?, close_reason = ?
+     WHERE id = ?`
+  ).run(status, closedAt, closeReason, id);
+  return getGroupSession(id);
+}
+
 export function reopenGroupSession(id) {
   const existing = db
     .prepare("SELECT id, status FROM group_sessions WHERE id = ?")

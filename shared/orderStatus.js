@@ -4,6 +4,27 @@ export const SESSION_UNPLACED = "unplaced";
 export const SESSION_AUTO_CLOSED = "auto_closed";
 export const SESSION_CANCELED = "canceled";
 
+export const SESSION_STATUSES = [
+  SESSION_OPEN,
+  SESSION_CLOSED,
+  SESSION_UNPLACED,
+  SESSION_AUTO_CLOSED,
+  SESSION_CANCELED,
+];
+
+export function isValidSessionStatus(status) {
+  return SESSION_STATUSES.includes(status);
+}
+
+export function closeReasonForStatus(status) {
+  if (status === SESSION_OPEN) return null;
+  if (status === SESSION_UNPLACED) return "unplaced";
+  if (status === SESSION_AUTO_CLOSED) return "auto";
+  if (status === SESSION_CANCELED) return "canceled";
+  if (status === SESSION_CLOSED) return "manual";
+  return null;
+}
+
 export function isOpenSession(status) {
   return (status ?? SESSION_OPEN) === SESSION_OPEN;
 }

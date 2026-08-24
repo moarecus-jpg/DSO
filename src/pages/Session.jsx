@@ -22,8 +22,10 @@ import {
   isArchivedSession,
   isOpenSession,
   isReopenableSession,
+  SESSION_STATUSES,
   sessionListNavKey,
   sessionListPath,
+  sessionStatusAppearance,
   sessionStatusNoteKey,
 } from "../../shared/orderStatus.js";
 
@@ -51,6 +53,8 @@ export function Session() {
   const [reopening, setReopening] = useState(false);
   const [ownerId, setOwnerId] = useState("");
   const [transferring, setTransferring] = useState(false);
+  const [statusId, setStatusId] = useState("");
+  const [savingStatus, setSavingStatus] = useState(false);
 
   function loadSession() {
     return api(`/api/sessions/${id}`).then((d) => {
@@ -83,6 +87,10 @@ export function Session() {
   useEffect(() => {
     setOwnerId(session?.created_by ?? "");
   }, [session?.created_by]);
+
+  useEffect(() => {
+    setStatusId(session?.status ?? "open");
+  }, [session?.status]);
 
   function openAddRecord() {
     setAddRecordSkippable(false);
@@ -156,6 +164,22 @@ export function Session() {
       alert(err.message);
     } finally {
       setTransferring(false);
+    }
+  }
+
+  async function handleSaveStatus() {
+    if (!statusId || statusId === session?.status) return;
+    setSavingStatus(true);
+    try {
+      const { session: updated } = await api(`/api/sessions/${id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: statusId }),
+      });
+      setSession(updated);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSavingStatus(false);
     }
   }
 
@@ -519,6 +543,36 @@ export function Session() {
               }
             >
               {transferring ? t("session.transferring") : t("session.transferOwner")}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {(session.canChangeStatus || user?.isAdmin) && (
+        <div className="members card session-owner-card">
+          <span className="label">{t("session.statusLabel")}</span>
+          <p className="muted fine">{t("session.statusHint")}</p>
+          <div className="session-owner-row">
+            <AppSelect
+              value={statusId || session.status || "open"}
+              onChange={setStatusId}
+              options={SESSION_STATUSES.map((status) => ({
+                value: status,
+                label: t(sessionStatusAppearance(status).labelKey),
+              }))}
+              ariaLabel={t("session.statusLabel")}
+              disabled={savingStatus}
+              searchable={false}
+            />
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={handleSaveStatus}
+              disabled={
+                savingStatus || !statusId || statusId === session.status
+              }
+            >
+              {savingStatus ? t("session.savingStatus") : t("session.saveStatus")}
             </button>
           </div>
         </div>

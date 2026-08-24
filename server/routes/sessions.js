@@ -24,6 +24,7 @@ import {
   publicUser,
   removeSessionLink,
   reopenGroupSession,
+  setGroupSessionStatus,
   transferGroupSessionOwner,
 } from "../db.js";
 import {
@@ -61,6 +62,7 @@ import { googleConfigured } from "../auth/google.js";
 import { discogsAppConfigured } from "../discogs/auth.js";
 import { discogsOAuthConfigured } from "../discogs/oauth.js";
 import { canRemoveSessionLink, isOrderAdmin, isOrderCreator } from "../auth/orderAdmin.js";
+import { isAppAdmin } from "../auth/appAdmin.js";
 import { publicErrorMessage } from "../utils/publicError.js";
 import { appBaseUrl } from "../appUrl.js";
 import { refreshSessionAvailability } from "../jobs/availability.js";
@@ -269,6 +271,7 @@ function requireUser(req, res, next) {
 function withOrderPermissions(session, userId) {
   const isAdmin = isOrderAdmin(session, userId);
   const isCreator = isOrderCreator(session, userId);
+  const appAdmin = isAppAdmin(userId);
   const viewed = sessionForViewer(session, userId, isAdmin);
   const shippingValue =
     viewed.shipping_value != null && Number.isNaN(Number(viewed.shipping_value))
@@ -282,6 +285,7 @@ function withOrderPermissions(session, userId) {
     canManageOrder: isAdmin,
     canAddAllToCart: isCreator,
     canReopen: isReopenableSession(session.status) && (isCreator || isAdmin),
+    canChangeStatus: appAdmin,
   };
 }
 
@@ -757,6 +761,61 @@ router.post("/:id/reopen", requireUser, (req, res) => {
   }
 
   res.json({ session: withOrderPermissions(session, userId) });
+});
+
+router.patch("/:id/status", requireUser, (req, res) => {
+  const userId = req.session.userId;
+  if (!isAppAdmin(userId)) {
+    return res.status(403).json({
+      error: "Samo app admin lahko spremeni status naročila.",
+    });
+  }
+
+  const status = String(req.body?.status ?? "").trim();
+  const allowed = ["open", "closed", "unplaced", "auto_closed", "canceled"];
+  if (!allowed.includes(status)) {
+    return res.status(400).json({ error: "Neveljaven status naročila." });
+  }
+
+  if (useMockAuth() && req.params.id.startsWith("mock")) {
+    const idx = mockSessions.findIndex((s) => s.id === req.params.id);
+    if (idx === -1) {
+      return res.status(404).json({ error: "Session not found" });
+    }
+    const current = mockSessions[idx];
+    mockSessions[idx] = {
+      ...current,
+      status,
+      closed_at:
+        status === "open" ? null : current.closed_at || new Date().toISOString(),
+      close_reason:
+        status === "open"
+          ? null
+          : status === "unplaced"
+            ? "unplaced"
+            : status === "auto_closed"
+              ? "auto"
+              : status === "canceled"
+                ? "canceled"
+                : "manual",
+    };
+    return res.json({
+      session: withOrderPermissions(mockSessionDetail(mockSessions[idx]), userId),
+    });
+  }
+
+  const existing = getGroupSession(req.params.id);
+  if (!existing) return res.status(404).json({ error: "Session not found" });
+
+  try {
+    const session = setGroupSessionStatus(req.params.id, status);
+    if (!session) return res.status(404).json({ error: "Session not found" });
+    res.json({ session: withOrderPermissions(session, userId) });
+  } catch (err) {
+    return res.status(400).json({
+      error: err.message ?? "Statusa ni bilo mogoče spremeniti.",
+    });
+  }
 });
 
 router.patch("/:id/owner", requireUser, (req, res) => {
