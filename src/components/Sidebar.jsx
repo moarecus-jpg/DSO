@@ -1,6 +1,7 @@
 import { Link, NavLink, useSearchParams } from "react-router-dom";
 import {
   ChevronDown,
+  CircleOff,
   Folder,
   Lock,
   LogOut,
@@ -63,6 +64,15 @@ export function Sidebar() {
               <Lock size={18} strokeWidth={2.1} />
             </span>
             <span className="sidebar-link-label">{t("nav.closedOrders")}</span>
+          </NavLink>
+          <NavLink
+            to="/unplaced"
+            className={({ isActive }) => `sidebar-link-v2${isActive ? " active" : ""}`}
+          >
+            <span className="sidebar-link-icon sidebar-link-icon--unplaced" aria-hidden>
+              <CircleOff size={18} strokeWidth={2.1} />
+            </span>
+            <span className="sidebar-link-label">{t("nav.unplacedOrders")}</span>
           </NavLink>
           <NavLink
             to="/my-items"

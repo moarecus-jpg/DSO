@@ -1,6 +1,7 @@
 import { ExternalLink } from "lucide-react";
 import { DiscogsAddToCartLink } from "./DiscogsAddToCartLink.jsx";
 import { RemoveFromOrderButton } from "./RemoveFromOrderButton.jsx";
+import { isLinkUnavailable } from "../../shared/orderTotals.js";
 import { getStoreConfig, isShopStore } from "../../shared/stores.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 
@@ -14,10 +15,11 @@ export function DiscogsCartActions({
   const { t } = useLocale();
   const isShop = isShopStore(store);
   const storeConfig = getStoreConfig(store);
+  const unavailable = isLinkUnavailable(link);
 
   return (
     <div className={`discogs-cart-actions ${className}`.trim()}>
-      {isShop ? (
+      {unavailable ? null : isShop ? (
         link?.url ? (
           <a
             href={link.url}

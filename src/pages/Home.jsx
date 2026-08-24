@@ -5,6 +5,7 @@ import { OrderDetailPreview } from "../components/OrderDetailPreview.jsx";
 import { OrderList } from "../components/OrderList.jsx";
 import { OrdersPageHeader } from "../components/OrdersPageHeader.jsx";
 import { filterSessions } from "../../shared/filterOrders.js";
+import { sessionListPath } from "../../shared/orderStatus.js";
 import { api } from "../api.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { useOrderPreview } from "../hooks/useOrderPreview.js";
@@ -37,9 +38,9 @@ export function Home() {
   );
 
   const preview = useOrderPreview(filteredSessions, {
-    onClosed: async () => {
+    onClosed: async (session) => {
       await loadSessions();
-      navigate("/closed");
+      navigate(sessionListPath(session?.status));
     },
   });
 

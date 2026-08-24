@@ -79,6 +79,7 @@ function fromListingPayload(data, url, note) {
     mediaCondition: data.condition ?? null,
     sleeveCondition: data.sleeve_condition ?? null,
     label: note?.trim() || itemDescription || buildLabel(artist, title, note),
+    listingStatus: data.status ?? null,
   };
 }
 

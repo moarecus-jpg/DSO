@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Archive, Disc3, ExternalLink, Heart, Plus, X } from "lucide-react";
+import { ArrowLeft, Archive, Disc3, ExternalLink, Heart, Plus, RotateCcw, X } from "lucide-react";
 import { AddRecordModal } from "../components/AddRecordModal.jsx";
+import { AppSelect } from "../components/AppSelect.jsx";
+import { CloseOrderDialog } from "../components/CloseOrderDialog.jsx";
 import { DiscogsAddAllToCartButton } from "../components/DiscogsAddAllToCartButton.jsx";
 import { MemberChips } from "../components/MemberChips.jsx";
 import { OrderStoreAvatar } from "../components/OrderStoreAvatar.jsx";
@@ -16,6 +18,14 @@ import { sellerMywantsUrl } from "../../shared/discogsUrls.js";
 import { displayOrderTitle } from "../../shared/orderTitle.js";
 import { orderPageTitle } from "../../shared/orderShare.js";
 import { getStoreConfig, isShopStore } from "../../shared/stores.js";
+import {
+  isArchivedSession,
+  isOpenSession,
+  isReopenableSession,
+  sessionListNavKey,
+  sessionListPath,
+  sessionStatusNoteKey,
+} from "../../shared/orderStatus.js";
 
 export function Session() {
   const { id } = useParams();
@@ -37,6 +47,10 @@ export function Session() {
   const [footerExpanded, setFooterExpanded] = useState(false);
   const [shippingError, setShippingError] = useState(null);
   const [settlingUserId, setSettlingUserId] = useState(null);
+  const [closeDialogOpen, setCloseDialogOpen] = useState(false);
+  const [reopening, setReopening] = useState(false);
+  const [ownerId, setOwnerId] = useState("");
+  const [transferring, setTransferring] = useState(false);
 
   function loadSession() {
     return api(`/api/sessions/${id}`).then((d) => {
@@ -66,6 +80,10 @@ export function Session() {
     }
   }, [searchParams, setSearchParams]);
 
+  useEffect(() => {
+    setOwnerId(session?.created_by ?? "");
+  }, [session?.created_by]);
+
   function openAddRecord() {
     setAddRecordSkippable(false);
     setAddRecordOpen(true);
@@ -89,16 +107,53 @@ export function Session() {
     }
   }
 
-  async function handleClose() {
-    if (!confirm(t("session.confirmClose"))) return;
+  function handleClose() {
+    setCloseDialogOpen(true);
+  }
+
+  async function handleCloseOutcome(outcome) {
     setClosing(true);
     try {
-      await api(`/api/sessions/${id}/close`, { method: "POST" });
-      navigate("/closed");
+      const { session: updated } = await api(`/api/sessions/${id}/close`, {
+        method: "POST",
+        body: JSON.stringify({ outcome }),
+      });
+      setCloseDialogOpen(false);
+      navigate(sessionListPath(updated?.status));
     } catch (err) {
       alert(err.message);
     } finally {
       setClosing(false);
+    }
+  }
+
+  async function handleReopen() {
+    setReopening(true);
+    try {
+      const { session: updated } = await api(`/api/sessions/${id}/reopen`, {
+        method: "POST",
+      });
+      setSession(updated);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setReopening(false);
+    }
+  }
+
+  async function handleTransferOwner() {
+    if (!ownerId || ownerId === session?.created_by) return;
+    setTransferring(true);
+    try {
+      const { session: updated } = await api(`/api/sessions/${id}/owner`, {
+        method: "PATCH",
+        body: JSON.stringify({ userId: ownerId }),
+      });
+      setSession(updated);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setTransferring(false);
     }
   }
 
@@ -244,7 +299,7 @@ export function Session() {
   }
 
   function canRemoveLink(link) {
-    if (session?.status === "closed") return false;
+    if (!isOpenSession(session?.status)) return false;
     if (session?.canManageOrder) return true;
     return link.user_id === user?.id;
   }
@@ -278,14 +333,41 @@ export function Session() {
   const wantlistUrl = isShop
     ? null
     : sellerMywantsUrl(session.seller_username, user?.discogsUsername);
-  const isClosed = session.status === "closed";
+  const isOpen = isOpenSession(session.status);
+  const isArchived = isArchivedSession(session.status);
   const recordCount = session.links?.length ?? 0;
   const canManageOrder = session.canManageOrder;
   const showOrderFooter = true;
-  const backTo = isClosed ? "/closed" : "/";
+  const backTo = sessionListPath(session.status);
+  const backLabel = t(sessionListNavKey(session.status));
+  const statusNoteKey = sessionStatusNoteKey(session.status);
+  const ownerOptions = (session.members ?? []).map((member) => {
+    const handle = member.discogs_username ? `@${member.discogs_username}` : null;
+    const name = member.name ?? handle ?? member.id;
+    return {
+      value: member.id,
+      label:
+        handle && member.name && member.name !== handle
+          ? `${member.name} (${handle})`
+          : name,
+    };
+  });
+  if (
+    session.created_by &&
+    !ownerOptions.some((option) => option.value === session.created_by)
+  ) {
+    ownerOptions.unshift({
+      value: session.created_by,
+      label:
+        session.creator_name ??
+        (session.creator_username
+          ? `@${session.creator_username}`
+          : session.created_by),
+    });
+  }
 
   const footerLeadingActions =
-    canManageOrder && !isClosed ? (
+    canManageOrder && isOpen ? (
       <button
         type="button"
         className="order-sticky-footer-action-btn order-sticky-footer-action-btn--destructive"
@@ -305,14 +387,14 @@ export function Session() {
     session.canAddAllToCart && recordCount > 0 && !isShop ? (
       <DiscogsAddAllToCartButton
         links={session.links}
-        disabled={isClosed}
+        disabled={isArchived}
         variant="outline"
         className="order-sticky-footer-action-btn order-sticky-footer-action-btn--secondary"
       />
     ) : null;
 
   const footerActions =
-    canManageOrder && !isClosed ? (
+    canManageOrder && isOpen ? (
       <button
         type="button"
         className="order-sticky-footer-action-btn order-sticky-footer-action-btn--primary"
@@ -332,6 +414,20 @@ export function Session() {
           {closing ? t("session.closing") : t("session.closeOrderShort")}
         </span>
       </button>
+    ) : session.canReopen && isReopenableSession(session.status) ? (
+      <button
+        type="button"
+        className="order-sticky-footer-action-btn order-sticky-footer-action-btn--primary"
+        onClick={handleReopen}
+        disabled={reopening}
+        title={t("session.reopenOrder")}
+        aria-label={reopening ? t("session.reopening") : t("session.reopenOrder")}
+      >
+        <RotateCcw size={18} aria-hidden />
+        <span className="order-sticky-footer-action-label">
+          {reopening ? t("session.reopening") : t("session.reopenOrder")}
+        </span>
+      </button>
     ) : null;
 
   return (
@@ -340,9 +436,8 @@ export function Session() {
         footerExpanded ? " page-session-with-footer--expanded" : ""
       }`}
     >
-      <Link to={isClosed ? "/closed" : "/"} className="back-link">
-        <ArrowLeft size={16} />{" "}
-        {isClosed ? t("nav.closedOrders") : t("nav.openOrders")}
+      <Link to={backTo} className="back-link">
+        <ArrowLeft size={16} /> {backLabel}
       </Link>
 
       <header className="page-header">
@@ -361,7 +456,7 @@ export function Session() {
               <ExternalLink size={14} />
             </a>
           </div>
-          {isClosed && <p className="muted fine">{t("session.closedNote")}</p>}
+          {statusNoteKey && <p className="muted fine">{t(statusNoteKey)}</p>}
         </div>
         <div className="page-header-actions">
           {wantlistUrl && (
@@ -375,7 +470,7 @@ export function Session() {
               {t("session.openWantlist")}
             </a>
           )}
-          {!isClosed && (
+          {isOpen && (
             <button type="button" className="btn btn-primary" onClick={openAddRecord}>
               <Plus size={18} />
               {t("session.addItem")}
@@ -401,9 +496,35 @@ export function Session() {
         <MemberChips members={session.members} />
       </div>
 
+      {canManageOrder && isOpen && ownerOptions.length > 0 && (
+        <div className="members card session-owner-card">
+          <span className="label">{t("session.ownerLabel")}</span>
+          <p className="muted fine">{t("session.ownerHint")}</p>
+          <div className="session-owner-row">
+            <AppSelect
+              value={ownerId || session.created_by}
+              onChange={setOwnerId}
+              options={ownerOptions}
+              ariaLabel={t("session.ownerLabel")}
+              disabled={transferring}
+            />
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={handleTransferOwner}
+              disabled={
+                transferring || !ownerId || ownerId === session.created_by
+              }
+            >
+              {transferring ? t("session.transferring") : t("session.transferOwner")}
+            </button>
+          </div>
+        </div>
+      )}
+
       <OrderTargetDate
         targetDate={session.target_date}
-        readOnly={isClosed || !canManageOrder}
+        readOnly={isArchived || !canManageOrder}
         saving={savingTargetDate}
         onSave={canManageOrder ? handleSaveTargetDate : undefined}
       />
@@ -436,7 +557,7 @@ export function Session() {
         )}
         <OrderNotes
           notes={session.notes}
-          readOnly={isClosed}
+          readOnly={isArchived}
           posting={postingNote}
           onPostNote={handlePostNote}
         />
@@ -452,7 +573,7 @@ export function Session() {
           shippingMode={session.shipping_mode ?? "equal"}
           memberCount={session.members?.length ?? 0}
           readOnly={
-            session.status === "closed" ||
+            session.status !== "open" ||
             !(session.canManageShipping || session.canManageOrder)
           }
           onSaveShipping={
@@ -479,6 +600,13 @@ export function Session() {
           settlingUserId={settlingUserId}
         />
       )}
+
+      <CloseOrderDialog
+        open={closeDialogOpen}
+        closing={closing}
+        onClose={() => setCloseDialogOpen(false)}
+        onChoose={handleCloseOutcome}
+      />
     </div>
   );
 }

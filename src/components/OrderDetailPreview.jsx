@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Calendar,
   Disc3,
   Lock,
   MessageSquare,
+  RotateCcw,
   Target,
   UserRound,
   Users,
@@ -11,8 +13,14 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { displayOrderTitle } from "../../shared/orderTitle.js";
+import {
+  isOpenSession,
+  isReopenableSession,
+} from "../../shared/orderStatus.js";
 import { useLocale } from "../hooks/useLocale.jsx";
+import { CloseOrderDialog } from "./CloseOrderDialog.jsx";
 import { OrderStoreAvatar } from "./OrderStoreAvatar.jsx";
+import { StatusPill } from "./StatusPill.jsx";
 
 function formatCreatedAt(createdAt, localeTag) {
   if (!createdAt) return "—";
@@ -45,11 +53,15 @@ export function OrderDetailPreview({
   error,
   canClose,
   closing,
+  canReopen = false,
+  reopening = false,
   onClose,
   onCloseOrder,
+  onReopenOrder,
   variant = "panel",
 }) {
   const { t, localeTag } = useLocale();
+  const [closeDialogOpen, setCloseDialogOpen] = useState(false);
   const rootClass =
     variant === "sheet"
       ? "order-preview order-preview--sheet"
@@ -66,7 +78,7 @@ export function OrderDetailPreview({
     );
   }
 
-  const isClosed = session.status === "closed";
+  const isOpen = isOpenSession(session.status);
   const title = displayOrderTitle(session);
   const creatorLabel =
     session.creator_name ??
@@ -79,6 +91,8 @@ export function OrderDetailPreview({
     detail?.target_date ?? session.target_date,
     localeTag
   );
+  const showClose = canClose && isOpen;
+  const showReopen = canReopen && isReopenableSession(session.status);
 
   return (
     <aside className={rootClass} aria-label={t("orders.previewTitle")}>
@@ -99,12 +113,7 @@ export function OrderDetailPreview({
             </p>
           )}
           <div className="order-preview-badges">
-            <span
-              className={`status-pill-v2 ${isClosed ? "status-pill-v2-closed" : "status-pill-v2-open"}`}
-            >
-              <span className="status-dot" />
-              {isClosed ? t("common.closed") : t("common.open")}
-            </span>
+            <StatusPill status={session.status} />
             <span className="order-preview-badge-meta">
               <Users size={14} aria-hidden />
               {memberCount}
@@ -206,15 +215,26 @@ export function OrderDetailPreview({
       </div>
 
       <div className="order-preview-actions">
-        {canClose && !isClosed && (
+        {showClose && (
           <button
             type="button"
             className="btn btn-ghost order-preview-close-btn"
-            onClick={onCloseOrder}
+            onClick={() => setCloseDialogOpen(true)}
             disabled={closing}
           >
             <Lock size={15} aria-hidden />
             {closing ? t("session.closing") : t("session.closeOrder")}
+          </button>
+        )}
+        {showReopen && (
+          <button
+            type="button"
+            className="btn btn-ghost order-preview-close-btn"
+            onClick={onReopenOrder}
+            disabled={reopening}
+          >
+            <RotateCcw size={15} aria-hidden />
+            {reopening ? t("session.reopening") : t("session.reopenOrder")}
           </button>
         )}
         <Link to={`/session/${session.id}`} className="btn btn-primary order-preview-view-btn">
@@ -222,6 +242,16 @@ export function OrderDetailPreview({
           <ChevronRight size={18} aria-hidden />
         </Link>
       </div>
+
+      <CloseOrderDialog
+        open={closeDialogOpen}
+        closing={closing}
+        onClose={() => setCloseDialogOpen(false)}
+        onChoose={async (outcome) => {
+          const ok = await onCloseOrder?.(outcome);
+          if (ok !== false) setCloseDialogOpen(false);
+        }}
+      />
     </aside>
   );
 }

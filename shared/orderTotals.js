@@ -97,6 +97,11 @@ export function allocateShippingShares(memberRows, shipping, mode, splitCount) {
   }));
 }
 
+export function isLinkUnavailable(link) {
+  const value = link?.availability ?? link?.Availability;
+  return value === "unavailable";
+}
+
 export function computeMemberTotals(links = [], session = {}) {
   const byUser = new Map();
   const settledByUser = new Map();
@@ -125,6 +130,7 @@ export function computeMemberTotals(links = [], session = {}) {
       });
     }
     const row = byUser.get(key);
+    if (isLinkUnavailable(link)) continue;
     row.count += 1;
     const eur = toEurAmount(link.price_value, link.price_currency);
     if (eur != null) {
@@ -152,8 +158,9 @@ export function computeMemberTotals(links = [], session = {}) {
 export function computeOrderGrandTotal(links = [], session = {}) {
   let itemsTotal = 0;
   let hasUnknown = false;
+  const countable = links.filter((link) => !isLinkUnavailable(link));
 
-  for (const link of links) {
+  for (const link of countable) {
     const eur = toEurAmount(link.price_value, link.price_currency);
     if (eur != null) {
       itemsTotal += eur;
@@ -179,7 +186,7 @@ export function computeOrderGrandTotal(links = [], session = {}) {
   let shippingPerPerson = null;
   if (shipping > 0) {
     if (shippingMode === "by_items") {
-      const totalRecords = links.length;
+      const totalRecords = countable.length;
       shippingPerPerson =
         totalRecords > 0 ? round2(shipping / totalRecords) : null;
     } else if (splitCount) {
@@ -197,7 +204,7 @@ export function computeOrderGrandTotal(links = [], session = {}) {
     total: itemsTotal + shipping,
     currency: DISPLAY_CURRENCY,
     hasUnknown,
-    count: links.length,
+    count: countable.length,
   };
 }
 

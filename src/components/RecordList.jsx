@@ -2,6 +2,7 @@ import { ExternalLink } from "lucide-react";
 import { DiscogsCartActions } from "./DiscogsCartActions.jsx";
 import {
   formatPrice,
+  isLinkUnavailable,
   listingIdFor,
   recordTitle,
 } from "../../shared/orderTotals.js";
@@ -32,8 +33,18 @@ export function RecordList({
           </tr>
         </thead>
         <tbody>
-          {links.map((link) => (
-            <tr key={link.id} className={link.blurred ? "order-item-row--hidden" : undefined}>
+          {links.map((link) => {
+            const unavailable = isLinkUnavailable(link);
+            return (
+            <tr
+              key={link.id}
+              className={[
+                link.blurred ? "order-item-row--hidden" : "",
+                unavailable ? "order-item-row--unavailable" : "",
+              ]
+                .filter(Boolean)
+                .join(" ") || undefined}
+            >
               <td className="col-participant">
                 <span className="order-participant">
                   {link.user_name ?? t("common.unknown")}
@@ -46,6 +57,11 @@ export function RecordList({
                   </div>
                 ) : (
                   <div className="order-item-cell">
+                    {unavailable && (
+                      <span className="order-item-unavailable-badge">
+                        {t("items.unavailable")}
+                      </span>
+                    )}
                     <a
                       href={link.url}
                       target="_blank"
@@ -87,12 +103,19 @@ export function RecordList({
                 )}
               </td>
               <td className="col-price">
-                {link.blurred
-                  ? "—"
-                  : formatPrice(link.price_value, link.price_currency)}
+                {link.blurred ? (
+                  "—"
+                ) : unavailable ? (
+                  <span className="order-item-price--unavailable">
+                    {formatPrice(link.price_value, link.price_currency)}
+                  </span>
+                ) : (
+                  formatPrice(link.price_value, link.price_currency)
+                )}
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
       {isShop && (

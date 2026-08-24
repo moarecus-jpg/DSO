@@ -2972,6 +2972,67 @@ code {
   color: var(--muted);
 }
 
+.order-item-unavailable-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  margin-bottom: 0.15rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.16);
+  color: #fca5a5;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.order-item-row--unavailable .order-item-title,
+.order-item-row--unavailable .order-listing-id,
+.my-items-row--unavailable .my-items-item-title {
+  text-decoration: line-through;
+  opacity: 0.72;
+}
+
+.order-item-price--unavailable {
+  text-decoration: line-through;
+  opacity: 0.55;
+}
+
+.session-owner-card .muted {
+  margin: 0.35rem 0 0;
+}
+
+.session-owner-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.session-owner-row .app-select {
+  min-width: min(16rem, 100%);
+  flex: 1;
+}
+
+.modal-close-order {
+  max-width: 28rem;
+}
+
+.close-order-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.close-order-choices .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.close-order-choices .muted {
+  margin: 0 0 0.55rem;
+}
+
 .discogs-cart-actions {
   display: flex;
   flex-wrap: wrap;
@@ -4103,6 +4164,10 @@ body.modal-open .order-sticky-backdrop {
   background: linear-gradient(135deg, #64748b 0%, #7c3aed 100%);
 }
 
+.sidebar-link-v2.active .sidebar-link-icon--unplaced {
+  background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+}
+
 .sidebar-link-v2.active .sidebar-link-icon--items {
   background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
 }
@@ -5164,6 +5229,16 @@ body.modal-open .order-sticky-backdrop {
   color: rgba(255, 255, 255, 0.55);
 }
 
+.status-pill-v2-unplaced {
+  background: rgba(245, 158, 11, 0.22);
+  color: #fbbf24;
+}
+
+.status-pill-v2-auto {
+  background: rgba(249, 115, 22, 0.2);
+  color: #fb923c;
+}
+
 .orders-loading,
 .orders-empty {
   text-align: center;
@@ -5646,6 +5721,10 @@ body.modal-open .order-sticky-backdrop {
     min-width: 0;
   }
 
+  .mobile-nav-side:first-child {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .mobile-nav-link {
     display: flex;
     flex: 1;
@@ -5657,7 +5736,7 @@ body.modal-open .order-sticky-backdrop {
     padding: 0.35rem 0.15rem;
     border-radius: 0.75rem;
     color: rgba(255, 255, 255, 0.5);
-    font-size: 0.62rem;
+    font-size: 0.56rem;
     font-weight: 600;
     text-decoration: none;
     transition: color 0.15s, background 0.15s;
@@ -6170,6 +6249,31 @@ body.modal-open .order-sticky-backdrop {
   background: #fff;
   border-color: rgba(124, 58, 237, 0.35);
   box-shadow: 0 10px 28px rgba(124, 58, 237, 0.08);
+}
+
+[data-theme="light"] .status-pill-v2-open {
+  background: rgba(16, 185, 129, 0.16);
+  color: #059669;
+}
+
+[data-theme="light"] .status-pill-v2-closed {
+  background: rgba(24, 24, 27, 0.08);
+  color: #52525b;
+}
+
+[data-theme="light"] .status-pill-v2-unplaced {
+  background: rgba(245, 158, 11, 0.18);
+  color: #b45309;
+}
+
+[data-theme="light"] .status-pill-v2-auto {
+  background: rgba(249, 115, 22, 0.16);
+  color: #c2410c;
+}
+
+[data-theme="light"] .order-item-unavailable-badge {
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
 }
 
 [data-theme="light"] .order-preview {

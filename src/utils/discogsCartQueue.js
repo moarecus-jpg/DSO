@@ -1,5 +1,5 @@
 import { discogsAddToCartUrl, discogsCartUrl } from "../../shared/discogsUrls.js";
-import { listingIdFor } from "../../shared/orderTotals.js";
+import { isLinkUnavailable, listingIdFor } from "../../shared/orderTotals.js";
 
 const DEFAULT_DELAY_MS = 1400;
 const HELPER_NAME = "dso_discogs_cart_helper";
@@ -7,6 +7,7 @@ const HELPER_NAME = "dso_discogs_cart_helper";
 function uniqueListingIds(links) {
   const ids = new Set();
   for (const link of links ?? []) {
+    if (isLinkUnavailable(link)) continue;
     const id = listingIdFor(link);
     if (id && id !== "—") ids.add(id);
   }

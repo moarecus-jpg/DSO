@@ -150,6 +150,11 @@ for (const sql of [
   "ALTER TABLE group_sessions ADD COLUMN shipping_mode TEXT DEFAULT 'equal'",
   "ALTER TABLE session_members ADD COLUMN settled_at TEXT",
   "ALTER TABLE group_sessions ADD COLUMN store TEXT DEFAULT 'discogs'",
+  "ALTER TABLE group_sessions ADD COLUMN closed_at TEXT",
+  "ALTER TABLE group_sessions ADD COLUMN close_reason TEXT",
+  "ALTER TABLE group_sessions ADD COLUMN availability_checked_at TEXT",
+  "ALTER TABLE session_links ADD COLUMN availability TEXT DEFAULT 'available'",
+  "ALTER TABLE session_links ADD COLUMN availability_note TEXT",
 ]) {
   try {
     db.exec(sql);
@@ -509,7 +514,24 @@ export function addSessionNote(sessionId, userId, body) {
     .get(id);
 }
 
+const UNPLACED_STATUSES = ["unplaced", "auto_closed"];
+
 export function listGroupSessions(status = "open") {
+  if (status === "unplaced") {
+    return db
+      .prepare(
+        `SELECT gs.*, u.name as creator_name, u.username as creator_username,
+          (SELECT COUNT(DISTINCT user_id) FROM session_links WHERE session_id = gs.id) as member_count,
+          (SELECT COUNT(*) FROM session_links WHERE session_id = gs.id) as link_count
+         FROM group_sessions gs
+         JOIN users u ON u.id = gs.created_by
+         WHERE gs.status IN ('unplaced', 'auto_closed')
+         ORDER BY gs.created_at DESC`
+      )
+      .all()
+      .map(withOrderTitle);
+  }
+
   return db
     .prepare(
       `SELECT gs.*, u.name as creator_name, u.username as creator_username,
@@ -522,6 +544,10 @@ export function listGroupSessions(status = "open") {
     )
     .all(status)
     .map(withOrderTitle);
+}
+
+export function listOpenGroupSessions() {
+  return listGroupSessions("open");
 }
 
 export function listAllGroupSessions() {
@@ -634,15 +660,124 @@ export function updateSessionTargetDate(id, targetDate) {
   return getGroupSession(id);
 }
 
-export function closeGroupSession(id) {
+export function closeGroupSession(id, { outcome = "ordered", reason = "manual" } = {}) {
   const existing = db
     .prepare("SELECT id, status FROM group_sessions WHERE id = ?")
     .get(id);
   if (!existing) return null;
-  if (existing.status === "closed") return getGroupSession(id);
+  if (existing.status !== "open") return getGroupSession(id);
 
-  db.prepare("UPDATE group_sessions SET status = 'closed' WHERE id = ?").run(id);
+  const status = outcome === "unplaced" ? "unplaced" : "closed";
+  const closeReason =
+    status === "unplaced" ? "unplaced" : reason === "auto" ? "auto" : "manual";
+  const closedAt = new Date().toISOString();
+
+  db.prepare(
+    `UPDATE group_sessions
+     SET status = ?, closed_at = ?, close_reason = ?
+     WHERE id = ?`
+  ).run(status, closedAt, closeReason, id);
   return getGroupSession(id);
+}
+
+export function autoCloseStaleOpenSessions(maxAgeDays = 14) {
+  const cutoff = new Date(Date.now() - maxAgeDays * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .replace("T", " ")
+    .slice(0, 19);
+  const rows = db
+    .prepare(
+      `SELECT id FROM group_sessions
+       WHERE status = 'open' AND created_at <= ?`
+    )
+    .all(cutoff);
+
+  const closed = [];
+  const closedAt = new Date().toISOString();
+  for (const row of rows) {
+    db.prepare(
+      `UPDATE group_sessions
+       SET status = 'auto_closed', closed_at = ?, close_reason = 'auto'
+       WHERE id = ? AND status = 'open'`
+    ).run(closedAt, row.id);
+    const session = getGroupSession(row.id);
+    if (session) closed.push(session);
+  }
+  return closed;
+}
+
+export function reopenGroupSession(id) {
+  const existing = db
+    .prepare("SELECT id, status FROM group_sessions WHERE id = ?")
+    .get(id);
+  if (!existing) return null;
+  if (!UNPLACED_STATUSES.includes(existing.status)) return null;
+
+  db.prepare(
+    `UPDATE group_sessions
+     SET status = 'open', closed_at = NULL, close_reason = NULL
+     WHERE id = ?`
+  ).run(id);
+  return getGroupSession(id);
+}
+
+export function transferGroupSessionOwner(id, newOwnerId) {
+  const existing = db
+    .prepare("SELECT id FROM group_sessions WHERE id = ?")
+    .get(id);
+  if (!existing) return null;
+
+  const hasItems = db
+    .prepare(
+      "SELECT 1 FROM session_links WHERE session_id = ? AND user_id = ? LIMIT 1"
+    )
+    .get(id, newOwnerId);
+  if (!hasItems) {
+    throw new Error("Novi lastnik mora imeti vsaj en item v tem naročilu.");
+  }
+
+  ensureSessionMember(id, newOwnerId);
+  db.prepare("UPDATE group_sessions SET created_by = ? WHERE id = ?").run(
+    newOwnerId,
+    id
+  );
+  return getGroupSession(id);
+}
+
+export function updateSessionAvailabilityCheckedAt(id, checkedAt = new Date().toISOString()) {
+  db.prepare(
+    "UPDATE group_sessions SET availability_checked_at = ? WHERE id = ?"
+  ).run(checkedAt, id);
+}
+
+export function updateSessionLinkAvailability(linkId, fields) {
+  const existing = db.prepare("SELECT * FROM session_links WHERE id = ?").get(linkId);
+  if (!existing) return null;
+
+  db.prepare(
+    `UPDATE session_links
+     SET artist = ?, title = ?, item_description = ?, label = ?,
+         price_value = ?, price_currency = ?,
+         media_condition = ?, sleeve_condition = ?,
+         listing_id = ?, release_id = ?,
+         availability = ?, availability_note = ?
+     WHERE id = ?`
+  ).run(
+    fields.artist ?? existing.artist,
+    fields.title ?? existing.title,
+    fields.itemDescription ?? existing.item_description,
+    fields.label ?? existing.label,
+    fields.priceValue ?? existing.price_value,
+    fields.priceCurrency ?? existing.price_currency,
+    fields.mediaCondition ?? existing.media_condition,
+    fields.sleeveCondition ?? existing.sleeve_condition,
+    fields.listingId ?? existing.listing_id,
+    fields.releaseId ?? existing.release_id,
+    fields.availability ?? existing.availability ?? "available",
+    fields.availabilityNote ?? existing.availability_note,
+    linkId
+  );
+  return getSessionLinkById(linkId);
 }
 
 export function deleteGroupSession(id) {

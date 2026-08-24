@@ -1,4 +1,5 @@
 import { displayOrderTitle } from "./orderTitle.js";
+import { isArchivedSession } from "./orderStatus.js";
 
 export function orderSharePath(sessionId) {
   return `/session/${sessionId}`;
@@ -23,7 +24,7 @@ export function orderShareDescription(session, locale = "sl") {
     session.member_count ??
     session.members?.length ??
     0;
-  const isClosed = session.status === "closed";
+  const isClosed = isArchivedSession(session.status);
   const isSl = locale === "sl";
 
   const parts = [];

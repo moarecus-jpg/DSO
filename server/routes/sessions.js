@@ -23,6 +23,8 @@ import {
   listUserStatisticsRows,
   publicUser,
   removeSessionLink,
+  reopenGroupSession,
+  transferGroupSessionOwner,
 } from "../db.js";
 import {
   fetchInventoryForReleaseIds,
@@ -48,6 +50,10 @@ import {
 } from "../../shared/stores.js";
 import { DISPLAY_CURRENCY, toEurAmount } from "../../shared/currency.js";
 import { enrichSessionOrder, recordTitle } from "../../shared/orderTotals.js";
+import {
+  isArchivedSession,
+  isReopenableSession,
+} from "../../shared/orderStatus.js";
 import { sessionForViewer } from "../../shared/sessionPrivacy.js";
 import { computeUserStatistics } from "../../shared/userStatistics.js";
 import { resolveSellerInput } from "../discogs/resolveSeller.js";
@@ -57,6 +63,7 @@ import { discogsOAuthConfigured } from "../discogs/oauth.js";
 import { canRemoveSessionLink, isOrderAdmin, isOrderCreator } from "../auth/orderAdmin.js";
 import { publicErrorMessage } from "../utils/publicError.js";
 import { appBaseUrl } from "../appUrl.js";
+import { refreshSessionAvailability } from "../jobs/availability.js";
 import {
   notifyNewOrderOpened,
   notifyOrderClosed,
@@ -274,6 +281,7 @@ function withOrderPermissions(session, userId) {
     canManageShipping: isCreator || isAdmin,
     canManageOrder: isAdmin,
     canAddAllToCart: isCreator,
+    canReopen: isReopenableSession(session.status) && (isCreator || isAdmin),
   };
 }
 
@@ -281,6 +289,7 @@ function listStatus(req) {
   const raw = req.query.status;
   if (raw === "all") return "all";
   if (raw === "closed") return "closed";
+  if (raw === "unplaced") return "unplaced";
   return "open";
 }
 
@@ -323,7 +332,11 @@ router.get("/", requireUser, async (req, res) => {
     const sessions =
       status === "all"
         ? mockSessions
-        : mockSessions.filter((s) => (s.status ?? "open") === status);
+        : status === "unplaced"
+          ? mockSessions.filter((s) =>
+              ["unplaced", "auto_closed"].includes(s.status)
+            )
+          : mockSessions.filter((s) => (s.status ?? "open") === status);
     return res.json({ sessions: await ensureSellerAvatars(sessions) });
   }
   const sessions =
@@ -351,6 +364,7 @@ function serializeOrderedItem(row) {
     sessionStatus: row.session_status,
     orderNumber: row.order_number,
     orderTitle: formatOrderTitle(row.order_number ?? 1, row.seller_username),
+    availability: row.availability ?? "available",
   };
 }
 
@@ -598,7 +612,7 @@ router.patch("/:id/target-date", requireUser, (req, res) => {
       error: "Samo odpravitelj naročila lahko nastavi ciljni datum.",
     });
   }
-  if (existingSession.status === "closed") {
+  if (isArchivedSession(existingSession.status)) {
     return res.status(400).json({ error: "Zaključenega naročila ni mogoče urejati." });
   }
 
@@ -649,6 +663,7 @@ function parseTargetDateInput(value) {
 
 router.post("/:id/close", requireUser, (req, res) => {
   const userId = req.session.userId;
+  const outcome = req.body?.outcome === "unplaced" ? "unplaced" : "ordered";
 
   if (useMockAuth() && req.params.id.startsWith("mock")) {
     const idx = mockSessions.findIndex((s) => s.id === req.params.id);
@@ -660,7 +675,12 @@ router.post("/:id/close", requireUser, (req, res) => {
         error: "Samo odpravitelj naročila lahko zaključi naročilo.",
       });
     }
-    mockSessions[idx] = { ...mockSessions[idx], status: "closed" };
+    mockSessions[idx] = {
+      ...mockSessions[idx],
+      status: outcome === "unplaced" ? "unplaced" : "closed",
+      close_reason: outcome === "unplaced" ? "unplaced" : "manual",
+      closed_at: new Date().toISOString(),
+    };
     return res.json({
       session: withOrderPermissions(mockSessionDetail(mockSessions[idx]), userId),
     });
@@ -673,17 +693,120 @@ router.post("/:id/close", requireUser, (req, res) => {
       error: "Samo odpravitelj naročila lahko zaključi naročilo.",
     });
   }
+  if (existing.status !== "open") {
+    return res.status(400).json({ error: "Zaključiti je mogoče samo odprto naročilo." });
+  }
 
-  const session = closeGroupSession(req.params.id);
+  const session = closeGroupSession(req.params.id, { outcome });
   if (!session) return res.status(404).json({ error: "Session not found" });
 
   notifyOrderClosed({
     baseUrl: appBaseUrl(req),
     session,
     excludeUserId: userId,
+    kind: outcome === "unplaced" ? "unplaced" : "closed",
   }).catch((err) => console.error("Order closed notification:", err));
 
   res.json({ session: withOrderPermissions(session, userId) });
+});
+
+router.post("/:id/reopen", requireUser, (req, res) => {
+  const userId = req.session.userId;
+
+  if (useMockAuth() && req.params.id.startsWith("mock")) {
+    const idx = mockSessions.findIndex((s) => s.id === req.params.id);
+    if (idx === -1) {
+      return res.status(404).json({ error: "Session not found" });
+    }
+    const current = mockSessions[idx];
+    if (!isOrderCreator(current, userId) && !isOrderAdmin(current, userId)) {
+      return res.status(403).json({
+        error: "Samo lastnik naročila lahko znova odpre naročilo.",
+      });
+    }
+    if (!isReopenableSession(current.status)) {
+      return res.status(400).json({
+        error: "Znova je mogoče odpreti samo nenaročena ali avtomatsko zaprta naročila.",
+      });
+    }
+    mockSessions[idx] = {
+      ...current,
+      status: "open",
+      closed_at: null,
+      close_reason: null,
+    };
+    return res.json({
+      session: withOrderPermissions(mockSessionDetail(mockSessions[idx]), userId),
+    });
+  }
+
+  const existing = getGroupSession(req.params.id);
+  if (!existing) return res.status(404).json({ error: "Session not found" });
+  if (!isOrderCreator(existing, userId) && !isOrderAdmin(existing, userId)) {
+    return res.status(403).json({
+      error: "Samo lastnik naročila lahko znova odpre naročilo.",
+    });
+  }
+
+  const session = reopenGroupSession(req.params.id);
+  if (!session) {
+    return res.status(400).json({
+      error: "Znova je mogoče odpreti samo nenaročena ali avtomatsko zaprta naročila.",
+    });
+  }
+
+  res.json({ session: withOrderPermissions(session, userId) });
+});
+
+router.patch("/:id/owner", requireUser, (req, res) => {
+  const userId = req.session.userId;
+  const newOwnerId = String(req.body?.userId ?? "").trim();
+  if (!newOwnerId) {
+    return res.status(400).json({ error: "Izberi novega lastnika." });
+  }
+
+  if (useMockAuth() && req.params.id.startsWith("mock")) {
+    const idx = mockSessions.findIndex((s) => s.id === req.params.id);
+    if (idx === -1) {
+      return res.status(404).json({ error: "Session not found" });
+    }
+    const current = mockSessions[idx];
+    if (!isOrderAdmin(current, userId)) {
+      return res.status(403).json({
+        error: "Samo lastnik naročila lahko prenese lastništvo.",
+      });
+    }
+    const detail = mockSessionDetail(current);
+    const hasItems = (detail.links ?? []).some((link) => link.user_id === newOwnerId);
+    if (!hasItems) {
+      return res.status(400).json({
+        error: "Novi lastnik mora imeti vsaj en item v tem naročilu.",
+      });
+    }
+    mockSessions[idx] = { ...current, created_by: newOwnerId };
+    return res.json({
+      session: withOrderPermissions(mockSessionDetail(mockSessions[idx]), userId),
+    });
+  }
+
+  const existing = getGroupSession(req.params.id);
+  if (!existing) return res.status(404).json({ error: "Session not found" });
+  if (!isOrderAdmin(existing, userId)) {
+    return res.status(403).json({
+      error: "Samo lastnik naročila lahko prenese lastništvo.",
+    });
+  }
+  if (existing.status !== "open") {
+    return res.status(400).json({ error: "Lastnika je mogoče spremeniti samo na odprtem naročilu." });
+  }
+
+  try {
+    const session = transferGroupSessionOwner(req.params.id, newOwnerId);
+    if (!session) return res.status(404).json({ error: "Session not found" });
+    res.json({ session: withOrderPermissions(session, userId) });
+  } catch (err) {
+    return res.status(400).json({ error: err.message ?? "Lastništva ni bilo mogoče prenesti." });
+  }
 });
 
 router.post("/:id/cancel", requireUser, (req, res) => {
@@ -734,6 +857,11 @@ router.get("/:id", requireUser, async (req, res) => {
 
   joinSession(req.params.id, req.session.userId);
   session = await ensureSellerAvatar(getGroupSession(req.params.id));
+  try {
+    session = await refreshSessionAvailability(session);
+  } catch (err) {
+    console.warn("Availability refresh:", err?.message ?? err);
+  }
   res.json({ session: withOrderPermissions(session, req.session.userId) });
 });
 
@@ -844,7 +972,7 @@ router.patch("/:id/members/:userId", requireUser, (req, res) => {
 
   const session = getGroupSession(id);
   if (!session) return res.status(404).json({ error: "Session not found" });
-  if (session.status === "closed") {
+  if (isArchivedSession(session.status)) {
     return res.status(400).json({ error: "Zaključenega naročila ni mogoče urejati." });
   }
   if (!isOrderAdmin(session, req.session.userId)) {
@@ -902,7 +1030,7 @@ router.patch("/:id/links/:linkId", requireUser, (req, res) => {
 
   const session = getGroupSession(id);
   if (!session) return res.status(404).json({ error: "Session not found" });
-  if (session.status === "closed") {
+  if (isArchivedSession(session.status)) {
     return res.status(400).json({ error: "Zaključenega naročila ni mogoče urejati." });
   }
   if (!isOrderAdmin(session, req.session.userId)) {
@@ -1146,7 +1274,7 @@ router.delete("/:id/links/:linkId", requireUser, (req, res) => {
     }
 
     const summary = mockSessions[idx];
-    if ((summary.status ?? "open") === "closed") {
+    if (isArchivedSession(summary.status ?? "open")) {
       return res.status(400).json({ error: "Zaključenega naročila ni mogoče urejati." });
     }
 
@@ -1176,7 +1304,7 @@ router.delete("/:id/links/:linkId", requireUser, (req, res) => {
 
   const session = getGroupSession(id);
   if (!session) return res.status(404).json({ error: "Session not found" });
-  if (session.status === "closed") {
+  if (isArchivedSession(session.status)) {
     return res.status(400).json({ error: "Zaključenega naročila ni mogoče urejati." });
   }
 
@@ -1217,7 +1345,7 @@ router.post("/:id/notes", requireUser, (req, res) => {
       return res.status(404).json({ error: "Session not found" });
     }
     const summary = mockSessions[idx];
-    if ((summary.status ?? "open") === "closed") {
+    if (isArchivedSession(summary.status ?? "open")) {
       return res.status(400).json({ error: "Zaključenega naročila ni mogoče urejati." });
     }
     const user = findUserById(userId);
@@ -1239,7 +1367,7 @@ router.post("/:id/notes", requireUser, (req, res) => {
 
   const session = getGroupSession(id);
   if (!session) return res.status(404).json({ error: "Session not found" });
-  if (session.status === "closed") {
+  if (isArchivedSession(session.status)) {
     return res.status(400).json({ error: "Zaključenega naročila ni mogoče urejati." });
   }
   if (!isSessionMember(id, userId)) {

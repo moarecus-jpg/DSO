@@ -3,6 +3,7 @@ import { Calendar, ChevronRight, Disc3, UserRound, Users } from "lucide-react";
 import { displayOrderTitle } from "../../shared/orderTitle.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { OrderStoreAvatar } from "./OrderStoreAvatar.jsx";
+import { StatusPill } from "./StatusPill.jsx";
 
 function formatOrderDate(createdAt, localeTag) {
   if (!createdAt) return null;
@@ -16,7 +17,6 @@ function formatOrderDate(createdAt, localeTag) {
 }
 
 function OrderCardContent({ s, title, dateLabel, creatorLabel, t }) {
-  const isClosed = s.status === "closed";
   const itemCount = s.link_count ?? 0;
 
   return (
@@ -44,12 +44,7 @@ function OrderCardContent({ s, title, dateLabel, creatorLabel, t }) {
         )}
       </div>
       <div className="order-card-v2-aside">
-        <span
-          className={`status-pill-v2 ${isClosed ? "status-pill-v2-closed" : "status-pill-v2-open"}`}
-        >
-          <span className="status-dot" />
-          {isClosed ? t("common.closed") : t("common.open")}
-        </span>
+        <StatusPill status={s.status} />
         <div className="order-card-v2-meta" title={t("orders.previewMembers")}>
           <Users size={18} aria-hidden />
           {s.member_count ?? 1}

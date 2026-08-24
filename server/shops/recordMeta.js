@@ -72,6 +72,20 @@ function priceFromJsonLd(product) {
   return toEurPrice(Number(offer.price), offer.priceCurrency ?? "EUR");
 }
 
+function availabilityFromJsonLd(product) {
+  const offers = product?.offers;
+  const offer = Array.isArray(offers) ? offers[0] : offers;
+  const raw = String(offer?.availability ?? "").toLowerCase();
+  if (
+    raw.includes("outofstock") ||
+    raw.includes("soldout") ||
+    raw.includes("discontinued")
+  ) {
+    return "unavailable";
+  }
+  return "available";
+}
+
 function cleanTitleNoise(name, storeId) {
   if (!name?.trim()) return null;
   let cleaned = name.trim();
@@ -189,12 +203,14 @@ function metaFromHtml(html, parsed, note, storeId) {
   let artist = null;
   let title = null;
   let price = { value: null, currency: "EUR" };
+  let availability = "available";
 
   if (product) {
     const split = splitArtistTitle(product.name, storeId);
     artist = split.artist;
     title = split.title ?? cleanTitleNoise(product.name, storeId);
     price = priceFromJsonLd(product);
+    availability = availabilityFromJsonLd(product);
   }
 
   if (!title) {
@@ -246,6 +262,7 @@ function metaFromHtml(html, parsed, note, storeId) {
     mediaCondition: null,
     sleeveCondition: null,
     label: buildLabel(artist, title, note),
+    availability,
   };
 }
 

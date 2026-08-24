@@ -14,11 +14,7 @@ import { sessionStore } from "./sessionStore.js";
 import { appBaseUrl, discogsCallbackUrl } from "./appUrl.js";
 import { googleCallbackUrl, googleConfigured } from "./auth/google.js";
 import { injectShareMeta } from "./shareHtml.js";
-import {
-  orderPageTitle,
-  orderShareDescription,
-  orderShareUrl,
-} from "../shared/orderShare.js";
+import { startOrderMaintenanceJobs } from "./jobs/orderMaintenance.js";
 
 dotenv.config();
 
@@ -134,6 +130,7 @@ const server = app.listen(PORT, () => {
   console.log(
     `Auth: lokalni računi${googleConfigured() ? " + Google OAuth" : ""}${process.env.USE_MOCK_AUTH === "true" ? " · Discogs demo" : ""}`
   );
+  startOrderMaintenanceJobs();
 });
 
 server.on("error", (err) => {

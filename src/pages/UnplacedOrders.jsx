@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { OrderDetailPreview } from "../components/OrderDetailPreview.jsx";
 import { OrderList } from "../components/OrderList.jsx";
 import { OrdersPageHeader } from "../components/OrdersPageHeader.jsx";
@@ -8,8 +7,7 @@ import { api } from "../api.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { useOrderPreview } from "../hooks/useOrderPreview.js";
 
-export function ClosedOrders() {
-  const navigate = useNavigate();
+export function UnplacedOrders() {
   const { t } = useLocale();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,7 +15,7 @@ export function ClosedOrders() {
   const [searchMode, setSearchMode] = useState("creator");
 
   const loadSessions = useCallback(async () => {
-    const d = await api("/api/sessions?status=closed");
+    const d = await api("/api/sessions?status=unplaced");
     setSessions(d.sessions);
   }, []);
 
@@ -31,10 +29,7 @@ export function ClosedOrders() {
   );
 
   const preview = useOrderPreview(filteredSessions, {
-    onClosed: async () => {
-      await loadSessions();
-      navigate("/closed");
-    },
+    onReopened: loadSessions,
   });
 
   const hasOrders = !loading && filteredSessions.length > 0;
@@ -43,8 +38,8 @@ export function ClosedOrders() {
   return (
     <div className="page page-orders">
       <OrdersPageHeader
-        title={t("orders.closedTitle")}
-        subtitle={t("orders.closedSubtitle")}
+        title={t("orders.unplacedTitle")}
+        subtitle={t("orders.unplacedSubtitle")}
         query={query}
         onQueryChange={setQuery}
         searchMode={searchMode}
@@ -57,7 +52,7 @@ export function ClosedOrders() {
             sessions={filteredSessions}
             loading={loading}
             emptyMessage={
-              query.trim() ? t("common.noSearchResults") : t("orders.emptyClosed")
+              query.trim() ? t("common.noSearchResults") : t("orders.emptyUnplaced")
             }
             selectedId={preview.selectedId}
             onSelect={preview.selectSession}
@@ -72,9 +67,11 @@ export function ClosedOrders() {
             error={preview.error}
             canClose={false}
             closing={false}
-            canReopen={false}
+            canReopen={preview.canReopen}
+            reopening={preview.reopening}
             onClose={preview.clearSelection}
             onCloseOrder={preview.closeOrder}
+            onReopenOrder={preview.reopenOrder}
           />
         )}
       </div>

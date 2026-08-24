@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../api.js";
+import { isOpenSession, isReopenableSession } from "../../shared/orderStatus.js";
 import { useAuth } from "./useAuth.jsx";
-import { useLocale } from "./useLocale.jsx";
 import { useMediaQuery } from "./useMediaQuery.js";
 
 const DESKTOP_MQ = "(min-width: 960px)";
 
-export function useOrderPreview(sessions, { onClosed } = {}) {
+export function useOrderPreview(sessions, { onClosed, onReopened } = {}) {
   const { user } = useAuth();
-  const { t } = useLocale();
   const isDesktop = useMediaQuery(DESKTOP_MQ);
   const [selectedId, setSelectedId] = useState(null);
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [closing, setClosing] = useState(false);
+  const [reopening, setReopening] = useState(false);
 
   const selectedSession =
     sessions.find((s) => s.id === selectedId) ?? null;
@@ -74,27 +74,57 @@ export function useOrderPreview(sessions, { onClosed } = {}) {
 
   const canClose =
     Boolean(selectedSession) &&
-    selectedSession.status !== "closed" &&
+    isOpenSession(selectedSession.status) &&
     Boolean(
       user?.isAdmin ||
         (user?.id && selectedSession.created_by === user.id) ||
         detail?.canManageOrder
     );
 
-  const closeOrder = useCallback(async () => {
+  const canReopen =
+    Boolean(selectedSession) &&
+    isReopenableSession(selectedSession.status) &&
+    Boolean(
+      user?.isAdmin ||
+        (user?.id && selectedSession.created_by === user.id) ||
+        detail?.canReopen
+    );
+
+  const closeOrder = useCallback(
+    async (outcome = "ordered") => {
+      if (!selectedId) return false;
+      setClosing(true);
+      try {
+        const data = await api(`/api/sessions/${selectedId}/close`, {
+          method: "POST",
+          body: JSON.stringify({ outcome }),
+        });
+        clearSelection();
+        await onClosed?.(data.session);
+        return true;
+      } catch (err) {
+        setError(err.message ?? "Error");
+        return false;
+      } finally {
+        setClosing(false);
+      }
+    },
+    [selectedId, clearSelection, onClosed]
+  );
+
+  const reopenOrder = useCallback(async () => {
     if (!selectedId) return;
-    if (!window.confirm(t("session.confirmClose"))) return;
-    setClosing(true);
+    setReopening(true);
     try {
-      await api(`/api/sessions/${selectedId}/close`, { method: "POST" });
+      await api(`/api/sessions/${selectedId}/reopen`, { method: "POST" });
       clearSelection();
-      await onClosed?.();
+      await onReopened?.();
     } catch (err) {
       setError(err.message ?? "Error");
     } finally {
-      setClosing(false);
+      setReopening(false);
     }
-  }, [selectedId, clearSelection, onClosed, t]);
+  }, [selectedId, clearSelection, onReopened]);
 
   return {
     isDesktop,
@@ -106,9 +136,12 @@ export function useOrderPreview(sessions, { onClosed } = {}) {
     loading,
     error,
     closing,
+    reopening,
     canClose,
+    canReopen,
     selectSession,
     clearSelection,
     closeOrder,
+    reopenOrder,
   };
 }

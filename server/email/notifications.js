@@ -62,19 +62,42 @@ export async function notifyOrderNotePosted({
   await notifyUsers(users, { subject, text, html });
 }
 
-export async function notifyOrderClosed({ baseUrl, session, excludeUserId }) {
+export async function notifyOrderClosed({
+  baseUrl,
+  session,
+  excludeUserId,
+  kind = "closed",
+}) {
   const users = listSessionMembersForNotifications(session.id, "closed", excludeUserId);
   if (!users.length) return;
 
   const title = displayOrderTitle(session);
   const url = orderShareUrl(baseUrl, session.id);
   const linkLabel = orderEmailLinkLabel(session, { locale: "en", action: "view" });
-  const subject = `DSO: Order closed — ${title}`;
-  const text = `The group order ${title} has been closed.\n\n${linkLabel}: ${url}`;
-  const html = `<p>The group order <strong>${title}</strong> has been closed.</p>
-<p><a href="${url}">${linkLabel}</a></p>`;
 
-  await notifyUsers(users, { subject, text, html });
+  const copy =
+    kind === "unplaced"
+      ? {
+          subject: `DSO: Order marked unplaced — ${title}`,
+          text: `The group order ${title} was closed as unplaced (not ordered).\n\n${linkLabel}: ${url}`,
+          html: `<p>The group order <strong>${title}</strong> was closed as <strong>unplaced</strong> (not ordered).</p>
+<p><a href="${url}">${linkLabel}</a></p>`,
+        }
+      : kind === "auto"
+        ? {
+            subject: `DSO: Order auto-closed — ${title}`,
+            text: `The group order ${title} was automatically closed after 14 days.\n\n${linkLabel}: ${url}`,
+            html: `<p>The group order <strong>${title}</strong> was automatically closed after 14 days.</p>
+<p><a href="${url}">${linkLabel}</a></p>`,
+          }
+        : {
+            subject: `DSO: Order closed — ${title}`,
+            text: `The group order ${title} has been closed.\n\n${linkLabel}: ${url}`,
+            html: `<p>The group order <strong>${title}</strong> has been closed.</p>
+<p><a href="${url}">${linkLabel}</a></p>`,
+          };
+
+  await notifyUsers(users, copy);
 }
 
 export async function sendPasswordResetEmail({ baseUrl, user, token }) {
