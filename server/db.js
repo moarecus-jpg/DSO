@@ -515,6 +515,7 @@ export function addSessionNote(sessionId, userId, body) {
 }
 
 const UNPLACED_STATUSES = ["unplaced", "auto_closed"];
+const REOPENABLE_STATUSES = [...UNPLACED_STATUSES, "canceled"];
 
 export function listGroupSessions(status = "open") {
   if (status === "unplaced") {
@@ -687,8 +688,23 @@ export function autoCloseStaleOpenSessions(maxAgeDays = 14) {
     .slice(0, 19);
   const rows = db
     .prepare(
-      `SELECT id FROM group_sessions
-       WHERE status = 'open' AND created_at <= ?`
+      `SELECT gs.id
+       FROM group_sessions gs
+       WHERE gs.status = 'open'
+         AND datetime((
+           SELECT MAX(datetime(ts))
+           FROM (
+             SELECT gs.created_at AS ts
+             UNION ALL
+             SELECT sl.created_at
+               FROM session_links sl
+              WHERE sl.session_id = gs.id
+             UNION ALL
+             SELECT sn.created_at
+               FROM session_notes sn
+              WHERE sn.session_id = gs.id
+           )
+         )) <= datetime(?)`
     )
     .all(cutoff);
 
@@ -706,12 +722,28 @@ export function autoCloseStaleOpenSessions(maxAgeDays = 14) {
   return closed;
 }
 
+export function cancelGroupSession(id) {
+  const existing = db
+    .prepare("SELECT id, status FROM group_sessions WHERE id = ?")
+    .get(id);
+  if (!existing) return null;
+  if (existing.status !== "open") return getGroupSession(id);
+
+  const closedAt = new Date().toISOString();
+  db.prepare(
+    `UPDATE group_sessions
+     SET status = 'canceled', closed_at = ?, close_reason = 'canceled'
+     WHERE id = ?`
+  ).run(closedAt, id);
+  return getGroupSession(id);
+}
+
 export function reopenGroupSession(id) {
   const existing = db
     .prepare("SELECT id, status FROM group_sessions WHERE id = ?")
     .get(id);
   if (!existing) return null;
-  if (!UNPLACED_STATUSES.includes(existing.status)) return null;
+  if (!REOPENABLE_STATUSES.includes(existing.status)) return null;
 
   db.prepare(
     `UPDATE group_sessions

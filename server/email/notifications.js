@@ -83,11 +83,18 @@ export async function notifyOrderClosed({
           html: `<p>The group order <strong>${title}</strong> was closed as <strong>unplaced</strong> (not ordered).</p>
 <p><a href="${url}">${linkLabel}</a></p>`,
         }
+      : kind === "canceled"
+        ? {
+            subject: `DSO: Order canceled — ${title}`,
+            text: `The group order ${title} was canceled.\n\n${linkLabel}: ${url}`,
+            html: `<p>The group order <strong>${title}</strong> was <strong>canceled</strong>.</p>
+<p><a href="${url}">${linkLabel}</a></p>`,
+          }
       : kind === "auto"
         ? {
             subject: `DSO: Order auto-closed — ${title}`,
-            text: `The group order ${title} was automatically closed after 14 days.\n\n${linkLabel}: ${url}`,
-            html: `<p>The group order <strong>${title}</strong> was automatically closed after 14 days.</p>
+            text: `The group order ${title} was automatically closed after 14 days without activity.\n\n${linkLabel}: ${url}`,
+            html: `<p>The group order <strong>${title}</strong> was automatically closed after 14 days without activity.</p>
 <p><a href="${url}">${linkLabel}</a></p>`,
           }
         : {

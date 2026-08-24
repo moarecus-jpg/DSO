@@ -98,8 +98,10 @@ export function Session() {
     if (!confirm(t("session.confirmCancel"))) return;
     setCancelling(true);
     try {
-      await api(`/api/sessions/${id}/cancel`, { method: "POST" });
-      navigate("/");
+      const { session: updated } = await api(`/api/sessions/${id}/cancel`, {
+        method: "POST",
+      });
+      navigate(sessionListPath(updated?.status ?? "canceled"));
     } catch (err) {
       alert(err.message);
     } finally {

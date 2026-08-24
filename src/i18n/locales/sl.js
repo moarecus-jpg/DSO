@@ -14,6 +14,7 @@ export default {
     closed: "Zaključeno",
     unplaced: "Nenaročeno",
     autoClosed: "Avtomatsko zaprto",
+    canceled: "Preklicano",
     total: "Skupaj",
     noSearchResults: "Ni zadetkov za iskanje.",
     selectSearch: "Išči…",
@@ -36,6 +37,7 @@ export default {
     openOrders: "Odprta naročila",
     closedOrders: "Zaključena naročila",
     unplacedOrders: "Nenaročeno",
+    canceledOrders: "Preklicano",
     myItems: "Naročeni Itemi",
     myStatistics: "Moja statistika",
     logout: "Odjava",
@@ -45,6 +47,7 @@ export default {
     mobileOpen: "Odprta",
     mobileClosed: "Zaključena",
     mobileUnplaced: "Nenar.",
+    mobileCanceled: "Prekl.",
     mobileItems: "Itemi",
     mobileStatistics: "Stat.",
     mobileProfile: "Profil",
@@ -107,7 +110,9 @@ export default {
     closedSubtitle: "Pretekla skupinska naročila, ki so bila oddana",
     unplacedTitle: "Nenaročena naročila",
     unplacedSubtitle:
-      "Naročila, zaprta kot nenaročena ali samodejno po 14 dneh",
+      "Naročila, zaprta kot nenaročena ali samodejno po 14 dneh brez aktivnosti",
+    canceledTitle: "Preklicana naročila",
+    canceledSubtitle: "Naročila, ki so bila preklicana brez oddaje",
     myItemsTitle: "Naročeni Itemi",
     myItemsSubtitle: "Tvoji vnosi v skupinskih naročilih",
     myItemsCount: "{{count}} {{items}} v {{orders}} naročilih",
@@ -126,6 +131,7 @@ export default {
     emptyOpen: "Ni odprtih naročil. Uporabi Novo naročilo v stranski vrstici.",
     emptyClosed: "Ni zaključenih naročil.",
     emptyUnplaced: "Ni nenaročenih ali avtomatsko zaprtih naročil.",
+    emptyCanceled: "Ni preklicanih naročil.",
     emptyMyItems:
       "Še nisi dodal nobenega itema. Odpri naročilo in uporabi Dodaj Item.",
     createFailed: "Naročila ni bilo mogoče odpreti.",
@@ -161,7 +167,9 @@ export default {
     notFound: "Naročilo ni najdeno",
     closedNote: "To naročilo je zaključeno.",
     unplacedNote: "To naročilo je bilo zaprto kot nenaročeno.",
-    autoClosedNote: "To naročilo je bilo samodejno zaprto po 14 dneh.",
+    autoClosedNote:
+      "To naročilo je bilo samodejno zaprto po 14 dneh brez aktivnosti.",
+    canceledNote: "To naročilo je bilo preklicano.",
     participants: "Sodelujoči",
     cancelOrder: "Prekliči naročilo",
     cancelling: "Preklicujem…",
@@ -183,7 +191,7 @@ export default {
     participantAria: "Ime sodelujočega",
     ordererAria: "Ime naročnika",
     confirmCancel:
-      "Preklicati to naročilo? Vsi vnosi bodo izbrisani in naročilo ne bo več na seznamu.",
+      "Preklicati to naročilo? Premaknjeno bo med Preklicano in ga lahko kasneje znova odpreš.",
     confirmClose: "Zaključiti to naročilo?",
     confirmCloseOrdered:
       "Zapri kot naročeno? Premaknjeno bo med Zaključena naročila.",
@@ -476,7 +484,8 @@ export default {
     closeOpenOnly: "Zaključiti je mogoče samo odprto naročilo.",
     ownerReopenOnly: "Samo lastnik naročila lahko znova odpre naročilo.",
     reopenUnplacedOnly:
-      "Znova je mogoče odpreti samo nenaročena ali avtomatsko zaprta naročila.",
+      "Znova je mogoče odpreti samo nenaročena, avtomatsko zaprta ali preklicana naročila.",
+    cancelOpenOnly: "Preklicati je mogoče samo odprto naročilo.",
     ownerRequired: "Izberi novega lastnika.",
     ownerTransferOnly: "Samo lastnik naročila lahko prenese lastništvo.",
     ownerMustHaveItem: "Novi lastnik mora imeti vsaj en item v tem naročilu.",

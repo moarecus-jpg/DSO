@@ -4168,6 +4168,10 @@ body.modal-open .order-sticky-backdrop {
   background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
 }
 
+.sidebar-link-v2.active .sidebar-link-icon--canceled {
+  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+}
+
 .sidebar-link-v2.active .sidebar-link-icon--items {
   background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
 }
@@ -5239,6 +5243,11 @@ body.modal-open .order-sticky-backdrop {
   color: #fb923c;
 }
 
+.status-pill-v2-canceled {
+  background: rgba(244, 63, 94, 0.2);
+  color: #fb7185;
+}
+
 .orders-loading,
 .orders-empty {
   text-align: center;
@@ -5722,7 +5731,7 @@ body.modal-open .order-sticky-backdrop {
   }
 
   .mobile-nav-side:first-child {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .mobile-nav-link {
@@ -6269,6 +6278,11 @@ body.modal-open .order-sticky-backdrop {
 [data-theme="light"] .status-pill-v2-auto {
   background: rgba(249, 115, 22, 0.16);
   color: #c2410c;
+}
+
+[data-theme="light"] .status-pill-v2-canceled {
+  background: rgba(244, 63, 94, 0.14);
+  color: #be123c;
 }
 
 [data-theme="light"] .order-item-unavailable-badge {

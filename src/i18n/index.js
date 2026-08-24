@@ -46,6 +46,9 @@ const SERVER_ERROR_MAP = {
   "Samo odpravitelj naročila lahko prekliče naročilo.": "errors.creatorCancelOnly",
   "Zaključiti je mogoče samo odprto naročilo.": "errors.closeOpenOnly",
   "Samo lastnik naročila lahko znova odpre naročilo.": "errors.ownerReopenOnly",
+  "Znova je mogoče odpreti samo nenaročena, avtomatsko zaprta ali preklicana naročila.":
+    "errors.reopenUnplacedOnly",
+  "Preklicati je mogoče samo odprto naročilo.": "errors.cancelOpenOnly",
   "Znova je mogoče odpreti samo nenaročena ali avtomatsko zaprta naročila.":
     "errors.reopenUnplacedOnly",
   "Izberi novega lastnika.": "errors.ownerRequired",

@@ -3,7 +3,7 @@ import {
   addSessionLink,
   addSessionNote,
   closeGroupSession,
-  deleteGroupSession,
+  cancelGroupSession,
   findDuplicateSessionLink,
   updateSessionShipping,
   updateSessionTargetDate,
@@ -290,6 +290,7 @@ function listStatus(req) {
   if (raw === "all") return "all";
   if (raw === "closed") return "closed";
   if (raw === "unplaced") return "unplaced";
+  if (raw === "canceled") return "canceled";
   return "open";
 }
 
@@ -726,7 +727,7 @@ router.post("/:id/reopen", requireUser, (req, res) => {
     }
     if (!isReopenableSession(current.status)) {
       return res.status(400).json({
-        error: "Znova je mogoče odpreti samo nenaročena ali avtomatsko zaprta naročila.",
+        error: "Znova je mogoče odpreti samo nenaročena, avtomatsko zaprta ali preklicana naročila.",
       });
     }
     mockSessions[idx] = {
@@ -751,7 +752,7 @@ router.post("/:id/reopen", requireUser, (req, res) => {
   const session = reopenGroupSession(req.params.id);
   if (!session) {
     return res.status(400).json({
-      error: "Znova je mogoče odpreti samo nenaročena ali avtomatsko zaprta naročila.",
+      error: "Znova je mogoče odpreti samo nenaročena, avtomatsko zaprta ali preklicana naročila.",
     });
   }
 
@@ -822,8 +823,20 @@ router.post("/:id/cancel", requireUser, (req, res) => {
         error: "Samo odpravitelj naročila lahko prekliče naročilo.",
       });
     }
-    mockSessions.splice(idx, 1);
-    return res.json({ ok: true });
+    if ((mockSessions[idx].status ?? "open") !== "open") {
+      return res.status(400).json({
+        error: "Preklicati je mogoče samo odprto naročilo.",
+      });
+    }
+    mockSessions[idx] = {
+      ...mockSessions[idx],
+      status: "canceled",
+      close_reason: "canceled",
+      closed_at: new Date().toISOString(),
+    };
+    return res.json({
+      session: withOrderPermissions(mockSessionDetail(mockSessions[idx]), userId),
+    });
   }
 
   const existing = getGroupSession(req.params.id);
@@ -833,11 +846,23 @@ router.post("/:id/cancel", requireUser, (req, res) => {
       error: "Samo odpravitelj naročila lahko prekliče naročilo.",
     });
   }
-
-  if (!deleteGroupSession(req.params.id)) {
-    return res.status(404).json({ error: "Session not found" });
+  if (existing.status !== "open") {
+    return res.status(400).json({
+      error: "Preklicati je mogoče samo odprto naročilo.",
+    });
   }
-  res.json({ ok: true });
+
+  const session = cancelGroupSession(req.params.id);
+  if (!session) return res.status(404).json({ error: "Session not found" });
+
+  notifyOrderClosed({
+    baseUrl: appBaseUrl(req),
+    session,
+    excludeUserId: userId,
+    kind: "canceled",
+  }).catch((err) => console.error("Order canceled notification:", err));
+
+  res.json({ session: withOrderPermissions(session, userId) });
 });
 
 router.get("/:id", requireUser, async (req, res) => {
