@@ -14,6 +14,11 @@ import { sessionStore } from "./sessionStore.js";
 import { appBaseUrl, discogsCallbackUrl } from "./appUrl.js";
 import { googleCallbackUrl, googleConfigured } from "./auth/google.js";
 import { injectShareMeta } from "./shareHtml.js";
+import {
+  orderPageTitle,
+  orderShareDescription,
+  orderShareUrl,
+} from "../shared/orderShare.js";
 import { startOrderMaintenanceJobs } from "./jobs/orderMaintenance.js";
 
 dotenv.config();
@@ -85,23 +90,32 @@ if (serveClient) {
 
   app.use(express.static(distDir));
 
-  app.get("/session/:id", (req, res, next) => {
-    const session = getGroupSessionShareMeta(req.params.id);
-    if (!session) {
-      return res.sendFile(indexHtmlPath, (err) => {
-        if (err) next(err);
-      });
-    }
-
-    const baseUrl = appBaseUrl(req);
-    const pageUrl = orderShareUrl(baseUrl, session.id);
-    const html = injectShareMeta(indexHtmlTemplate, {
-      title: orderPageTitle(session),
-      description: orderShareDescription(session),
-      url: pageUrl,
-      imageUrl: `${baseUrl}/dso-icon.png`,
+  function sendIndexHtml(res, next) {
+    res.sendFile(indexHtmlPath, (err) => {
+      if (err) next(err);
     });
-    res.type("html").send(html);
+  }
+
+  app.get("/session/:id", (req, res, next) => {
+    try {
+      const session = getGroupSessionShareMeta(req.params.id);
+      if (!session) {
+        return sendIndexHtml(res, next);
+      }
+
+      const baseUrl = appBaseUrl(req);
+      const pageUrl = orderShareUrl(baseUrl, session.id);
+      const html = injectShareMeta(indexHtmlTemplate, {
+        title: orderPageTitle(session),
+        description: orderShareDescription(session),
+        url: pageUrl,
+        imageUrl: `${baseUrl}/dso-icon.png`,
+      });
+      res.type("html").send(html);
+    } catch (err) {
+      console.error("Share meta injection failed:", err);
+      sendIndexHtml(res, next);
+    }
   });
 
   app.get("*", (req, res, next) => {
