@@ -1,28 +1,23 @@
 import { Link, NavLink, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
-  ChevronDown,
   CircleOff,
   Ban,
   Folder,
   Lock,
-  LogOut,
   Package,
   Plus,
   BarChart3,
 } from "lucide-react";
-import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { BrandMark } from "./BrandMark.jsx";
 import { LanguageToggle } from "./LanguageToggle.jsx";
 import { StealthModeToggle } from "./StealthModeToggle.jsx";
 import { NotificationToggle } from "./NotificationToggle.jsx";
-import { UserAvatar } from "./UserAvatar.jsx";
 import { api } from "../api.js";
 
 export function Sidebar() {
   const [searchParams] = useSearchParams();
-  const { user, logout } = useAuth();
   const { t } = useLocale();
   const newOrderOpen = searchParams.get("new") === "1";
   const [counts, setCounts] = useState(null);
@@ -131,36 +126,6 @@ export function Sidebar() {
         <NotificationToggle className="sidebar-footer-item" />
 
         <LanguageToggle className="sidebar-footer-item" compact />
-
-        <div className="sidebar-footer-item sidebar-footer-account">
-          <Link to="/settings" className="sidebar-user-card">
-            <UserAvatar
-              name={user?.name}
-              avatarUrl={
-                user?.discogsConnected ? user.discogsAvatarUrl : user?.picture
-              }
-              className="sidebar-user-avatar"
-              size={36}
-            />
-            <div className="sidebar-user-text">
-              <p className="sidebar-user-name">{user?.name ?? t("settings.title")}</p>
-              <p className="sidebar-user-meta">
-                {user?.isAdmin ? t("nav.admin") : t("settings.title")}
-              </p>
-            </div>
-            <ChevronDown size={18} className="sidebar-user-chevron" aria-hidden />
-          </Link>
-
-          <button
-            type="button"
-            className="sidebar-logout sidebar-logout--aside"
-            onClick={logout}
-            aria-label={t("nav.logout")}
-            title={t("nav.logout")}
-          >
-            <LogOut size={18} aria-hidden />
-          </button>
-        </div>
       </div>
     </aside>
   );

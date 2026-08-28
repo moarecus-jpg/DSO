@@ -2,6 +2,7 @@ import { Search } from "lucide-react";
 import { ORDER_SEARCH_MODES } from "../../shared/filterOrders.js";
 import { ORDER_SORTS } from "../../shared/orderDashboard.js";
 import { AppSelect } from "./AppSelect.jsx";
+import { HeaderAccount } from "./HeaderAccount.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
 
 const SEARCH_MODE_LABELS = {
@@ -76,6 +77,7 @@ export function OrdersPageHeader({
           />
         )}
       </div>
+      <HeaderAccount className="orders-page-header-account" />
     </div>
   );
 }

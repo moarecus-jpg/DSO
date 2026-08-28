@@ -2,16 +2,15 @@ import { useId } from "react";
 
 const GROOVES = [0.9, 0.81, 0.72, 0.63, 0.54, 0.45];
 
-/** Tilted vinyl with DSO on the label and the name arced under the disc. */
-export function DsoLogo({ className, withName = true }) {
+/** Front-facing vinyl with DSO on the label. */
+export function DsoLogo({ className }) {
   const uid = useId().replace(/:/g, "");
   const discId = `dso-disc-${uid}`;
-  const arcId = `dso-arc-${uid}`;
 
   return (
     <svg
       className={className}
-      viewBox={withName ? "32 27 186 140" : "44 28 174 116"}
+      viewBox="0 0 200 200"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden
@@ -19,80 +18,54 @@ export function DsoLogo({ className, withName = true }) {
       <defs>
         <linearGradient
           id={discId}
-          x1="52"
-          y1="34"
-          x2="208"
-          y2="140"
+          x1="44"
+          y1="44"
+          x2="156"
+          y2="156"
           gradientUnits="userSpaceOnUse"
         >
           <stop stopColor="#4c3f7d" />
           <stop offset="0.55" stopColor="#2e2650" />
           <stop offset="1" stopColor="#1b1730" />
         </linearGradient>
-        {/* Offset of the disc ellipse, so the name follows the tilted rim. */}
-        <path id={arcId} d="M37.3 135.8 A110 69 -14 0 0 211.4 120.2" />
       </defs>
 
-      <g transform="rotate(-14 130 86)">
-        <ellipse
-          cx="130"
-          cy="86"
-          rx="84"
-          ry="52"
-          fill={`url(#${discId})`}
-          stroke="#a78bfa"
-          strokeWidth="2"
-        />
+      <circle
+        cx="100"
+        cy="100"
+        r="84"
+        fill={`url(#${discId})`}
+        stroke="#a78bfa"
+        strokeWidth="2"
+      />
 
-        <g stroke="#a78bfa" strokeOpacity="0.3" strokeWidth="1.1">
-          {GROOVES.map((scale) => (
-            <ellipse
-              key={scale}
-              cx="130"
-              cy="86"
-              rx={84 * scale}
-              ry={52 * scale}
-            />
-          ))}
-        </g>
-
-        <ellipse
-          cx="130"
-          cy="86"
-          rx="31"
-          ry="19"
-          fill="#14111f"
-          stroke="#c4b5fd"
-          strokeWidth="1.2"
-        />
-
-        <text
-          x="130"
-          y="94"
-          textAnchor="middle"
-          fontFamily="'Permanent Marker', cursive"
-          fontSize="24"
-          letterSpacing="0.03em"
-        >
-          <tspan fill="#fff">D</tspan>
-          <tspan fill="#c4b5fd">S</tspan>
-          <tspan fill="#fff">O</tspan>
-        </text>
+      <g stroke="#a78bfa" strokeOpacity="0.3" strokeWidth="1.1">
+        {GROOVES.map((scale) => (
+          <circle key={scale} cx="100" cy="100" r={84 * scale} />
+        ))}
       </g>
 
-      {withName && (
-        <text
-          className="dso-logo-name"
-          textAnchor="middle"
-          fontFamily="'Permanent Marker', cursive"
-          fontSize="15"
-          letterSpacing="0.02em"
-        >
-          <textPath href={`#${arcId}`} startOffset="50%">
-            Discogs Slovenia Orders
-          </textPath>
-        </text>
-      )}
+      <circle
+        cx="100"
+        cy="100"
+        r="31"
+        fill="#14111f"
+        stroke="#c4b5fd"
+        strokeWidth="1.2"
+      />
+
+      <text
+        x="100"
+        y="108"
+        textAnchor="middle"
+        fontFamily="'Permanent Marker', cursive"
+        fontSize="24"
+        letterSpacing="0.03em"
+      >
+        <tspan fill="#fff">D</tspan>
+        <tspan fill="#c4b5fd">S</tspan>
+        <tspan fill="#fff">O</tspan>
+      </text>
     </svg>
   );
 }
