@@ -4,9 +4,11 @@ import {
   ArrowRight,
   Calendar,
   Disc3,
+  ExternalLink,
   Lock,
   MoreHorizontal,
   RotateCcw,
+  Store,
   Target,
   UserRound,
   X,
@@ -16,7 +18,12 @@ import {
   isOpenSession,
   isReopenableSession,
 } from "../../shared/orderStatus.js";
-import { getStoreConfig } from "../../shared/stores.js";
+import {
+  computeOrderGrandTotal,
+  formatPrice,
+  recordTitle,
+} from "../../shared/orderTotals.js";
+import { getStoreConfig, isShopStore } from "../../shared/stores.js";
 import { sessionTimestamp } from "../../shared/orderDashboard.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { CloseOrderDialog } from "./CloseOrderDialog.jsx";
@@ -44,6 +51,13 @@ function formatTargetDate(targetDate, localeTag) {
     month: "short",
     year: "numeric",
   });
+}
+
+function truncateText(value, max = 140) {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+  if (text.length <= max) return text;
+  return `${text.slice(0, max).trim()}…`;
 }
 
 function formatActivityTime(value, localeTag) {
@@ -107,7 +121,25 @@ function buildActivity(session, detail, t) {
   }
 
   events.sort((a, b) => b.at - a.at);
-  return events.slice(0, 6);
+  return events.slice(0, 4);
+}
+
+function membersForPreview(detail, session) {
+  if (detail?.members?.length) return detail.members;
+  const seen = new Map();
+  for (const link of detail?.links ?? []) {
+    const id = link.user_id ?? link.user_name;
+    if (!id || seen.has(id)) continue;
+    seen.set(id, {
+      id,
+      name: link.user_name ?? link.member_name ?? id,
+    });
+  }
+  if (seen.size) return [...seen.values()];
+  const creator =
+    session.creator_name ??
+    (session.creator_username ? `@${session.creator_username}` : null);
+  return creator ? [{ id: session.created_by ?? "creator", name: creator }] : [];
 }
 
 export function OrderDetailPreview({
@@ -166,13 +198,37 @@ export function OrderDetailPreview({
   const creatorLabel =
     session.creator_name ??
     (session.creator_username ? `@${session.creator_username}` : null);
-  const members = detail?.members ?? [];
-  const noteCount = detail?.notes?.length ?? 0;
-  const itemCount = detail?.links?.length ?? session.link_count ?? 0;
+  const members = membersForPreview(detail, session);
+  const links = detail?.links ?? [];
+  const notes = [...(detail?.notes ?? [])].sort(
+    (a, b) => sessionTimestamp(b.created_at) - sessionTimestamp(a.created_at)
+  );
+  const noteCount = notes.length;
+  const itemCount = links.length || session.link_count || 0;
   const memberCount = members.length || session.member_count || 1;
   const targetDate = detail?.target_date ?? session.target_date;
   const targetLabel = targetDate ? formatTargetDate(targetDate, localeTag) : null;
   const createdLabel = formatCreatedAt(session.created_at, localeTag);
+  const storeConfig = getStoreConfig(session.store);
+  const shop = isShopStore(session.store);
+  const sellerUrl = shop
+    ? storeConfig.shopUrl
+    : session.seller_username
+      ? `https://www.discogs.com/seller/${session.seller_username}/profile`
+      : null;
+  const sellerLabel = session.seller_username
+    ? `@${session.seller_username}`
+    : storeConfig.label;
+  const totals = computeOrderGrandTotal(links, detail ?? session);
+  const totalLabel = formatPrice(totals.total, totals.currency);
+  const visibleItems = links.slice(0, 6);
+  const extraItemCount = Math.max(0, links.length - visibleItems.length);
+  const itemCountByMember = new Map();
+  for (const link of links) {
+    const key = link.user_id ?? link.user_name;
+    if (!key) continue;
+    itemCountByMember.set(key, (itemCountByMember.get(key) ?? 0) + 1);
+  }
   const showClose = canClose && isOpen;
   const showReopen = canReopen && isReopenableSession(session.status);
   const showMenu = showClose || showReopen;
@@ -270,7 +326,7 @@ export function OrderDetailPreview({
         )}
       </div>
 
-      <div className="order-preview-stats">
+      <div className="order-preview-stats order-preview-stats--quad">
         <div className="order-preview-stat">
           <span className="order-preview-stat-value">{memberCount}</span>
           <span className="order-preview-stat-label">{t("orders.previewMembers")}</span>
@@ -283,15 +339,164 @@ export function OrderDetailPreview({
           <span className="order-preview-stat-value">{loading ? "…" : noteCount}</span>
           <span className="order-preview-stat-label">{t("orders.previewMessages")}</span>
         </div>
+        <div className="order-preview-stat">
+          <span className="order-preview-stat-value order-preview-stat-value--sm">
+            {loading && !detail ? "…" : totalLabel}
+          </span>
+          <span className="order-preview-stat-label">{t("orders.previewTotal")}</span>
+        </div>
       </div>
 
       <div className="order-preview-section">
         <h3 className="order-preview-section-title">{t("orders.previewAbout")}</h3>
-        <p className="order-preview-about">
-          {session.seller_username
-            ? `@${session.seller_username} · ${getStoreConfig(session.store).label}`
-            : getStoreConfig(session.store).label}
-        </p>
+        <div className="order-preview-meta-row">
+          <div>
+            <span className="order-preview-meta-label">
+              <Store size={13} aria-hidden />
+              {t("orders.previewSeller")}
+            </span>
+            {sellerUrl ? (
+              <a
+                className="order-preview-meta-link"
+                href={sellerUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {sellerLabel}
+                <ExternalLink size={12} aria-hidden />
+              </a>
+            ) : (
+              <span className="order-preview-meta-value">{sellerLabel}</span>
+            )}
+          </div>
+          <div>
+            <span className="order-preview-meta-label">{t("orders.previewStore")}</span>
+            <span className="order-preview-meta-value">{storeConfig.label}</span>
+          </div>
+          {createdLabel && (
+            <div>
+              <span className="order-preview-meta-label">
+                <Calendar size={13} aria-hidden />
+                {t("orders.previewCreated")}
+              </span>
+              <span className="order-preview-meta-value">{createdLabel}</span>
+            </div>
+          )}
+          <div>
+            <span className="order-preview-meta-label">
+              <Target size={13} aria-hidden />
+              {t("orders.previewTarget")}
+            </span>
+            <span className="order-preview-meta-value">{targetLabel ?? "—"}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="order-preview-section">
+        <h3 className="order-preview-section-title">{t("orders.previewMembers")}</h3>
+        {loading && !detail ? (
+          <p className="muted fine">{t("common.loading")}</p>
+        ) : members.length === 0 ? (
+          <p className="order-preview-member-muted">{t("orders.previewNoMembers")}</p>
+        ) : (
+          <ul className="order-preview-members">
+            {members.map((member) => {
+              const count =
+                itemCountByMember.get(member.id) ??
+                itemCountByMember.get(member.name) ??
+                0;
+              return (
+                <li key={member.id ?? member.name} className="order-preview-member">
+                  <UserAvatar
+                    name={member.name}
+                    className="order-preview-member-avatar order-preview-member-avatar--fallback"
+                    size={32}
+                  />
+                  <div className="order-preview-member-text">
+                    <span className="order-preview-member-name">{member.name}</span>
+                    <small>
+                      {t("orders.previewMemberItems", { count })}
+                    </small>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+      <div className="order-preview-section">
+        <h3 className="order-preview-section-title">{t("orders.previewItems")}</h3>
+        {loading && !detail ? (
+          <p className="muted fine">{t("common.loading")}</p>
+        ) : visibleItems.length === 0 ? (
+          <p className="order-preview-member-muted">{t("orders.previewNoItems")}</p>
+        ) : (
+          <ul className="order-preview-items">
+            {visibleItems.map((link) => (
+              <li key={link.id} className="order-preview-item">
+                <div className="order-preview-item-text">
+                  {link.blurred ? (
+                    <span className="order-preview-item-title">
+                      {t("items.hiddenItem")}
+                    </span>
+                  ) : (
+                    <a
+                      className="order-preview-item-title"
+                      href={link.url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {recordTitle(link)}
+                    </a>
+                  )}
+                  <small>
+                    {link.user_name ?? t("common.unknown")}
+                    {!link.blurred && link.media_condition
+                      ? ` · ${link.media_condition}`
+                      : ""}
+                  </small>
+                </div>
+                {!link.blurred && (
+                  <span className="order-preview-item-price">
+                    {formatPrice(link.price_value, link.price_currency)}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+        {extraItemCount > 0 && (
+          <p className="order-preview-more">{t("orders.previewMoreItems", { count: extraItemCount })}</p>
+        )}
+      </div>
+
+      <div className="order-preview-section">
+        <h3 className="order-preview-section-title">{t("orders.previewNotes")}</h3>
+        {loading && !detail ? (
+          <p className="muted fine">{t("common.loading")}</p>
+        ) : notes.length === 0 ? (
+          <p className="order-preview-member-muted">{t("orders.previewNoNotes")}</p>
+        ) : (
+          <ul className="order-preview-notes">
+            {notes.slice(0, 3).map((note) => (
+              <li key={note.id} className="order-preview-note">
+                <UserAvatar
+                  name={note.user_name}
+                  className="order-preview-activity-avatar"
+                  size={28}
+                />
+                <div className="order-preview-activity-text">
+                  <p>{note.user_name ?? t("common.unknown")}</p>
+                  <span className="order-preview-note-body">
+                    {truncateText(note.body)}
+                  </span>
+                  <small>{formatActivityTime(note.created_at, localeTag)}</small>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div className="order-preview-section">
