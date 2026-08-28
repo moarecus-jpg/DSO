@@ -1433,10 +1433,10 @@ function deliverableUserFilter(alias = "u") {
 export function listUsersForNewOrderNotifications(excludeUserId) {
   return db
     .prepare(
-      `SELECT id, email, name, username FROM users
-       WHERE notify_new_order = 1
+      `SELECT u.id, u.email, u.name, u.username FROM users u
+       WHERE u.notify_new_order = 1
          AND ${deliverableUserFilter()}
-         AND id != ?`
+         AND u.id != ?`
     )
     .all(excludeUserId ?? "");
 }

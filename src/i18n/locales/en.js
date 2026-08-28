@@ -196,6 +196,7 @@ export default {
       items: "Items",
       activeToday: "Active today",
       attention: "Needs attention",
+      recent: "Recently active",
       viewNow: "View now",
     },
     statHint: {
@@ -203,6 +204,8 @@ export default {
       items: "Listings in open orders",
       activeToday: "Updated today",
       attention: "Idle or past target",
+      recent: "Activity in the last 7 days",
+      recentList: "Orders with recent changes",
     },
     statTrend: {
       openWeek: "{{count}} this week",

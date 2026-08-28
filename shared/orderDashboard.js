@@ -49,6 +49,13 @@ export function isOpen(session) {
   return session?.status === "open";
 }
 
+export function getRecentlyActiveSessions(sessions, limit = 4, now = Date.now()) {
+  return [...sessions]
+    .filter((session) => isRecentlyActive(session, now))
+    .sort((a, b) => lastActivityTs(b) - lastActivityTs(a))
+    .slice(0, limit);
+}
+
 export function computeDashboardStats(sessions, now = Date.now()) {
   const dayStart = startOfLocalDay(now);
   const weekStart = now - RECENT_DAYS * DAY_MS;
@@ -58,12 +65,14 @@ export function computeDashboardStats(sessions, now = Date.now()) {
   let openedWeek = 0;
   let itemsWeek = 0;
   let activeYesterday = 0;
+  let recent = 0;
 
   for (const session of sessions) {
     items += session.link_count ?? 0;
     itemsWeek += session.items_week ?? 0;
     if (isActiveToday(session, now)) activeToday += 1;
     if (needsAttention(session, now)) attention += 1;
+    if (isRecentlyActive(session, now)) recent += 1;
     if (sessionTimestamp(session.created_at) >= weekStart) openedWeek += 1;
     const activity = lastActivityTs(session);
     if (activity >= dayStart - DAY_MS && activity < dayStart) activeYesterday += 1;
@@ -74,6 +83,7 @@ export function computeDashboardStats(sessions, now = Date.now()) {
     items,
     activeToday,
     attention,
+    recent,
     trend: {
       open: openedWeek,
       items: itemsWeek,

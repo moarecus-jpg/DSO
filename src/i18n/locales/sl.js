@@ -197,6 +197,7 @@ export default {
       items: "Itemi",
       activeToday: "Aktivna danes",
       attention: "Zahtevajo pozornost",
+      recent: "Nedavno aktivna",
       viewNow: "Poglej zdaj",
     },
     statHint: {
@@ -204,6 +205,8 @@ export default {
       items: "Listingi v odprtih naročilih",
       activeToday: "Posodobljena danes",
       attention: "Nedejavna ali mimo cilja",
+      recent: "Dejavnost v zadnjih 7 dneh",
+      recentList: "Naročila z nedavnimi spremembami",
     },
     statTrend: {
       openWeek: "{{count}} ta teden",

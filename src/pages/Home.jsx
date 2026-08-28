@@ -12,6 +12,7 @@ import { filterSessions } from "../../shared/filterOrders.js";
 import {
   computeDashboardStats,
   filterSessionsByChip,
+  getRecentlyActiveSessions,
   paginate,
   sortSessions,
 } from "../../shared/orderDashboard.js";
@@ -50,6 +51,10 @@ export function Home() {
     [sessions, query, searchMode]
   );
   const stats = useMemo(() => computeDashboardStats(sessions), [sessions]);
+  const recentSessions = useMemo(
+    () => getRecentlyActiveSessions(sessions, 4),
+    [sessions]
+  );
   const chipCounts = useMemo(
     () => ({
       all: searchedSessions.length,
@@ -71,7 +76,7 @@ export function Home() {
     setPage(1);
   }, [query, searchMode, chip, sort]);
 
-  const preview = useOrderPreview(pagedSessions, {
+  const preview = useOrderPreview(filteredSessions, {
     onClosed: async (session) => {
       await loadSessions();
       navigate(sessionListPath(session?.status));
@@ -125,32 +130,36 @@ export function Home() {
       {!showForm && !loading && (
         <DashboardStats
           stats={stats}
+          recentSessions={recentSessions}
+          onOpen={() => setChip("all")}
           onAttention={() => setChip("attention")}
-        />
-      )}
-
-      {!showForm && (
-        <OrderChips
-          value={chip}
-          onChange={setChip}
-          counts={chipCounts}
-          trailing={
-            <OrdersFilterButton
-              searchMode={searchMode}
-              onSearchModeChange={setSearchMode}
-              dirty={filtersDirty}
-              onReset={() => {
-                setQuery("");
-                setSearchMode("creator");
-                setChip("all");
-              }}
-            />
-          }
+          onRecent={() => setChip("recent")}
+          onSelectOrder={preview.selectSession}
         />
       )}
 
       <div className={`orders-split${showDesktopPreview ? " orders-split--preview" : ""}`}>
-        <div className="orders-split-list">
+        <div className="orders-split-main">
+          {!showForm && (
+            <OrderChips
+              value={chip}
+              onChange={setChip}
+              counts={chipCounts}
+              trailing={
+                <OrdersFilterButton
+                  searchMode={searchMode}
+                  onSearchModeChange={setSearchMode}
+                  dirty={filtersDirty}
+                  onReset={() => {
+                    setQuery("");
+                    setSearchMode("creator");
+                    setChip("all");
+                  }}
+                />
+              }
+            />
+          )}
+
           <OrderList
             sessions={pagedSessions}
             loading={loading}
