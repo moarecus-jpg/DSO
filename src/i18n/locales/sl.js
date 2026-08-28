@@ -191,6 +191,13 @@ export default {
       recent: "Nedavno aktivna",
       attention: "Zahtevajo pozornost",
     },
+    chipMobile: {
+      all: "Vsa",
+      open: "Odprta",
+      waiting: "Čaka",
+      recent: "Nedavno",
+      attention: "Pozornost",
+    },
     sortLabel: "Razvrsti",
     sort: {
       recent: "Nazadnje odprta",

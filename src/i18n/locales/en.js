@@ -190,6 +190,13 @@ export default {
       recent: "Recently active",
       attention: "Needs attention",
     },
+    chipMobile: {
+      all: "All",
+      open: "Open",
+      waiting: "Waiting",
+      recent: "Recent",
+      attention: "Attention",
+    },
     sortLabel: "Sort by",
     sort: {
       recent: "Recently opened",

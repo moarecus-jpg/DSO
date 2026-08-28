@@ -5437,10 +5437,22 @@ body.modal-open .order-sticky-backdrop {
 }
 
 .order-chip-dot {
+  flex: 0 0 0.45rem;
   width: 0.45rem;
   height: 0.45rem;
   border-radius: 999px;
   background: currentColor;
+}
+
+.order-chip-label--mobile {
+  display: none;
+}
+
+.order-chip-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .order-chip--open .order-chip-dot {
@@ -7250,32 +7262,56 @@ a.order-preview-item-title:hover {
   }
 
   .order-chips-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.55rem;
-  }
-
-  .order-chips {
-    order: 2;
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.45rem;
-    overflow: visible;
-    flex-wrap: wrap;
-    padding-bottom: 0;
+    align-items: stretch;
+  }
+
+  .order-chips {
+    display: contents;
   }
 
   .order-chips-row .orders-filter {
-    order: 1;
-    align-self: flex-end;
+    grid-column: 3;
+    grid-row: 2;
+    align-self: stretch;
+    min-width: 0;
+  }
+
+  .order-chips-row .orders-filter-btn {
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    padding: 0.42rem 0.45rem;
+    font-size: 0.76rem;
+  }
+
+  .order-chip-label--full {
+    display: none;
+  }
+
+  .order-chip-label--mobile {
+    display: inline;
+    flex: 1;
   }
 
   .order-chip {
     width: 100%;
-    justify-content: center;
+    justify-content: flex-start;
     min-width: 0;
-    padding: 0.42rem 0.45rem;
-    font-size: 0.76rem;
+    padding: 0.42rem 0.5rem;
+    font-size: 0.74rem;
+    overflow: hidden;
+  }
+
+  .order-chip--all {
+    justify-content: center;
+  }
+
+  .order-chip-count {
+    flex-shrink: 0;
+    margin-left: auto;
   }
 
   .orders-pagination {

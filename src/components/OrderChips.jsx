@@ -21,7 +21,12 @@ export function OrderChips({ value, onChange, counts, trailing = null }) {
               onClick={() => onChange(chip)}
             >
               {chip !== "all" && <span className="order-chip-dot" aria-hidden />}
-              {t(`orders.chip.${chip}`)}
+              <span className="order-chip-label order-chip-label--full">
+                {t(`orders.chip.${chip}`)}
+              </span>
+              <span className="order-chip-label order-chip-label--mobile">
+                {t(`orders.chipMobile.${chip}`)}
+              </span>
               {typeof count === "number" ? (
                 <span className="order-chip-count">{count}</span>
               ) : null}
