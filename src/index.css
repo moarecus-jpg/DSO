@@ -4943,55 +4943,55 @@ body.modal-open .order-sticky-backdrop {
 }
 
 .dash-stats--compact {
-  grid-template-columns: repeat(3, minmax(9.25rem, 11.25rem));
-  justify-content: start;
-  gap: 0.7rem;
-  margin: 0 0 0.85rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  gap: 0.85rem;
+  margin: 0 0 1rem;
   flex-shrink: 0;
 }
 
 .dash-stats--compact .dash-stat {
-  min-height: 6.25rem;
+  min-height: 7.75rem;
 }
 
 .dash-stats--compact .dash-stat:not(.dash-stat--wide),
 .dash-stats--compact .dash-stat-main {
-  padding: 0.8rem 0.9rem 0.75rem;
+  padding: 1rem 1.05rem 0.9rem;
 }
 
 .dash-stats--compact .dash-stat-head {
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.35rem;
 }
 
 .dash-stats--compact .dash-stat-icon {
-  width: 1.85rem;
-  height: 1.85rem;
-  border-radius: 0.6rem;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 0.7rem;
 }
 
 .dash-stats--compact .dash-stat-label {
-  font-size: 0.64rem;
-  letter-spacing: 0.07em;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
 }
 
 .dash-stats--compact .dash-stat-value {
-  font-size: 1.55rem;
+  font-size: 1.85rem;
 }
 
 .dash-stats--compact .dash-stat-hint {
-  font-size: 0.68rem;
-  margin-top: 0;
+  font-size: 0.76rem;
+  margin-top: 0.15rem;
 }
 
 .dash-stats--compact .dash-stat-recent {
-  padding: 0 0.55rem 0.55rem;
-  gap: 0.25rem;
+  padding: 0 0.75rem 0.75rem;
+  gap: 0.35rem;
 }
 
 .dash-stats--compact .dash-stat-recent-item {
-  padding: 0.32rem 0.45rem;
-  font-size: 0.72rem;
-  border-radius: 0.5rem;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.78rem;
+  border-radius: 0.55rem;
 }
 
 .dash-stat {
@@ -5662,8 +5662,8 @@ body.modal-open .order-sticky-backdrop {
 }
 
 .orders-split--preview .order-list-v2 {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.2rem;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 1rem;
 }
 
 .order-card-v2 {
@@ -5780,7 +5780,7 @@ body.modal-open .order-sticky-backdrop {
 
 .orders-split--preview {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(19rem, 23rem);
+  grid-template-columns: minmax(0, 1fr) clamp(24rem, 34vw, 32rem);
   gap: 1.15rem;
   align-items: stretch;
   flex: 1;
