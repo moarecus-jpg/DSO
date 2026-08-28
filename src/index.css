@@ -4967,8 +4967,24 @@ body.modal-open .order-sticky-backdrop {
 
 .dash-stats--compact .dash-stat {
   min-height: 6.75rem;
+  min-width: 0;
+  width: 100%;
   justify-content: space-between;
   gap: 0.35rem;
+  background: radial-gradient(
+    ellipse 58% 54% at 100% 0%,
+    var(--dash-glow),
+    var(--dash-fill) 72%
+  );
+}
+
+.dash-stats--compact .dash-stat::before {
+  width: 100%;
+  background: var(--dash-accent);
+}
+
+.dash-stats--compact .dash-stat::after {
+  content: none;
 }
 
 .dash-stats--compact .dash-stat:not(.dash-stat--wide),
@@ -5021,7 +5037,11 @@ body.modal-open .order-sticky-backdrop {
   color: #fff;
   text-align: left;
   font: inherit;
-  background: rgba(255, 255, 255, 0.025);
+  background: radial-gradient(
+    ellipse 70% 62% at 100% 0%,
+    var(--dash-glow),
+    var(--dash-fill) 70%
+  );
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
 }
 
@@ -5031,20 +5051,13 @@ body.modal-open .order-sticky-backdrop {
   inset: 0 auto auto 0;
   width: 100%;
   height: 3px;
-  background: linear-gradient(90deg, var(--dash-accent), transparent 72%);
+  background: var(--dash-accent);
   opacity: 0.95;
   pointer-events: none;
 }
 
 .dash-stat::after {
-  content: "";
-  position: absolute;
-  top: -18%;
-  right: -8%;
-  width: 58%;
-  height: 72%;
-  background: radial-gradient(circle, var(--dash-glow) 0%, transparent 68%);
-  pointer-events: none;
+  content: none;
 }
 
 .dash-stat-main {
@@ -5070,17 +5083,20 @@ body.modal-open .order-sticky-backdrop {
 
 .dash-stat--violet {
   --dash-accent: #a78bfa;
-  --dash-glow: rgba(139, 92, 246, 0.28);
+  --dash-glow: rgba(167, 139, 250, 0.45);
+  --dash-fill: #221d33;
 }
 
 .dash-stat--amber {
   --dash-accent: #fbbf24;
-  --dash-glow: rgba(245, 158, 11, 0.24);
+  --dash-glow: rgba(251, 191, 36, 0.42);
+  --dash-fill: #2c2414;
 }
 
 .dash-stat--sky {
   --dash-accent: #38bdf8;
-  --dash-glow: rgba(56, 189, 248, 0.22);
+  --dash-glow: rgba(56, 189, 248, 0.38);
+  --dash-fill: #15232c;
 }
 
 .dash-stat--action {
@@ -5192,7 +5208,7 @@ body.modal-open .order-sticky-backdrop {
   }
 
   .dash-stats--compact {
-    grid-template-columns: repeat(3, minmax(8.5rem, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     max-width: none;
   }
 
@@ -5799,7 +5815,7 @@ body.modal-open .order-sticky-backdrop {
 
 .orders-split--preview {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(28rem, 42vw, 40rem);
+  grid-template-columns: minmax(18rem, 0.62fr) minmax(28rem, 1.38fr);
   gap: 1.15rem;
   align-items: stretch;
   flex: 1;
@@ -7297,10 +7313,26 @@ body.modal-open .order-sticky-backdrop {
 }
 
 [data-theme="light"] .dash-stat {
-  background: rgba(255, 255, 255, 0.94);
+  background: radial-gradient(
+    ellipse 70% 62% at 100% 0%,
+    var(--dash-glow),
+    var(--dash-fill) 70%
+  );
   border-color: rgba(24, 24, 27, 0.08);
   color: #18181b;
   box-shadow: 0 10px 26px rgba(24, 24, 27, 0.08);
+}
+
+[data-theme="light"] .dash-stat--violet {
+  --dash-fill: #f4f0ff;
+}
+
+[data-theme="light"] .dash-stat--amber {
+  --dash-fill: #fff8e8;
+}
+
+[data-theme="light"] .dash-stat--sky {
+  --dash-fill: #eef8fd;
 }
 
 [data-theme="light"] .dash-stat-label,
