@@ -11,7 +11,7 @@ export function DsoLogo({ className, withName = true }) {
   return (
     <svg
       className={className}
-      viewBox={withName ? "30 24 200 164" : "44 28 174 116"}
+      viewBox={withName ? "32 27 186 140" : "44 28 174 116"}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden
@@ -29,7 +29,8 @@ export function DsoLogo({ className, withName = true }) {
           <stop offset="0.55" stopColor="#2e2650" />
           <stop offset="1" stopColor="#1b1730" />
         </linearGradient>
-        <path id={arcId} d="M20 126 A 114 66 0 0 0 240 126" />
+        {/* Offset of the disc ellipse, so the name follows the tilted rim. */}
+        <path id={arcId} d="M37.3 135.8 A110 69 -14 0 0 211.4 120.2" />
       </defs>
 
       <g transform="rotate(-14 130 86)">
