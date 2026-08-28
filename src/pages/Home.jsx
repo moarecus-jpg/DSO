@@ -127,20 +127,20 @@ export function Home() {
         onSortChange={setSort}
       />
 
-      {!showForm && !loading && (
-        <DashboardStats
-          stats={stats}
-          recentSessions={recentSessions}
-          compact={showDesktopPreview}
-          onOpen={() => setChip("all")}
-          onAttention={() => setChip("attention")}
-          onRecent={() => setChip("recent")}
-          onSelectOrder={preview.selectSession}
-        />
-      )}
-
       <div className={`orders-split${showDesktopPreview ? " orders-split--preview" : ""}`}>
         <div className="orders-split-main">
+          {!showForm && !loading && (
+            <DashboardStats
+              stats={stats}
+              recentSessions={recentSessions}
+              compact={showDesktopPreview}
+              onOpen={() => setChip("all")}
+              onAttention={() => setChip("attention")}
+              onRecent={() => setChip("recent")}
+              onSelectOrder={preview.selectSession}
+            />
+          )}
+
           {!showForm && (
             <OrderChips
               value={chip}
