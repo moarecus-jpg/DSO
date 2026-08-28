@@ -73,13 +73,11 @@ export function DashboardStats({
               </span>
             </div>
             <span className="dash-stat-value">{value}</span>
-            {!(compact && card.key === "recent" && visibleRecent.length > 0) && (
-              <span className="dash-stat-hint">{hint}</span>
-            )}
+            <span className="dash-stat-hint">{hint}</span>
           </>
         );
 
-        if (card.key === "recent") {
+        if (card.key === "recent" && !compact) {
           return (
             <div key={card.key} className={className}>
               <button type="button" className="dash-stat-main" onClick={onClick}>
