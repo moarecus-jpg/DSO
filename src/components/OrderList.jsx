@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
-import { Calendar, ChevronRight, Disc3, UserRound, Users } from "lucide-react";
+import { Calendar, Disc3, MessageSquare, UserRound, Users } from "lucide-react";
 import { displayOrderTitle } from "../../shared/orderTitle.js";
+import { needsAttention } from "../../shared/orderDashboard.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { OrderStoreAvatar } from "./OrderStoreAvatar.jsx";
 import { StatusPill } from "./StatusPill.jsx";
@@ -18,16 +19,21 @@ function formatOrderDate(createdAt, localeTag) {
 
 function OrderCardContent({ s, title, dateLabel, creatorLabel, t }) {
   const itemCount = s.link_count ?? 0;
+  const noteCount = s.note_count ?? 0;
+  const attention = needsAttention(s);
 
   return (
     <>
-      <OrderStoreAvatar
-        store={s.store}
-        username={s.seller_username}
-        avatarUrl={s.seller_avatar_url}
-        className="order-card-v2-avatar"
-        size={80}
-      />
+      <div className="order-card-v2-top">
+        <OrderStoreAvatar
+          store={s.store}
+          username={s.seller_username}
+          avatarUrl={s.seller_avatar_url}
+          className="order-card-v2-avatar"
+          size={56}
+        />
+        <StatusPill status={s.status} />
+      </div>
       <div className="order-card-v2-body">
         <h3 className="order-card-v2-title">{title}</h3>
         {dateLabel && (
@@ -43,17 +49,22 @@ function OrderCardContent({ s, title, dateLabel, creatorLabel, t }) {
           </p>
         )}
       </div>
-      <div className="order-card-v2-aside">
-        <StatusPill status={s.status} />
-        <div className="order-card-v2-meta" title={t("orders.previewMembers")}>
-          <Users size={18} aria-hidden />
+      <div className="order-card-v2-footer">
+        <span className="order-card-v2-meta" title={t("orders.previewMembers")}>
+          <Users size={15} aria-hidden />
           {s.member_count ?? 1}
-        </div>
-        <div className="order-card-v2-meta" title={t("orders.previewItems")}>
-          <Disc3 size={18} aria-hidden />
+        </span>
+        <span className="order-card-v2-meta" title={t("orders.previewItems")}>
+          <Disc3 size={15} aria-hidden />
           {itemCount}
-        </div>
-        <ChevronRight className="order-card-v2-chevron" size={24} aria-hidden />
+        </span>
+        <span className="order-card-v2-meta" title={t("orders.previewNotes")}>
+          <MessageSquare size={15} aria-hidden />
+          {noteCount}
+        </span>
+        {attention ? (
+          <span className="order-card-v2-alert">{t("orders.chip.attention")}</span>
+        ) : null}
       </div>
     </>
   );

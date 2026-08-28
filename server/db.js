@@ -517,13 +517,25 @@ export function addSessionNote(sessionId, userId, body) {
 const UNPLACED_STATUSES = ["unplaced", "auto_closed"];
 const REOPENABLE_STATUSES = [...UNPLACED_STATUSES, "canceled"];
 
+const SESSION_LIST_COLUMNS = `gs.*, u.name as creator_name, u.username as creator_username,
+        (SELECT COUNT(DISTINCT user_id) FROM session_links WHERE session_id = gs.id) as member_count,
+        (SELECT COUNT(*) FROM session_links WHERE session_id = gs.id) as link_count,
+        (SELECT COUNT(*) FROM session_notes WHERE session_id = gs.id) as note_count,
+        (SELECT MAX(datetime(ts))
+           FROM (
+             SELECT gs.created_at AS ts
+             UNION ALL
+             SELECT sl.created_at FROM session_links sl WHERE sl.session_id = gs.id
+             UNION ALL
+             SELECT sn.created_at FROM session_notes sn WHERE sn.session_id = gs.id
+           )
+        ) as last_activity_at`;
+
 export function listGroupSessions(status = "open") {
   if (status === "unplaced") {
     return db
       .prepare(
-        `SELECT gs.*, u.name as creator_name, u.username as creator_username,
-          (SELECT COUNT(DISTINCT user_id) FROM session_links WHERE session_id = gs.id) as member_count,
-          (SELECT COUNT(*) FROM session_links WHERE session_id = gs.id) as link_count
+        `SELECT ${SESSION_LIST_COLUMNS}
          FROM group_sessions gs
          JOIN users u ON u.id = gs.created_by
          WHERE gs.status IN ('unplaced', 'auto_closed')
@@ -535,9 +547,7 @@ export function listGroupSessions(status = "open") {
 
   return db
     .prepare(
-      `SELECT gs.*, u.name as creator_name, u.username as creator_username,
-        (SELECT COUNT(DISTINCT user_id) FROM session_links WHERE session_id = gs.id) as member_count,
-        (SELECT COUNT(*) FROM session_links WHERE session_id = gs.id) as link_count
+      `SELECT ${SESSION_LIST_COLUMNS}
        FROM group_sessions gs
        JOIN users u ON u.id = gs.created_by
        WHERE gs.status = ?
@@ -554,15 +564,28 @@ export function listOpenGroupSessions() {
 export function listAllGroupSessions() {
   return db
     .prepare(
-      `SELECT gs.*, u.name as creator_name, u.username as creator_username,
-        (SELECT COUNT(DISTINCT user_id) FROM session_links WHERE session_id = gs.id) as member_count,
-        (SELECT COUNT(*) FROM session_links WHERE session_id = gs.id) as link_count
+      `SELECT ${SESSION_LIST_COLUMNS}
        FROM group_sessions gs
        JOIN users u ON u.id = gs.created_by
        ORDER BY gs.created_at DESC`
     )
     .all()
     .map(withOrderTitle);
+}
+
+export function countGroupSessionsByStatus() {
+  const rows = db
+    .prepare("SELECT status, COUNT(*) AS n FROM group_sessions GROUP BY status")
+    .all();
+  const counts = { open: 0, closed: 0, unplaced: 0, canceled: 0 };
+  for (const row of rows) {
+    if (row.status === "unplaced" || row.status === "auto_closed") {
+      counts.unplaced += row.n;
+    } else if (counts[row.status] != null) {
+      counts[row.status] = row.n;
+    }
+  }
+  return counts;
 }
 
 export function updateSessionSellerAvatar(id, sellerAvatarUrl) {

@@ -3,6 +3,7 @@ import { OrderDetailPreview } from "../components/OrderDetailPreview.jsx";
 import { OrderList } from "../components/OrderList.jsx";
 import { OrdersPageHeader } from "../components/OrdersPageHeader.jsx";
 import { filterSessions } from "../../shared/filterOrders.js";
+import { sortSessions } from "../../shared/orderDashboard.js";
 import { api } from "../api.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { useOrderPreview } from "../hooks/useOrderPreview.js";
@@ -13,6 +14,7 @@ export function CanceledOrders() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [searchMode, setSearchMode] = useState("creator");
+  const [sort, setSort] = useState("recent");
 
   const loadSessions = useCallback(async () => {
     const d = await api("/api/sessions?status=canceled");
@@ -24,8 +26,8 @@ export function CanceledOrders() {
   }, [loadSessions]);
 
   const filteredSessions = useMemo(
-    () => filterSessions(sessions, { query, searchMode }),
-    [sessions, query, searchMode]
+    () => sortSessions(filterSessions(sessions, { query, searchMode }), sort),
+    [sessions, query, searchMode, sort]
   );
 
   const preview = useOrderPreview(filteredSessions, {
@@ -44,6 +46,8 @@ export function CanceledOrders() {
         onQueryChange={setQuery}
         searchMode={searchMode}
         onSearchModeChange={setSearchMode}
+        sort={sort}
+        onSortChange={setSort}
       />
 
       <div className={`orders-split${showDesktopPreview ? " orders-split--preview" : ""}`}>

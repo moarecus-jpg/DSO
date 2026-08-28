@@ -19,6 +19,7 @@ import {
   joinSession,
   listAllGroupSessions,
   listGroupSessions,
+  countGroupSessionsByStatus,
   listUserOrderedItems,
   listUserStatisticsRows,
   publicUser,
@@ -349,6 +350,19 @@ router.get("/", requireUser, async (req, res) => {
   res.json({ sessions: await ensureSellerAvatars(sessions) });
 });
 
+router.get("/counts", requireUser, (req, res) => {
+  if (useMockSessions(req)) {
+    const counts = { open: 0, closed: 0, unplaced: 0, canceled: 0 };
+    for (const session of mockSessions) {
+      const status = session.status ?? "open";
+      if (status === "unplaced" || status === "auto_closed") counts.unplaced += 1;
+      else if (counts[status] != null) counts[status] += 1;
+    }
+    return res.json({ counts });
+  }
+  res.json({ counts: countGroupSessionsByStatus() });
+});
+
 function serializeOrderedItem(row) {
   const priceEur = toEurAmount(row.price_value, row.price_currency);
   return {
@@ -482,10 +496,10 @@ router.post("/", requireUser, async (req, res) => {
     const userId = ensureRequestUser(req);
     if (!userId) {
       return res.status(401).json({ error: "Prijavi se v aplikacijo." });
-    }
+  }
 
-    const session = createGroupSession({
-      sellerUsername: cleanSeller,
+  const session = createGroupSession({
+    sellerUsername: cleanSeller,
       createdBy: userId,
       sellerAvatarUrl,
       store,
@@ -582,7 +596,7 @@ router.patch("/:id/shipping", requireUser, (req, res) => {
   }
 
   try {
-    const session = getGroupSession(req.params.id);
+  const session = getGroupSession(req.params.id);
     if (!session) return res.status(404).json({ error: "Session not found" });
     const updated = updateSessionShipping(
       req.params.id,

@@ -1,4 +1,5 @@
 import { Link, NavLink, useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 import {
   ChevronDown,
   CircleOff,
@@ -19,6 +20,7 @@ import { LanguageToggle } from "./LanguageToggle.jsx";
 import { StealthModeToggle } from "./StealthModeToggle.jsx";
 import { NotificationToggle } from "./NotificationToggle.jsx";
 import { UserAvatar } from "./UserAvatar.jsx";
+import { api } from "../api.js";
 
 export function Sidebar() {
   const [searchParams] = useSearchParams();
@@ -26,6 +28,13 @@ export function Sidebar() {
   const { darkMode, setDarkMode } = useTheme();
   const { t } = useLocale();
   const newOrderOpen = searchParams.get("new") === "1";
+  const [counts, setCounts] = useState(null);
+
+  useEffect(() => {
+    api("/api/sessions/counts")
+      .then((d) => setCounts(d.counts))
+      .catch(() => setCounts(null));
+  }, []);
 
   return (
     <aside className="sidebar sidebar-v2">
@@ -56,6 +65,9 @@ export function Sidebar() {
               <Folder size={18} strokeWidth={2.1} />
             </span>
             <span className="sidebar-link-label">{t("nav.openOrders")}</span>
+            {counts?.open > 0 && (
+              <span className="sidebar-link-count">{counts.open}</span>
+            )}
           </NavLink>
           <NavLink
             to="/closed"
@@ -65,6 +77,9 @@ export function Sidebar() {
               <Lock size={18} strokeWidth={2.1} />
             </span>
             <span className="sidebar-link-label">{t("nav.closedOrders")}</span>
+            {counts?.closed > 0 && (
+              <span className="sidebar-link-count">{counts.closed}</span>
+            )}
           </NavLink>
           <NavLink
             to="/unplaced"
@@ -74,6 +89,9 @@ export function Sidebar() {
               <CircleOff size={18} strokeWidth={2.1} />
             </span>
             <span className="sidebar-link-label">{t("nav.unplacedOrders")}</span>
+            {counts?.unplaced > 0 && (
+              <span className="sidebar-link-count">{counts.unplaced}</span>
+            )}
           </NavLink>
           <NavLink
             to="/canceled"
@@ -83,6 +101,9 @@ export function Sidebar() {
               <Ban size={18} strokeWidth={2.1} />
             </span>
             <span className="sidebar-link-label">{t("nav.canceledOrders")}</span>
+            {counts?.canceled > 0 && (
+              <span className="sidebar-link-count">{counts.canceled}</span>
+            )}
           </NavLink>
           <NavLink
             to="/my-items"
@@ -137,7 +158,10 @@ export function Sidebar() {
               size={36}
             />
             <div className="sidebar-user-text">
-              <p className="sidebar-user-name">{t("settings.title")}</p>
+              <p className="sidebar-user-name">{user?.name ?? t("settings.title")}</p>
+              <p className="sidebar-user-meta">
+                {user?.isAdmin ? t("nav.admin") : t("settings.title")}
+              </p>
             </div>
             <ChevronDown size={18} className="sidebar-user-chevron" aria-hidden />
           </Link>

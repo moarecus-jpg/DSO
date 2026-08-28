@@ -527,7 +527,7 @@ export function Session() {
                 className={refreshingAvailability ? "spin" : undefined}
               />
               {refreshingAvailability
-                ? t("session.refreshingAvailability")
+                ? t("session.refreshingAvailability", { count: recordCount })
                 : t("session.refreshAvailability")}
             </button>
           )}

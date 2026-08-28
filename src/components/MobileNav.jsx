@@ -2,6 +2,14 @@ import { NavLink, useLocation, useSearchParams } from "react-router-dom";
 import { Ban, BarChart3, CircleOff, Folder, Lock, Package, Plus } from "lucide-react";
 import { useLocale } from "../hooks/useLocale.jsx";
 
+function NavIcon({ children }) {
+  return (
+    <span className="mobile-nav-icon" aria-hidden>
+      {children}
+    </span>
+  );
+}
+
 export function MobileNav() {
   const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
@@ -22,32 +30,40 @@ export function MobileNav() {
             `mobile-nav-link${isActive && !newOrderOpen ? " active" : ""}`
           }
         >
-          <Folder size={20} strokeWidth={2} />
-          <span>{t("nav.mobileOpen")}</span>
+          <NavIcon>
+            <Folder size={20} strokeWidth={2} />
+          </NavIcon>
+          <span className="mobile-nav-label">{t("nav.mobileOpen")}</span>
         </NavLink>
 
         <NavLink
           to="/closed"
           className={({ isActive }) => `mobile-nav-link${isActive ? " active" : ""}`}
         >
-          <Lock size={20} strokeWidth={2} />
-          <span>{t("nav.mobileClosed")}</span>
+          <NavIcon>
+            <Lock size={20} strokeWidth={2} />
+          </NavIcon>
+          <span className="mobile-nav-label">{t("nav.mobileClosed")}</span>
         </NavLink>
 
         <NavLink
           to="/unplaced"
           className={({ isActive }) => `mobile-nav-link${isActive ? " active" : ""}`}
         >
-          <CircleOff size={20} strokeWidth={2} />
-          <span>{t("nav.mobileUnplaced")}</span>
+          <NavIcon>
+            <CircleOff size={20} strokeWidth={2} />
+          </NavIcon>
+          <span className="mobile-nav-label">{t("nav.mobileUnplaced")}</span>
         </NavLink>
 
         <NavLink
           to="/canceled"
           className={({ isActive }) => `mobile-nav-link${isActive ? " active" : ""}`}
         >
-          <Ban size={20} strokeWidth={2} />
-          <span>{t("nav.mobileCanceled")}</span>
+          <NavIcon>
+            <Ban size={20} strokeWidth={2} />
+          </NavIcon>
+          <span className="mobile-nav-label">{t("nav.mobileCanceled")}</span>
         </NavLink>
       </div>
 
@@ -64,16 +80,20 @@ export function MobileNav() {
           to="/my-items"
           className={({ isActive }) => `mobile-nav-link${isActive ? " active" : ""}`}
         >
-          <Package size={20} strokeWidth={2} />
-          <span>{t("nav.mobileItems")}</span>
+          <NavIcon>
+            <Package size={20} strokeWidth={2} />
+          </NavIcon>
+          <span className="mobile-nav-label">{t("nav.mobileItems")}</span>
         </NavLink>
 
         <NavLink
           to="/my-statistics"
           className={({ isActive }) => `mobile-nav-link${isActive ? " active" : ""}`}
         >
-          <BarChart3 size={20} strokeWidth={2} />
-          <span>{t("nav.mobileStatistics")}</span>
+          <NavIcon>
+            <BarChart3 size={20} strokeWidth={2} />
+          </NavIcon>
+          <span className="mobile-nav-label">{t("nav.mobileStatistics")}</span>
         </NavLink>
       </div>
     </nav>

@@ -4,7 +4,14 @@ import { NewOrderForm } from "../components/NewOrderForm.jsx";
 import { OrderDetailPreview } from "../components/OrderDetailPreview.jsx";
 import { OrderList } from "../components/OrderList.jsx";
 import { OrdersPageHeader } from "../components/OrdersPageHeader.jsx";
+import { DashboardStats } from "../components/DashboardStats.jsx";
+import { OrderChips } from "../components/OrderChips.jsx";
 import { filterSessions } from "../../shared/filterOrders.js";
+import {
+  computeDashboardStats,
+  filterSessionsByChip,
+  sortSessions,
+} from "../../shared/orderDashboard.js";
 import { sessionListPath } from "../../shared/orderStatus.js";
 import { api } from "../api.js";
 import { useLocale } from "../hooks/useLocale.jsx";
@@ -20,6 +27,8 @@ export function Home() {
   const [createError, setCreateError] = useState(null);
   const [query, setQuery] = useState("");
   const [searchMode, setSearchMode] = useState("creator");
+  const [chip, setChip] = useState("all");
+  const [sort, setSort] = useState("recent");
 
   const showForm = searchParams.get("new") === "1";
 
@@ -32,9 +41,23 @@ export function Home() {
     loadSessions().catch(console.error).finally(() => setLoading(false));
   }, [loadSessions]);
 
-  const filteredSessions = useMemo(
+  const searchedSessions = useMemo(
     () => filterSessions(sessions, { query, searchMode }),
     [sessions, query, searchMode]
+  );
+  const stats = useMemo(() => computeDashboardStats(sessions), [sessions]);
+  const chipCounts = useMemo(
+    () => ({
+      all: searchedSessions.length,
+      waiting: filterSessionsByChip(searchedSessions, "waiting").length,
+      recent: filterSessionsByChip(searchedSessions, "recent").length,
+      attention: filterSessionsByChip(searchedSessions, "attention").length,
+    }),
+    [searchedSessions]
+  );
+  const filteredSessions = useMemo(
+    () => sortSessions(filterSessionsByChip(searchedSessions, chip), sort),
+    [searchedSessions, chip, sort]
   );
 
   const preview = useOrderPreview(filteredSessions, {
@@ -65,7 +88,7 @@ export function Home() {
   }
 
   const hasOrders = !loading && filteredSessions.length > 0;
-  const showDesktopPreview = preview.isDesktop && hasOrders;
+  const showDesktopPreview = preview.isDesktop && !loading && sessions.length > 0;
 
   return (
     <div className={`page page-orders${showForm ? " page-orders--new" : ""}`}>
@@ -84,7 +107,20 @@ export function Home() {
         onQueryChange={setQuery}
         searchMode={searchMode}
         onSearchModeChange={setSearchMode}
+        sort={sort}
+        onSortChange={setSort}
       />
+
+      {!showForm && !loading && (
+        <DashboardStats
+          stats={stats}
+          onAttention={() => setChip("attention")}
+        />
+      )}
+
+      {!showForm && (
+        <OrderChips value={chip} onChange={setChip} counts={chipCounts} />
+      )}
 
       <div className={`orders-split${showDesktopPreview ? " orders-split--preview" : ""}`}>
         <div className="orders-split-list">
@@ -92,7 +128,9 @@ export function Home() {
             sessions={filteredSessions}
             loading={loading}
             emptyMessage={
-              query.trim() ? t("common.noSearchResults") : t("orders.emptyOpen")
+              query.trim() || chip !== "all"
+                ? t("common.noSearchResults")
+                : t("orders.emptyOpen")
             }
             selectedId={preview.selectedId}
             onSelect={preview.selectSession}

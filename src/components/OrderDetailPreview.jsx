@@ -17,10 +17,13 @@ import {
   isOpenSession,
   isReopenableSession,
 } from "../../shared/orderStatus.js";
+import { getStoreConfig } from "../../shared/stores.js";
+import { sessionTimestamp } from "../../shared/orderDashboard.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { CloseOrderDialog } from "./CloseOrderDialog.jsx";
 import { OrderStoreAvatar } from "./OrderStoreAvatar.jsx";
 import { StatusPill } from "./StatusPill.jsx";
+import { UserAvatar } from "./UserAvatar.jsx";
 
 function formatCreatedAt(createdAt, localeTag) {
   if (!createdAt) return "—";
@@ -44,6 +47,70 @@ function formatTargetDate(targetDate, localeTag) {
     month: "short",
     year: "numeric",
   });
+}
+
+function formatActivityTime(value, localeTag) {
+  if (!value) return "";
+  const d = new Date(String(value).includes("T") ? value : `${value}Z`);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString(localeTag, {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+function buildActivity(session, detail, t) {
+  const events = [];
+  const creatorLabel =
+    session.creator_name ??
+    (session.creator_username ? `@${session.creator_username}` : t("common.unknown"));
+  events.push({
+    id: "opened",
+    at: sessionTimestamp(session.created_at),
+    time: session.created_at,
+    text: t("orders.activityOpened", { name: creatorLabel }),
+    name: creatorLabel,
+  });
+
+  const byUser = new Map();
+  for (const link of detail?.links ?? []) {
+    const key = link.user_id ?? "unknown";
+    const entry = byUser.get(key) ?? {
+      count: 0,
+      name: link.user_name ?? link.member_name ?? key,
+      at: 0,
+      time: link.created_at,
+    };
+    entry.count += 1;
+    const ts = sessionTimestamp(link.created_at);
+    if (ts >= entry.at) {
+      entry.at = ts;
+      entry.time = link.created_at;
+    }
+    byUser.set(key, entry);
+  }
+  for (const [userId, entry] of byUser) {
+    events.push({
+      id: `items-${userId}`,
+      at: entry.at,
+      time: entry.time,
+      text: t("orders.activityAddedItems", { name: entry.name, count: entry.count }),
+      name: entry.name,
+    });
+  }
+
+  for (const note of detail?.notes ?? []) {
+    events.push({
+      id: `note-${note.id}`,
+      at: sessionTimestamp(note.created_at),
+      time: note.created_at,
+      text: t("orders.activityNote", { name: note.user_name ?? t("common.unknown") }),
+      name: note.user_name,
+    });
+  }
+
+  events.sort((a, b) => b.at - a.at);
+  return events.slice(0, 6);
 }
 
 export function OrderDetailPreview({
@@ -143,12 +210,34 @@ export function OrderDetailPreview({
           <span className="order-preview-stat-value">{loading ? "…" : noteCount}</span>
           <span className="order-preview-stat-label">{t("orders.previewNotes")}</span>
         </div>
-        <div className="order-preview-stat">
-          <span className="order-preview-stat-value order-preview-stat-value--sm">
-            {targetLabel}
-          </span>
-          <span className="order-preview-stat-label">{t("orders.previewTarget")}</span>
-        </div>
+      </div>
+
+      <div className="order-preview-section">
+        <h3 className="order-preview-section-title">{t("orders.previewAbout")}</h3>
+        <p className="order-preview-about">
+          {session.seller_username
+            ? `@${session.seller_username} · ${getStoreConfig(session.store).label}`
+            : getStoreConfig(session.store).label}
+        </p>
+      </div>
+
+      <div className="order-preview-section">
+        <h3 className="order-preview-section-title">{t("orders.previewActivity")}</h3>
+        {loading && !detail ? (
+          <p className="muted fine">{t("common.loading")}</p>
+        ) : (
+          <ul className="order-preview-activity">
+            {buildActivity(session, detail, t).map((event) => (
+              <li key={event.id} className="order-preview-activity-item">
+                <UserAvatar name={event.name} className="order-preview-activity-avatar" size={28} />
+                <div className="order-preview-activity-text">
+                  <p>{event.text}</p>
+                  <small>{formatActivityTime(event.time, localeTag)}</small>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div className="order-preview-section">
@@ -238,7 +327,7 @@ export function OrderDetailPreview({
           </button>
         )}
         <Link to={`/session/${session.id}`} className="btn btn-primary order-preview-view-btn">
-          {t("orders.openOrder")}
+          {t("orders.viewDetails")}
           <ChevronRight size={18} aria-hidden />
         </Link>
       </div>
