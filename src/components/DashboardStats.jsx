@@ -69,7 +69,7 @@ export function DashboardStats({
             <div className="dash-stat-head">
               <span className="dash-stat-label">{t(`orders.stat.${card.key}`)}</span>
               <span className="dash-stat-icon" aria-hidden>
-                <Icon size={compact ? 16 : 18} strokeWidth={2.1} />
+                <Icon size={18} strokeWidth={2.1} />
               </span>
             </div>
             <span className="dash-stat-value">{value}</span>
