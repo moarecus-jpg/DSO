@@ -7,14 +7,12 @@ import {
   Folder,
   Lock,
   LogOut,
-  Moon,
   Package,
   Plus,
   BarChart3,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
-import { useTheme } from "../hooks/useTheme.jsx";
 import { BrandMark } from "./BrandMark.jsx";
 import { LanguageToggle } from "./LanguageToggle.jsx";
 import { StealthModeToggle } from "./StealthModeToggle.jsx";
@@ -25,7 +23,6 @@ import { api } from "../api.js";
 export function Sidebar() {
   const [searchParams] = useSearchParams();
   const { user, logout } = useAuth();
-  const { darkMode, setDarkMode } = useTheme();
   const { t } = useLocale();
   const newOrderOpen = searchParams.get("new") === "1";
   const [counts, setCounts] = useState(null);
@@ -129,20 +126,6 @@ export function Sidebar() {
       </div>
 
       <div className="sidebar-footer">
-        <label className="sidebar-footer-item sidebar-theme-toggle">
-          <span className="sidebar-theme-toggle-label">
-            <Moon size={16} aria-hidden />
-            {t("nav.darkMode")}
-          </span>
-          <input
-            type="checkbox"
-            className="sidebar-theme-toggle-input"
-            checked={darkMode}
-            onChange={(e) => setDarkMode(e.target.checked)}
-          />
-          <span className="sidebar-theme-toggle-track" aria-hidden />
-        </label>
-
         <StealthModeToggle className="sidebar-footer-item" />
 
         <NotificationToggle className="sidebar-footer-item" />

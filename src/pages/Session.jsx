@@ -19,6 +19,7 @@ import { useLocale } from "../hooks/useLocale.jsx";
 import { sellerMywantsUrl } from "../../shared/discogsUrls.js";
 import { displayOrderTitle } from "../../shared/orderTitle.js";
 import { orderPageTitle } from "../../shared/orderShare.js";
+import { canReportItemIssue } from "../../shared/orderReview.js";
 import { getStoreConfig, isShopStore } from "../../shared/stores.js";
 import {
   isArchivedSession,
@@ -62,6 +63,7 @@ export function Session() {
   const [submittingIssue, setSubmittingIssue] = useState(false);
   const [deletingIssueId, setDeletingIssueId] = useState(null);
   const [markingReportSent, setMarkingReportSent] = useState(false);
+  const [issueFormLinkId, setIssueFormLinkId] = useState(null);
 
   function loadSession() {
     return api(`/api/sessions/${id}`).then((d) => {
@@ -330,6 +332,25 @@ export function Session() {
     } finally {
       setPostingNote(false);
     }
+  }
+
+  function canReportIssue(link) {
+    if (!isReviewable) return false;
+    return canReportItemIssue({
+      link,
+      userId: user?.id,
+      isOrderAdmin: Boolean(session?.canManageOrder),
+    });
+  }
+
+  function handleToggleIssueForm(link) {
+    setIssueFormLinkId((current) => (current === link.id ? null : link.id));
+  }
+
+  async function handleSubmitIssueFromRow(payload) {
+    const ok = await handleSubmitIssue(payload);
+    if (ok) setIssueFormLinkId(null);
+    return ok;
   }
 
   async function handleSubmitIssue({ linkId, photos = [], ...payload }) {
@@ -714,6 +735,12 @@ export function Session() {
               onRemoveLink={handleRemoveLink}
               removingLinkId={removingLinkId}
               canRemoveLink={canRemoveLink}
+              issues={session.issues ?? []}
+              canReportIssue={isReviewable ? canReportIssue : undefined}
+              issueFormLinkId={issueFormLinkId}
+              onToggleIssueForm={handleToggleIssueForm}
+              onSubmitIssue={handleSubmitIssueFromRow}
+              submittingIssue={submittingIssue}
             />
             {becameUnavailable.length > 0 && (
               <p className="muted fine order-unavailable-note">
@@ -737,9 +764,7 @@ export function Session() {
             <OrderReview
               session={session}
               currentUserId={user?.id}
-              submitting={submittingIssue}
               deletingIssueId={deletingIssueId}
-              onSubmitIssue={handleSubmitIssue}
               onDeleteIssue={handleDeleteIssue}
             />
             {canManageOrder && (

@@ -1,6 +1,7 @@
 import { ExternalLink } from "lucide-react";
 import { DiscogsAddToCartLink } from "./DiscogsAddToCartLink.jsx";
 import { RemoveFromOrderButton } from "./RemoveFromOrderButton.jsx";
+import { ReportProblemButton } from "./ReportProblemButton.jsx";
 import { isLinkUnavailable } from "../../shared/orderTotals.js";
 import { getStoreConfig, isShopStore } from "../../shared/stores.js";
 import { useLocale } from "../hooks/useLocale.jsx";
@@ -10,6 +11,8 @@ export function DiscogsCartActions({
   store = "discogs",
   onRemove,
   removing = false,
+  onReportIssue,
+  issueFormOpen = false,
   className = "",
 }) {
   const { t } = useLocale();
@@ -36,6 +39,7 @@ export function DiscogsCartActions({
         <DiscogsAddToCartLink link={link} />
       )}
       <RemoveFromOrderButton onRemove={onRemove} removing={removing} />
+      <ReportProblemButton onReport={onReportIssue} open={issueFormOpen} />
     </div>
   );
 }

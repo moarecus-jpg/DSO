@@ -1,7 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth.jsx";
 import { LocaleProvider, useLocale } from "./hooks/useLocale.jsx";
-import { ThemeProvider } from "./hooks/useTheme.jsx";
 import { Layout } from "./components/Layout.jsx";
 import { Login } from "./pages/Login.jsx";
 import { ResetPassword } from "./pages/ResetPassword.jsx";
@@ -53,13 +52,11 @@ function AppRoutes() {
 export default function App() {
   return (
     <LocaleProvider>
-      <ThemeProvider>
-        <AuthProvider>
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </AuthProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </AuthProvider>
     </LocaleProvider>
   );
 }

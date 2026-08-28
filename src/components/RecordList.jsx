@@ -1,11 +1,13 @@
-import { ExternalLink } from "lucide-react";
+import { AlertOctagon, ExternalLink } from "lucide-react";
 import { DiscogsCartActions } from "./DiscogsCartActions.jsx";
+import { OrderIssueForm } from "./OrderIssueForm.jsx";
 import {
   formatPrice,
   isLinkUnavailable,
   listingIdFor,
   recordTitle,
 } from "../../shared/orderTotals.js";
+import { issuesForLink } from "../../shared/orderReview.js";
 import { getStoreConfig, isShopStore } from "../../shared/stores.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 
@@ -17,12 +19,20 @@ function ItemRow({
   removingLinkId,
   canRemoveLink,
   unavailable,
+  issueCount = 0,
+  canReportIssue = false,
+  issueFormOpen = false,
+  onToggleIssueForm,
+  onSubmitIssue,
+  submittingIssue = false,
 }) {
   return (
+    <>
     <tr
       className={[
         link.blurred ? "order-item-row--hidden" : "",
         unavailable ? "order-item-row--unavailable" : "",
+        issueCount > 0 ? "order-item-row--reported" : "",
       ]
         .filter(Boolean)
         .join(" ") || undefined}
@@ -42,6 +52,12 @@ function ItemRow({
             {unavailable && (
               <span className="order-item-unavailable-badge">
                 {t("items.unavailable")}
+              </span>
+            )}
+            {issueCount > 0 && (
+              <span className="order-item-issue-badge">
+                <AlertOctagon size={12} aria-hidden />
+                {t("session.reviewItemReported", { count: issueCount })}
               </span>
             )}
             <a
@@ -78,6 +94,10 @@ function ItemRow({
                 canRemoveLink?.(link) ? () => onRemoveLink?.(link) : undefined
               }
               removing={removingLinkId === link.id}
+              onReportIssue={
+                canReportIssue ? () => onToggleIssueForm?.(link) : undefined
+              }
+              issueFormOpen={issueFormOpen}
             />
           </div>
         )}
@@ -94,6 +114,19 @@ function ItemRow({
         )}
       </td>
     </tr>
+    {issueFormOpen && (
+      <tr className="order-item-issue-row">
+        <td colSpan={3}>
+          <OrderIssueForm
+            link={link}
+            submitting={submittingIssue}
+            onCancel={() => onToggleIssueForm?.(link)}
+            onSubmit={onSubmitIssue}
+          />
+        </td>
+      </tr>
+    )}
+    </>
   );
 }
 
@@ -104,6 +137,12 @@ export function RecordList({
   removingLinkId,
   canRemoveLink,
   unavailableOnly = false,
+  issues = [],
+  canReportIssue,
+  issueFormLinkId = null,
+  onToggleIssueForm,
+  onSubmitIssue,
+  submittingIssue = false,
 }) {
   const { t } = useLocale();
   const isShop = isShopStore(store);
@@ -139,6 +178,12 @@ export function RecordList({
               removingLinkId={removingLinkId}
               canRemoveLink={canRemoveLink}
               unavailable={isLinkUnavailable(link)}
+              issueCount={issuesForLink(issues, link.id).length}
+              canReportIssue={Boolean(canReportIssue?.(link))}
+              issueFormOpen={issueFormLinkId === link.id}
+              onToggleIssueForm={onToggleIssueForm}
+              onSubmitIssue={onSubmitIssue}
+              submittingIssue={submittingIssue}
             />
           ))}
         </tbody>

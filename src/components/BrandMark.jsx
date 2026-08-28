@@ -12,17 +12,18 @@ function DsoWordmark({ className = "" }) {
 
 /** Brand lockup — vinyl mark with ring text. */
 export function BrandMark({ variant = "nav" }) {
-  // The arced name is only legible at sidebar/login sizes; the compact nav mark
-  // pairs a plain disc with the DSO wordmark instead.
-  const withName = variant === "sidebar" || variant === "login";
+  // The arced name is only legible at login size; the sidebar shows the bare
+  // disc and the compact nav mark pairs a plain disc with the DSO wordmark.
+  const withArcedName = variant === "login";
+  const withWordmark = variant !== "login" && variant !== "sidebar";
 
   return (
     <span
       className={`brand-mark brand-mark--${variant}`}
       title="DSO — Discogs Slovenia Orders"
     >
-      <DsoLogo className="brand-mark-logo" withName={withName} />
-      {!withName && (
+      <DsoLogo className="brand-mark-logo" withName={withArcedName} />
+      {withWordmark && (
         <span className="brand-mark-text">
           <DsoWordmark />
         </span>
