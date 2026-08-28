@@ -11,12 +11,14 @@ const CARDS = [
 export function DashboardStats({
   stats,
   recentSessions = [],
+  compact = false,
   onOpen,
   onAttention,
   onRecent,
   onSelectOrder,
 }) {
   const { t } = useLocale();
+  const visibleRecent = recentSessions.slice(0, compact ? 2 : 4);
 
   const handlers = {
     open: onOpen,
@@ -25,7 +27,7 @@ export function DashboardStats({
   };
 
   return (
-    <div className="dash-stats">
+    <div className={`dash-stats${compact ? " dash-stats--compact" : ""}`}>
       {CARDS.map((card) => {
         const Icon = card.icon;
         const value =
@@ -37,7 +39,7 @@ export function DashboardStats({
         const className = [
           "dash-stat",
           `dash-stat--${card.tone}`,
-          card.wide ? "dash-stat--wide" : "",
+          card.wide && !compact ? "dash-stat--wide" : "",
           onClick ? "dash-stat--action" : "",
         ]
           .filter(Boolean)
@@ -48,7 +50,7 @@ export function DashboardStats({
           hint = value > 0 ? t("orders.stat.viewNow") : t("orders.statHint.attention");
         } else if (card.key === "recent") {
           hint =
-            recentSessions.length > 0
+            visibleRecent.length > 0 && !compact
               ? t("orders.statHint.recentList")
               : t("orders.statHint.recent");
         } else if (delta > 0) {
@@ -67,11 +69,13 @@ export function DashboardStats({
             <div className="dash-stat-head">
               <span className="dash-stat-label">{t(`orders.stat.${card.key}`)}</span>
               <span className="dash-stat-icon" aria-hidden>
-                <Icon size={18} strokeWidth={2.1} />
+                <Icon size={compact ? 16 : 18} strokeWidth={2.1} />
               </span>
             </div>
             <span className="dash-stat-value">{value}</span>
-            <span className="dash-stat-hint">{hint}</span>
+            {!(compact && card.key === "recent" && visibleRecent.length > 0) && (
+              <span className="dash-stat-hint">{hint}</span>
+            )}
           </>
         );
 
@@ -81,9 +85,9 @@ export function DashboardStats({
               <button type="button" className="dash-stat-main" onClick={onClick}>
                 {summary}
               </button>
-              {recentSessions.length > 0 && (
+              {visibleRecent.length > 0 && (
                 <ul className="dash-stat-recent">
-                  {recentSessions.map((session) => (
+                  {visibleRecent.map((session) => (
                     <li key={session.id}>
                       <button
                         type="button"
