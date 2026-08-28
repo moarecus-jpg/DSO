@@ -5,6 +5,9 @@ const DISC_CENTER = 100;
 const LABEL_RADIUS = 31;
 const GROOVE_STEP = 2.1;
 const GROOVE_INSET = 3;
+const SHINE_SEGMENTS = 72;
+const SHINE_INNER = LABEL_RADIUS + GROOVE_INSET;
+const SHINE_OUTER = DISC_RADIUS - 1;
 
 function buildGrooveRadii() {
   const radii = [];
@@ -18,7 +21,54 @@ function buildGrooveRadii() {
   return radii;
 }
 
+function shineOpacity(angleDeg) {
+  const cos = Math.cos((angleDeg * Math.PI) / 180);
+  if (cos >= 0) return 0.4 + 0.6 * cos;
+  return 0.22 + 0.18 * (1 + cos);
+}
+
+function polarPoint(cx, cy, radius, angleDeg) {
+  const rad = (angleDeg * Math.PI) / 180;
+  return {
+    x: cx + radius * Math.sin(rad),
+    y: cy - radius * Math.cos(rad),
+  };
+}
+
+function buildShineSegmentPath(cx, cy, innerR, outerR, startAngle, endAngle) {
+  const startOuter = polarPoint(cx, cy, outerR, startAngle);
+  const endOuter = polarPoint(cx, cy, outerR, endAngle);
+  const endInner = polarPoint(cx, cy, innerR, endAngle);
+  const startInner = polarPoint(cx, cy, innerR, startAngle);
+  const largeArc = endAngle - startAngle > 180 ? 1 : 0;
+
+  return [
+    `M ${startOuter.x} ${startOuter.y}`,
+    `A ${outerR} ${outerR} 0 ${largeArc} 1 ${endOuter.x} ${endOuter.y}`,
+    `L ${endInner.x} ${endInner.y}`,
+    `A ${innerR} ${innerR} 0 ${largeArc} 0 ${startInner.x} ${startInner.y}`,
+    "Z",
+  ].join(" ");
+}
+
 const GROOVE_RADII = buildGrooveRadii();
+const SHINE_PATHS = Array.from({ length: SHINE_SEGMENTS }, (_, index) => {
+  const startAngle = (index / SHINE_SEGMENTS) * 360;
+  const endAngle = ((index + 1) / SHINE_SEGMENTS) * 360;
+  const midAngle = (startAngle + endAngle) / 2;
+
+  return {
+    d: buildShineSegmentPath(
+      DISC_CENTER,
+      DISC_CENTER,
+      SHINE_INNER,
+      SHINE_OUTER,
+      startAngle,
+      endAngle
+    ),
+    opacity: shineOpacity(midAngle),
+  };
+});
 
 /** Front-facing vinyl with DSO on the label. */
 export function DsoLogo({ className }) {
@@ -85,15 +135,17 @@ export function DsoLogo({ className }) {
         ))}
       </g>
 
-      <g mask={`url(#${shineMaskId})`}>
-        <foreignObject
-          x={DISC_CENTER - DISC_RADIUS}
-          y={DISC_CENTER - DISC_RADIUS}
-          width={DISC_RADIUS * 2}
-          height={DISC_RADIUS * 2}
-        >
-          <div xmlns="http://www.w3.org/1999/xhtml" className="dso-logo-shine" />
-        </foreignObject>
+      <g mask={`url(#${shineMaskId})`} style={{ mixBlendMode: "soft-light" }}>
+        <g className="dso-logo-shine-spin">
+          {SHINE_PATHS.map((segment, index) => (
+            <path
+              key={index}
+              d={segment.d}
+              fill="#fff"
+              fillOpacity={segment.opacity}
+            />
+          ))}
+        </g>
       </g>
 
       <circle

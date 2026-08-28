@@ -108,23 +108,16 @@ code {
   overflow: visible;
 }
 
+.dso-logo {
+  display: block;
+  overflow: hidden;
+}
+
 /* Vinyl shine: front 100%, sides 40%, back 22% — visible for the full spin. */
-.dso-logo-shine {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: conic-gradient(
-    from 0deg at 50% 50%,
-    rgba(255, 255, 255, 1) 0deg,
-    rgba(255, 255, 255, 0.4) 90deg,
-    rgba(255, 255, 255, 0.22) 180deg,
-    rgba(255, 255, 255, 0.4) 270deg,
-    rgba(255, 255, 255, 1) 360deg
-  );
-  mix-blend-mode: soft-light;
-  animation: dso-logo-shine-spin 7s linear infinite;
+.dso-logo-shine-spin {
+  transform-box: fill-box;
   transform-origin: center;
-  will-change: transform;
+  animation: dso-logo-shine-spin 7s linear infinite;
 }
 
 @keyframes dso-logo-shine-spin {
@@ -134,7 +127,7 @@ code {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dso-logo-shine {
+  .dso-logo-shine-spin {
     animation: none;
   }
 }
@@ -5421,6 +5414,8 @@ body.modal-open .order-sticky-backdrop {
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .order-chip.active {
@@ -7254,11 +7249,24 @@ a.order-preview-item-title:hover {
     margin-bottom: 1rem;
   }
 
+  .order-chips-row {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.55rem;
+  }
+
   .order-chips {
+    order: 2;
+    flex: 1 1 100%;
     overflow-x: auto;
     flex-wrap: nowrap;
     padding-bottom: 0.2rem;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .order-chips-row .orders-filter {
+    order: 1;
   }
 
   .order-chips::-webkit-scrollbar {
