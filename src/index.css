@@ -5815,7 +5815,7 @@ body.modal-open .order-sticky-backdrop {
 
 .orders-split--preview {
   display: grid;
-  grid-template-columns: minmax(18rem, 0.62fr) minmax(28rem, 1.38fr);
+  grid-template-columns: minmax(22rem, 1.1fr) minmax(24rem, 0.9fr);
   gap: 1.15rem;
   align-items: stretch;
   flex: 1;
