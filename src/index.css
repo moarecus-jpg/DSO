@@ -7250,27 +7250,32 @@ a.order-preview-item-title:hover {
   }
 
   .order-chips-row {
-    flex-wrap: wrap;
-    justify-content: flex-end;
+    flex-direction: column;
+    align-items: stretch;
     gap: 0.55rem;
   }
 
   .order-chips {
     order: 2;
-    flex: 1 1 100%;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    padding-bottom: 0.2rem;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.45rem;
+    overflow: visible;
+    flex-wrap: wrap;
+    padding-bottom: 0;
   }
 
   .order-chips-row .orders-filter {
     order: 1;
+    align-self: flex-end;
   }
 
-  .order-chips::-webkit-scrollbar {
-    display: none;
+  .order-chip {
+    width: 100%;
+    justify-content: center;
+    min-width: 0;
+    padding: 0.42rem 0.45rem;
+    font-size: 0.76rem;
   }
 
   .orders-pagination {
