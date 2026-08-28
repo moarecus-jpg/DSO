@@ -28,8 +28,6 @@ export function MobileTopBar() {
 
         <NotificationToggle variant="icon" />
 
-        <HeaderAccount compact />
-
         <Link
           to="/settings"
           className={`mobile-topbar-icon-btn${
@@ -40,6 +38,8 @@ export function MobileTopBar() {
         >
           <Settings size={18} />
         </Link>
+
+        <HeaderAccount compact />
       </div>
     </header>
   );
