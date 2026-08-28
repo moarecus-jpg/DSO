@@ -1,88 +1,97 @@
 import { useId } from "react";
 
-const GROOVES = [0.92, 0.84, 0.76, 0.68, 0.6, 0.52, 0.44];
+const GROOVES = [0.9, 0.81, 0.72, 0.63, 0.54, 0.45];
 
-/** Vinyl mark with DSO and ring text in Permanent Marker. */
-export function DsoLogo({ className }) {
+/** Tilted vinyl with DSO on the label and the name arced under the disc. */
+export function DsoLogo({ className, withName = true }) {
   const uid = useId().replace(/:/g, "");
-  const vinylId = `dso-vinyl-${uid}`;
-  const shineId = `dso-shine-${uid}`;
-  const clipId = `dso-clip-${uid}`;
-  const ringId = `dso-ring-${uid}`;
+  const discId = `dso-disc-${uid}`;
+  const arcId = `dso-arc-${uid}`;
 
   return (
     <svg
       className={className}
-      viewBox="0 0 240 210"
+      viewBox={withName ? "30 24 200 164" : "44 28 174 116"}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden
     >
       <defs>
-        <linearGradient id={vinylId} x1="40" y1="40" x2="200" y2="180" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#ede9fe" />
-          <stop offset="0.42" stopColor="#c4b5fd" />
-          <stop offset="1" stopColor="#7c3aed" />
+        <linearGradient
+          id={discId}
+          x1="52"
+          y1="34"
+          x2="208"
+          y2="140"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop stopColor="#4c3f7d" />
+          <stop offset="0.55" stopColor="#2e2650" />
+          <stop offset="1" stopColor="#1b1730" />
         </linearGradient>
-        <radialGradient id={shineId} cx="68%" cy="28%" r="55%">
-          <stop stopColor="#fff" stopOpacity="0.38" />
-          <stop offset="1" stopColor="#fff" stopOpacity="0" />
-        </radialGradient>
-        <clipPath id={clipId}>
-          <ellipse cx="120" cy="118" rx="88" ry="54" />
-        </clipPath>
-        <path
-          id={ringId}
-          d="M38 118 A 82 50 0 0 0 202 118"
-        />
+        <path id={arcId} d="M20 126 A 114 66 0 0 0 240 126" />
       </defs>
 
-      <ellipse cx="120" cy="126" rx="88" ry="54" fill="#4c1d95" opacity="0.85" />
-      <ellipse cx="120" cy="118" rx="88" ry="54" fill={`url(#${vinylId})`} />
-      <ellipse cx="120" cy="118" rx="88" ry="54" fill={`url(#${shineId})`} />
+      <g transform="rotate(-14 130 86)">
+        <ellipse
+          cx="130"
+          cy="86"
+          rx="84"
+          ry="52"
+          fill={`url(#${discId})`}
+          stroke="#a78bfa"
+          strokeWidth="2"
+        />
 
-      <g clipPath={`url(#${clipId})`} stroke="#5b21b6" strokeOpacity="0.28" strokeWidth="1.15">
-        {GROOVES.map((scale) => (
-          <ellipse
-            key={scale}
-            cx="120"
-            cy="118"
-            rx={88 * scale}
-            ry={54 * scale}
-          />
-        ))}
+        <g stroke="#a78bfa" strokeOpacity="0.3" strokeWidth="1.1">
+          {GROOVES.map((scale) => (
+            <ellipse
+              key={scale}
+              cx="130"
+              cy="86"
+              rx={84 * scale}
+              ry={52 * scale}
+            />
+          ))}
+        </g>
+
+        <ellipse
+          cx="130"
+          cy="86"
+          rx="31"
+          ry="19"
+          fill="#14111f"
+          stroke="#c4b5fd"
+          strokeWidth="1.2"
+        />
+
+        <text
+          x="130"
+          y="94"
+          textAnchor="middle"
+          fontFamily="'Permanent Marker', cursive"
+          fontSize="24"
+          letterSpacing="0.03em"
+        >
+          <tspan fill="#fff">D</tspan>
+          <tspan fill="#c4b5fd">S</tspan>
+          <tspan fill="#fff">O</tspan>
+        </text>
       </g>
 
-      <ellipse cx="120" cy="118" rx="34" ry="21" fill="#16121f" />
-      <ellipse cx="120" cy="118" rx="34" ry="21" stroke="#a78bfa" strokeWidth="1.2" />
-
-      <text
-        x="120"
-        y="126"
-        textAnchor="middle"
-        fontFamily="'Permanent Marker', cursive"
-        fontSize="26"
-        letterSpacing="0.04em"
-      >
-        <tspan fill="#fff">D</tspan>
-        <tspan fill="#c4b5fd">S</tspan>
-        <tspan fill="#fff">O</tspan>
-      </text>
-
-      <text
-        textAnchor="middle"
-        fontFamily="'Permanent Marker', cursive"
-        fontSize="14"
-        fill="#faf5ff"
-        stroke="#3b0764"
-        strokeWidth="0.35"
-        paintOrder="stroke"
-        letterSpacing="0.03em"
-      >
-        <textPath href={`#${ringId}`} startOffset="50%">
-          Discogs Slovenia Orders
-        </textPath>
-      </text>
+      {withName && (
+        <text
+          className="dso-logo-name"
+          textAnchor="middle"
+          fontFamily="'Permanent Marker', cursive"
+          fontSize="15"
+          letterSpacing="0.02em"
+        >
+          <textPath href={`#${arcId}`} startOffset="50%">
+            Discogs Slovenia Orders
+          </textPath>
+        </text>
+      )}
     </svg>
   );
 }
