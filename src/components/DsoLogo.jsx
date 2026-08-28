@@ -1,15 +1,19 @@
 import { useId } from "react";
 
 const GROOVES = [0.9, 0.81, 0.72, 0.63, 0.54, 0.45];
+const DISC_RADIUS = 84;
+const DISC_CENTER = 100;
+const LABEL_RADIUS = 31;
 
 /** Front-facing vinyl with DSO on the label. */
 export function DsoLogo({ className }) {
   const uid = useId().replace(/:/g, "");
   const discId = `dso-disc-${uid}`;
+  const shineMaskId = `dso-shine-mask-${uid}`;
 
   return (
     <svg
-      className={className}
+      className={`dso-logo ${className ?? ""}`.trim()}
       viewBox="0 0 200 200"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -28,12 +32,27 @@ export function DsoLogo({ className }) {
           <stop offset="0.55" stopColor="#2e2650" />
           <stop offset="1" stopColor="#1b1730" />
         </linearGradient>
+
+        <mask id={shineMaskId} maskUnits="userSpaceOnUse">
+          <circle
+            cx={DISC_CENTER}
+            cy={DISC_CENTER}
+            r={DISC_RADIUS}
+            fill="white"
+          />
+          <circle
+            cx={DISC_CENTER}
+            cy={DISC_CENTER}
+            r={LABEL_RADIUS}
+            fill="black"
+          />
+        </mask>
       </defs>
 
       <circle
-        cx="100"
-        cy="100"
-        r="84"
+        cx={DISC_CENTER}
+        cy={DISC_CENTER}
+        r={DISC_RADIUS}
         fill={`url(#${discId})`}
         stroke="#a78bfa"
         strokeWidth="2"
@@ -41,8 +60,24 @@ export function DsoLogo({ className }) {
 
       <g stroke="#a78bfa" strokeOpacity="0.3" strokeWidth="1.1">
         {GROOVES.map((scale) => (
-          <circle key={scale} cx="100" cy="100" r={84 * scale} />
+          <circle
+            key={scale}
+            cx={DISC_CENTER}
+            cy={DISC_CENTER}
+            r={DISC_RADIUS * scale}
+          />
         ))}
+      </g>
+
+      <g mask={`url(#${shineMaskId})`}>
+        <foreignObject
+          x={DISC_CENTER - DISC_RADIUS}
+          y={DISC_CENTER - DISC_RADIUS}
+          width={DISC_RADIUS * 2}
+          height={DISC_RADIUS * 2}
+        >
+          <div xmlns="http://www.w3.org/1999/xhtml" className="dso-logo-shine" />
+        </foreignObject>
       </g>
 
       <circle

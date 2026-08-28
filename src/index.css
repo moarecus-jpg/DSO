@@ -108,6 +108,37 @@ code {
   overflow: visible;
 }
 
+/* Vinyl shine: front 100%, sides 40%, back 22% — visible for the full spin. */
+.dso-logo-shine {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    rgba(255, 255, 255, 1) 0deg,
+    rgba(255, 255, 255, 0.4) 90deg,
+    rgba(255, 255, 255, 0.22) 180deg,
+    rgba(255, 255, 255, 0.4) 270deg,
+    rgba(255, 255, 255, 1) 360deg
+  );
+  mix-blend-mode: soft-light;
+  animation: dso-logo-shine-spin 7s linear infinite;
+  transform-origin: center;
+  will-change: transform;
+}
+
+@keyframes dso-logo-shine-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dso-logo-shine {
+    animation: none;
+  }
+}
+
 .brand-mark-img {
   display: block;
   flex-shrink: 0;
