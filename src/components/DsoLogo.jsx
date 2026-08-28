@@ -1,9 +1,24 @@
 import { useId } from "react";
 
-const GROOVES = [0.9, 0.81, 0.72, 0.63, 0.54, 0.45];
 const DISC_RADIUS = 84;
 const DISC_CENTER = 100;
 const LABEL_RADIUS = 31;
+const GROOVE_STEP = 2.1;
+const GROOVE_INSET = 3;
+
+function buildGrooveRadii() {
+  const radii = [];
+  const maxRadius = DISC_RADIUS - GROOVE_INSET;
+  const minRadius = LABEL_RADIUS + GROOVE_INSET;
+
+  for (let radius = maxRadius; radius >= minRadius; radius -= GROOVE_STEP) {
+    radii.push(Number(radius.toFixed(2)));
+  }
+
+  return radii;
+}
+
+const GROOVE_RADII = buildGrooveRadii();
 
 /** Front-facing vinyl with DSO on the label. */
 export function DsoLogo({ className }) {
@@ -58,13 +73,14 @@ export function DsoLogo({ className }) {
         strokeWidth="2"
       />
 
-      <g stroke="#a78bfa" strokeOpacity="0.3" strokeWidth="1.1">
-        {GROOVES.map((scale) => (
+      <g stroke="#a78bfa" strokeWidth="0.7">
+        {GROOVE_RADII.map((radius, index) => (
           <circle
-            key={scale}
+            key={radius}
             cx={DISC_CENTER}
             cy={DISC_CENTER}
-            r={DISC_RADIUS * scale}
+            r={radius}
+            strokeOpacity={0.16 + (index / Math.max(GROOVE_RADII.length - 1, 1)) * 0.16}
           />
         ))}
       </g>
@@ -81,17 +97,17 @@ export function DsoLogo({ className }) {
       </g>
 
       <circle
-        cx="100"
-        cy="100"
-        r="31"
+        cx={DISC_CENTER}
+        cy={DISC_CENTER}
+        r={LABEL_RADIUS}
         fill="#14111f"
         stroke="#c4b5fd"
         strokeWidth="1.2"
       />
 
       <text
-        x="100"
-        y="108"
+        x={DISC_CENTER}
+        y={DISC_CENTER + 8}
         textAnchor="middle"
         fontFamily="'Permanent Marker', cursive"
         fontSize="24"
