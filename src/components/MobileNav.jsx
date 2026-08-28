@@ -22,7 +22,7 @@ export function MobileNav() {
 
   return (
     <nav className="mobile-nav" aria-label={t("nav.mainNav")}>
-      <div className="mobile-nav-side">
+      <div className="mobile-nav-links">
         <NavLink
           to="/"
           end
@@ -65,17 +65,7 @@ export function MobileNav() {
           </NavIcon>
           <span className="mobile-nav-label">{t("nav.mobileCanceled")}</span>
         </NavLink>
-      </div>
 
-      <NavLink
-        to={{ pathname: "/", search: "?new=1" }}
-        className={() => `mobile-nav-fab${newOrderOpen ? " active" : ""}`}
-        aria-label={t("nav.newOrder")}
-      >
-        <Plus size={26} strokeWidth={2.5} />
-      </NavLink>
-
-      <div className="mobile-nav-side">
         <NavLink
           to="/my-items"
           className={({ isActive }) => `mobile-nav-link${isActive ? " active" : ""}`}
@@ -96,6 +86,14 @@ export function MobileNav() {
           <span className="mobile-nav-label">{t("nav.mobileStatistics")}</span>
         </NavLink>
       </div>
+
+      <NavLink
+        to={{ pathname: "/", search: "?new=1" }}
+        className={() => `mobile-nav-fab${newOrderOpen ? " active" : ""}`}
+        aria-label={t("nav.newOrder")}
+      >
+        <Plus size={26} strokeWidth={2.5} />
+      </NavLink>
     </nav>
   );
 }

@@ -4,11 +4,29 @@ import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { UserAvatar } from "./UserAvatar.jsx";
 
-export function HeaderAccount({ className = "" }) {
+export function HeaderAccount({ className = "", compact = false }) {
   const { user, logout } = useAuth();
   const { t } = useLocale();
 
   if (!user) return null;
+
+  if (compact) {
+    return (
+      <Link
+        to="/settings"
+        className={`mobile-topbar-account-btn ${className}`.trim()}
+        aria-label={user.name}
+        title={user.name}
+      >
+        <UserAvatar
+          name={user.name}
+          avatarUrl={user.discogsConnected ? user.discogsAvatarUrl : user.picture}
+          className="mobile-topbar-account-avatar"
+          size={30}
+        />
+      </Link>
+    );
+  }
 
   return (
     <div className={`header-account ${className}`.trim()}>

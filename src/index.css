@@ -137,7 +137,7 @@ code {
 
 .brand-mark--sidebar .brand-mark-logo {
   width: 100%;
-  max-width: 7.5rem;
+  max-width: 9.375rem;
   height: auto;
 }
 
@@ -4973,7 +4973,7 @@ body.modal-open .order-sticky-backdrop {
 
 .orders-page-header {
   display: grid;
-  grid-template-columns: 1fr minmax(0, 32rem) 1fr;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 1rem 1.25rem;
   margin-bottom: 1.35rem;
@@ -5616,12 +5616,13 @@ body.modal-open .order-sticky-backdrop {
   grid-column: 2;
   justify-self: stretch;
   width: 100%;
+  max-width: none;
   display: flex;
   align-items: center;
   justify-content: stretch;
   gap: 0.65rem;
   flex-shrink: 0;
-  min-width: min(100%, 28rem);
+  min-width: 0;
 }
 
 .app-select {
@@ -6983,6 +6984,42 @@ a.order-preview-item-title:hover {
     border-color: rgba(167, 139, 250, 0.55);
   }
 
+  .mobile-topbar-account-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    color: inherit;
+    text-decoration: none;
+    flex-shrink: 0;
+    overflow: hidden;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .mobile-topbar-account-btn:hover {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: rgba(139, 92, 246, 0.35);
+  }
+
+  .mobile-topbar-account-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+  }
+
+  .mobile-topbar-account-avatar .user-avatar,
+  .mobile-topbar-account-avatar .user-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+  }
+
   .mobile-nav {
     display: flex;
     justify-content: space-between;
@@ -6992,7 +7029,7 @@ a.order-preview-item-title:hover {
     right: 0;
     bottom: 0;
     z-index: 30;
-    gap: 0;
+    gap: 0.35rem;
     padding: 0.45rem 0.4rem;
     padding-bottom: max(0.45rem, env(safe-area-inset-bottom));
     border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -7000,32 +7037,28 @@ a.order-preview-item-title:hover {
     backdrop-filter: blur(24px);
   }
 
-  .mobile-nav-side {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.1rem;
+  .mobile-nav-links {
+    display: flex;
     flex: 1;
     min-width: 0;
-    max-width: calc(50% - 1.85rem);
+    align-items: flex-end;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
   }
 
-  .mobile-nav-side:first-child {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    padding-right: 0.15rem;
-  }
-
-  .mobile-nav-side:last-child {
-    padding-left: 0.15rem;
+  .mobile-nav-links::-webkit-scrollbar {
+    display: none;
   }
 
   .mobile-nav-link {
     display: flex;
-    flex: 1;
+    flex: 1 1 0;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 0.2rem;
-    min-width: 0;
+    min-width: 2.75rem;
     padding: 0.35rem 0.05rem;
     border-radius: 0.75rem;
     color: rgba(255, 255, 255, 0.5);
@@ -7081,12 +7114,11 @@ a.order-preview-item-title:hover {
     display: flex;
     align-items: center;
     justify-content: center;
-    position: absolute;
-    left: 50%;
-    bottom: calc(max(0.45rem, env(safe-area-inset-bottom)) + 1.1rem);
-    transform: translateX(-50%);
-    width: 3.25rem;
-    height: 3.25rem;
+    position: static;
+    transform: none;
+    width: 3.1rem;
+    height: 3.1rem;
+    margin: 0 0 0.15rem;
     z-index: 2;
     border-radius: 50%;
     background: linear-gradient(135deg, #6366f1, #7c3aed, #a855f7);
@@ -7094,13 +7126,19 @@ a.order-preview-item-title:hover {
     text-decoration: none;
     box-shadow: 0 8px 28px rgba(124, 58, 237, 0.45);
     flex-shrink: 0;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .mobile-nav-fab:hover {
+    transform: scale(1.04);
+    box-shadow: 0 10px 32px rgba(124, 58, 237, 0.55);
   }
 
   .mobile-nav-fab:hover,
   .mobile-nav-fab.active {
     color: #fff;
     text-decoration: none;
-    transform: translateX(-50%) scale(1.04);
+    transform: scale(1.04);
   }
 
   .app-shell-v2 {
@@ -7127,15 +7165,11 @@ a.order-preview-item-title:hover {
     gap: 1rem;
     margin-bottom: 1.25rem;
     position: relative;
-    padding-top: 3.25rem;
+    padding-top: 0;
   }
 
   .orders-page-header-account {
-    position: absolute;
-    top: 0;
-    right: 0;
-    grid-column: auto;
-    grid-row: auto;
+    display: none;
   }
 
   .header-account-card {

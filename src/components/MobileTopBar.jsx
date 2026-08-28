@@ -4,6 +4,7 @@ import { BrandMark } from "./BrandMark.jsx";
 import { LanguageToggle } from "./LanguageToggle.jsx";
 import { NotificationToggle } from "./NotificationToggle.jsx";
 import { StealthModeToggle } from "./StealthModeToggle.jsx";
+import { HeaderAccount } from "./HeaderAccount.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
 
 export function MobileTopBar() {
@@ -26,6 +27,8 @@ export function MobileTopBar() {
         <StealthModeToggle variant="icon" />
 
         <NotificationToggle variant="icon" />
+
+        <HeaderAccount compact />
 
         <Link
           to="/settings"
