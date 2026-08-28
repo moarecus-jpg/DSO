@@ -1,7 +1,14 @@
-import { Router } from "express";
+import express, { Router } from "express";
 import {
   addSessionLink,
   addSessionNote,
+  addSessionItemIssue,
+  addSessionItemIssuePhoto,
+  countSessionItemIssuePhotos,
+  deleteSessionItemIssue,
+  getSessionItemIssue,
+  getSessionItemIssuePhoto,
+  markSessionSellerReportSent,
   closeGroupSession,
   cancelGroupSession,
   findDuplicateSessionLink,
@@ -56,6 +63,16 @@ import {
   isArchivedSession,
   isReopenableSession,
 } from "../../shared/orderStatus.js";
+import {
+  canReportItemIssue,
+  isValidGrade,
+  isValidIssueType,
+  isValidResolution,
+  ISSUE_PHOTO_MIME_TYPES,
+  MAX_ISSUE_BODY_LENGTH,
+  MAX_ISSUE_PHOTOS,
+  MAX_ISSUE_PHOTO_BYTES,
+} from "../../shared/orderReview.js";
 import { sessionForViewer } from "../../shared/sessionPrivacy.js";
 import { computeUserStatistics } from "../../shared/userStatistics.js";
 import { resolveSellerInput } from "../discogs/resolveSeller.js";
@@ -1527,6 +1544,194 @@ router.post("/:id/notes", requireUser, (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message ?? "Komentarja ni bilo mogoče shraniti." });
+  }
+});
+
+const issuePhotoParser = express.raw({
+  type: ISSUE_PHOTO_MIME_TYPES,
+  limit: MAX_ISSUE_PHOTO_BYTES,
+});
+
+/** Item feedback exists to complain to the seller, so only orders that were placed. */
+function reviewableSession(session) {
+  return session?.status === "closed";
+}
+
+function loadIssueContext(req, res) {
+  const session = getGroupSession(req.params.id);
+  if (!session) {
+    res.status(404).json({ error: "Session not found" });
+    return null;
+  }
+  if (!reviewableSession(session)) {
+    res.status(400).json({
+      error: "Ocena izdelkov je na voljo samo pri oddanih (zaključenih) naročilih.",
+    });
+    return null;
+  }
+  return session;
+}
+
+router.post("/:id/links/:linkId/issues", requireUser, (req, res) => {
+  const userId = req.session.userId;
+  const session = loadIssueContext(req, res);
+  if (!session) return undefined;
+
+  const link = (session.links ?? []).find((item) => item.id === req.params.linkId);
+  if (!link) return res.status(404).json({ error: "Item not found" });
+
+  if (
+    !canReportItemIssue({
+      link,
+      userId,
+      isOrderAdmin: isOrderAdmin(session, userId),
+    })
+  ) {
+    return res.status(403).json({ error: "Napako lahko prijavi le naročnik itema." });
+  }
+
+  const { issueType, resolution } = req.body ?? {};
+  if (!isValidIssueType(issueType)) {
+    return res.status(400).json({ error: "Izberi vrsto težave." });
+  }
+  if (!isValidResolution(resolution)) {
+    return res.status(400).json({ error: "Izberi želeno rešitev." });
+  }
+
+  const actualMedia = req.body?.actualMediaCondition ?? null;
+  const actualSleeve = req.body?.actualSleeveCondition ?? null;
+  if (!isValidGrade(actualMedia) || !isValidGrade(actualSleeve)) {
+    return res.status(400).json({ error: "Neveljavna ocena stanja." });
+  }
+
+  const rawBody = typeof req.body?.body === "string" ? req.body.body.trim() : "";
+  if (rawBody.length > MAX_ISSUE_BODY_LENGTH) {
+    return res.status(400).json({ error: "Opis je predolg (največ 2000 znakov)." });
+  }
+
+  try {
+    const issue = addSessionItemIssue({
+      sessionId: session.id,
+      linkId: link.id,
+      userId,
+      issueType,
+      actualMediaCondition: actualMedia || null,
+      actualSleeveCondition: actualSleeve || null,
+      resolution,
+      body: rawBody || null,
+    });
+    res.status(201).json({
+      issue,
+      session: withOrderPermissions(getGroupSession(session.id), userId),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Prijave težave ni bilo mogoče shraniti." });
+  }
+});
+
+router.post(
+  "/:id/issues/:issueId/photos",
+  requireUser,
+  issuePhotoParser,
+  (req, res) => {
+    const userId = req.session.userId;
+    const session = loadIssueContext(req, res);
+    if (!session) return undefined;
+
+    const issue = getSessionItemIssue(req.params.issueId);
+    if (!issue || issue.session_id !== session.id) {
+      return res.status(404).json({ error: "Prijava težave ne obstaja." });
+    }
+    if (issue.user_id !== userId && !isOrderAdmin(session, userId)) {
+      return res.status(403).json({ error: "Fotografijo lahko doda le avtor prijave." });
+    }
+    if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+      return res.status(400).json({ error: "Fotografija manjka." });
+    }
+    if (!ISSUE_PHOTO_MIME_TYPES.includes(req.headers["content-type"])) {
+      return res.status(400).json({ error: "Nepodprta oblika slike." });
+    }
+    if (countSessionItemIssuePhotos(issue.id) >= MAX_ISSUE_PHOTOS) {
+      return res.status(400).json({
+        error: `Največ ${MAX_ISSUE_PHOTOS} fotografij na prijavo.`,
+      });
+    }
+
+    try {
+      const photo = addSessionItemIssuePhoto(
+        issue.id,
+        req.headers["content-type"],
+        req.body
+      );
+      res.status(201).json({
+        photo,
+        session: withOrderPermissions(getGroupSession(session.id), userId),
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Fotografije ni bilo mogoče shraniti." });
+    }
+  }
+);
+
+router.get("/:id/issues/:issueId/photos/:photoId", requireUser, (req, res) => {
+  const userId = req.session.userId;
+  const session = getGroupSession(req.params.id);
+  if (!session) return res.status(404).json({ error: "Session not found" });
+  if (!isSessionMember(session.id, userId) && !isOrderAdmin(session, userId)) {
+    return res.status(403).json({ error: "Nisi udeleženec tega naročila." });
+  }
+
+  const photo = getSessionItemIssuePhoto(req.params.photoId);
+  if (!photo || photo.session_id !== session.id || photo.issue_id !== req.params.issueId) {
+    return res.status(404).json({ error: "Fotografija ne obstaja." });
+  }
+
+  res.type(photo.mime_type);
+  res.setHeader("Cache-Control", "private, max-age=86400");
+  return res.send(photo.data);
+});
+
+router.delete("/:id/issues/:issueId", requireUser, (req, res) => {
+  const userId = req.session.userId;
+  const session = loadIssueContext(req, res);
+  if (!session) return undefined;
+
+  const issue = getSessionItemIssue(req.params.issueId);
+  if (!issue || issue.session_id !== session.id) {
+    return res.status(404).json({ error: "Prijava težave ne obstaja." });
+  }
+  if (issue.user_id !== userId && !isOrderAdmin(session, userId)) {
+    return res.status(403).json({ error: "Prijavo lahko izbriše le avtor." });
+  }
+
+  try {
+    deleteSessionItemIssue(issue.id);
+    res.json({
+      session: withOrderPermissions(getGroupSession(session.id), userId),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Prijave ni bilo mogoče izbrisati." });
+  }
+});
+
+router.post("/:id/seller-report/sent", requireUser, (req, res) => {
+  const userId = req.session.userId;
+  const session = loadIssueContext(req, res);
+  if (!session) return undefined;
+  if (!isOrderAdmin(session, userId)) {
+    return res.status(403).json({ error: "Samo naročnik lahko označi sporočilo." });
+  }
+
+  try {
+    const sent = req.body?.sent !== false;
+    const updated = markSessionSellerReportSent(session.id, sent);
+    res.json({ session: withOrderPermissions(updated, userId) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Stanja ni bilo mogoče shraniti." });
   }
 });
 

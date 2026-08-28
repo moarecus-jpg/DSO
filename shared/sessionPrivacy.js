@@ -36,7 +36,13 @@ export function sessionForViewer(session, viewerId, isOrderAdmin) {
   const links = (session.links ?? []).map((link) =>
     blurLinkForViewer(link, viewerId, isOrderAdmin)
   );
-  const hiddenItemCount = links.filter((link) => link.blurred).length;
+  const blurredLinkIds = new Set(
+    links.filter((link) => link.blurred).map((link) => link.id)
+  );
+  const hiddenItemCount = blurredLinkIds.size;
+  const issues = (session.issues ?? []).filter(
+    (issue) => !blurredLinkIds.has(issue.link_id)
+  );
   const linksForTotals = isOrderAdmin
     ? session.links ?? []
     : links.filter((link) => !link.blurred);
@@ -61,6 +67,7 @@ export function sessionForViewer(session, viewerId, isOrderAdmin) {
   return {
     ...session,
     links,
+    issues,
     memberTotals: enriched.memberTotals,
     orderGrandTotal: enriched.orderGrandTotal,
     canSeeAllItems: isOrderAdmin,

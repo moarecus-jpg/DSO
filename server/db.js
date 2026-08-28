@@ -155,6 +155,7 @@ for (const sql of [
   "ALTER TABLE group_sessions ADD COLUMN availability_checked_at TEXT",
   "ALTER TABLE session_links ADD COLUMN availability TEXT DEFAULT 'available'",
   "ALTER TABLE session_links ADD COLUMN availability_note TEXT",
+  "ALTER TABLE group_sessions ADD COLUMN seller_report_sent_at TEXT",
 ]) {
   try {
     db.exec(sql);
@@ -172,6 +173,38 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
+
+  CREATE TABLE IF NOT EXISTS session_item_issues (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    link_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    issue_type TEXT NOT NULL,
+    actual_media_condition TEXT,
+    actual_sleeve_condition TEXT,
+    resolution TEXT NOT NULL,
+    body TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (session_id) REFERENCES group_sessions(id),
+    FOREIGN KEY (link_id) REFERENCES session_links(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_session_item_issues_session
+    ON session_item_issues (session_id);
+
+  CREATE TABLE IF NOT EXISTS session_item_issue_photos (
+    id TEXT PRIMARY KEY,
+    issue_id TEXT NOT NULL,
+    mime_type TEXT NOT NULL,
+    byte_size INTEGER NOT NULL,
+    data BLOB NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (issue_id) REFERENCES session_item_issues(id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_session_item_issue_photos_issue
+    ON session_item_issue_photos (issue_id);
 `);
 
 const needsBackfill = db
@@ -452,8 +485,9 @@ export function getGroupSession(id) {
     .all(id);
 
   const notes = listSessionNotes(id);
+  const issues = listSessionItemIssues(id);
 
-  return withOrderTitle({ ...session, members, links, notes });
+  return withOrderTitle({ ...session, members, links, notes, issues });
 }
 
 export function getGroupSessionShareMeta(id) {
@@ -484,6 +518,116 @@ export function listSessionNotes(sessionId) {
        ORDER BY sn.created_at ASC`
     )
     .all(sessionId);
+}
+
+const ISSUE_SELECT_SQL = `SELECT sii.id, sii.session_id, sii.link_id, sii.user_id,
+              sii.issue_type, sii.actual_media_condition, sii.actual_sleeve_condition,
+              sii.resolution, sii.body, sii.created_at,
+              ${MEMBER_DISPLAY_NAME_SQL} as user_name
+       FROM session_item_issues sii
+       JOIN users u ON u.id = sii.user_id
+       LEFT JOIN session_members sm
+         ON sm.session_id = sii.session_id AND sm.user_id = sii.user_id`;
+
+function attachIssuePhotos(issues) {
+  if (issues.length === 0) return issues;
+  const photos = db.prepare(
+    `SELECT id, issue_id, mime_type, byte_size
+       FROM session_item_issue_photos
+      WHERE issue_id = ?
+      ORDER BY created_at ASC`
+  );
+  return issues.map((issue) => ({ ...issue, photos: photos.all(issue.id) }));
+}
+
+export function listSessionItemIssues(sessionId) {
+  const issues = db
+    .prepare(`${ISSUE_SELECT_SQL} WHERE sii.session_id = ? ORDER BY sii.created_at ASC`)
+    .all(sessionId);
+  return attachIssuePhotos(issues);
+}
+
+export function getSessionItemIssue(issueId) {
+  const issue = db.prepare(`${ISSUE_SELECT_SQL} WHERE sii.id = ?`).get(issueId);
+  if (!issue) return null;
+  return attachIssuePhotos([issue])[0];
+}
+
+export function addSessionItemIssue({
+  sessionId,
+  linkId,
+  userId,
+  issueType,
+  actualMediaCondition = null,
+  actualSleeveCondition = null,
+  resolution,
+  body = null,
+}) {
+  const id = randomUUID();
+  db.prepare(
+    `INSERT INTO session_item_issues (
+       id, session_id, link_id, user_id, issue_type,
+       actual_media_condition, actual_sleeve_condition, resolution, body
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(
+    id,
+    sessionId,
+    linkId,
+    userId,
+    issueType,
+    actualMediaCondition,
+    actualSleeveCondition,
+    resolution,
+    body
+  );
+  return getSessionItemIssue(id);
+}
+
+export function deleteSessionItemIssue(issueId) {
+  const del = db.transaction(() => {
+    db.prepare("DELETE FROM session_item_issue_photos WHERE issue_id = ?").run(issueId);
+    db.prepare("DELETE FROM session_item_issues WHERE id = ?").run(issueId);
+  });
+  del();
+  return true;
+}
+
+export function countSessionItemIssuePhotos(issueId) {
+  return (
+    db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM session_item_issue_photos WHERE issue_id = ?"
+      )
+      .get(issueId)?.n ?? 0
+  );
+}
+
+export function addSessionItemIssuePhoto(issueId, mimeType, buffer) {
+  const id = randomUUID();
+  db.prepare(
+    `INSERT INTO session_item_issue_photos (id, issue_id, mime_type, byte_size, data)
+     VALUES (?, ?, ?, ?, ?)`
+  ).run(id, issueId, mimeType, buffer.length, buffer);
+  return { id, issue_id: issueId, mime_type: mimeType, byte_size: buffer.length };
+}
+
+export function getSessionItemIssuePhoto(photoId) {
+  return db
+    .prepare(
+      `SELECT p.id, p.issue_id, p.mime_type, p.byte_size, p.data, i.session_id
+         FROM session_item_issue_photos p
+         JOIN session_item_issues i ON i.id = p.issue_id
+        WHERE p.id = ?`
+    )
+    .get(photoId);
+}
+
+export function markSessionSellerReportSent(sessionId, sent = true) {
+  db.prepare("UPDATE group_sessions SET seller_report_sent_at = ? WHERE id = ?").run(
+    sent ? new Date().toISOString() : null,
+    sessionId
+  );
+  return getGroupSession(sessionId);
 }
 
 export function isSessionMember(sessionId, userId) {
@@ -521,6 +665,9 @@ const SESSION_LIST_COLUMNS = `gs.*, u.name as creator_name, u.username as creato
         (SELECT COUNT(DISTINCT user_id) FROM session_links WHERE session_id = gs.id) as member_count,
         (SELECT COUNT(*) FROM session_links WHERE session_id = gs.id) as link_count,
         (SELECT COUNT(*) FROM session_notes WHERE session_id = gs.id) as note_count,
+        (SELECT COUNT(*) FROM session_links
+           WHERE session_id = gs.id
+             AND datetime(created_at) >= datetime('now', '-7 days')) as items_week,
         (SELECT MAX(datetime(ts))
            FROM (
              SELECT gs.created_at AS ts
@@ -881,6 +1028,11 @@ export function deleteGroupSession(id) {
   if (!existing) return false;
 
   const del = db.transaction(() => {
+    db.prepare(
+      `DELETE FROM session_item_issue_photos
+        WHERE issue_id IN (SELECT id FROM session_item_issues WHERE session_id = ?)`
+    ).run(id);
+    db.prepare("DELETE FROM session_item_issues WHERE session_id = ?").run(id);
     db.prepare("DELETE FROM session_notes WHERE session_id = ?").run(id);
     db.prepare("DELETE FROM session_links WHERE session_id = ?").run(id);
     db.prepare("DELETE FROM session_members WHERE session_id = ?").run(id);
@@ -1012,10 +1164,18 @@ export function removeSessionLink(sessionId, linkId) {
     .get(linkId, sessionId);
   if (!link) return null;
 
-  db.prepare("DELETE FROM session_links WHERE id = ? AND session_id = ?").run(
-    linkId,
-    sessionId
-  );
+  const remove = db.transaction(() => {
+    db.prepare(
+      `DELETE FROM session_item_issue_photos
+        WHERE issue_id IN (SELECT id FROM session_item_issues WHERE link_id = ?)`
+    ).run(linkId);
+    db.prepare("DELETE FROM session_item_issues WHERE link_id = ?").run(linkId);
+    db.prepare("DELETE FROM session_links WHERE id = ? AND session_id = ?").run(
+      linkId,
+      sessionId
+    );
+  });
+  remove();
   removeSessionMemberIfNoLinks(sessionId, link.user_id);
   return getGroupSession(sessionId);
 }

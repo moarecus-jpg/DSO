@@ -72,6 +72,7 @@ export function OrdersPageHeader({
             onChange={onSortChange}
             options={sortOptions}
             ariaLabel={t("orders.sortLabel")}
+            prefix={t("orders.sortLabel")}
           />
         )}
       </div>

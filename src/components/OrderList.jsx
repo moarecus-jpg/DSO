@@ -1,5 +1,12 @@
 import { Link } from "react-router-dom";
-import { Calendar, Disc3, MessageSquare, UserRound, Users } from "lucide-react";
+import {
+  AlertTriangle,
+  Calendar,
+  Disc3,
+  MessageSquare,
+  UserRound,
+  Users,
+} from "lucide-react";
 import { displayOrderTitle } from "../../shared/orderTitle.js";
 import { needsAttention } from "../../shared/orderDashboard.js";
 import { useLocale } from "../hooks/useLocale.jsx";
@@ -35,7 +42,16 @@ function OrderCardContent({ s, title, dateLabel, creatorLabel, t }) {
         <StatusPill status={s.status} />
       </div>
       <div className="order-card-v2-body">
-        <h3 className="order-card-v2-title">{title}</h3>
+        <h3 className="order-card-v2-title">
+          {title}
+          {attention ? (
+            <AlertTriangle
+              className="order-card-v2-alert"
+              size={15}
+              aria-label={t("orders.chip.attention")}
+            />
+          ) : null}
+        </h3>
         {dateLabel && (
           <p className="order-card-v2-date">
             <Calendar size={14} aria-hidden />
@@ -58,13 +74,10 @@ function OrderCardContent({ s, title, dateLabel, creatorLabel, t }) {
           <Disc3 size={15} aria-hidden />
           {itemCount}
         </span>
-        <span className="order-card-v2-meta" title={t("orders.previewNotes")}>
+        <span className="order-card-v2-meta" title={t("orders.previewMessages")}>
           <MessageSquare size={15} aria-hidden />
           {noteCount}
         </span>
-        {attention ? (
-          <span className="order-card-v2-alert">{t("orders.chip.attention")}</span>
-        ) : null}
       </div>
     </>
   );

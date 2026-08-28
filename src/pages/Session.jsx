@@ -10,7 +10,9 @@ import { OrderStoreAvatar } from "../components/OrderStoreAvatar.jsx";
 import { OrderStickyFooter } from "../components/OrderStickyFooter.jsx";
 import { OrderTargetDate } from "../components/OrderTargetDate.jsx";
 import { OrderNotes } from "../components/OrderNotes.jsx";
+import { OrderReview } from "../components/OrderReview.jsx";
 import { RecordList } from "../components/RecordList.jsx";
+import { SellerReportPanel } from "../components/SellerReportPanel.jsx";
 import { api } from "../api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
@@ -57,6 +59,9 @@ export function Session() {
   const [savingStatus, setSavingStatus] = useState(false);
   const [refreshingAvailability, setRefreshingAvailability] = useState(false);
   const [becameUnavailable, setBecameUnavailable] = useState([]);
+  const [submittingIssue, setSubmittingIssue] = useState(false);
+  const [deletingIssueId, setDeletingIssueId] = useState(null);
+  const [markingReportSent, setMarkingReportSent] = useState(false);
 
   function loadSession() {
     return api(`/api/sessions/${id}`).then((d) => {
@@ -327,6 +332,71 @@ export function Session() {
     }
   }
 
+  async function handleSubmitIssue({ linkId, photos = [], ...payload }) {
+    setSubmittingIssue(true);
+    try {
+      const { issue } = await api(`/api/sessions/${id}/links/${linkId}/issues`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      const failed = [];
+      for (const photo of photos) {
+        try {
+          await api(`/api/sessions/${id}/issues/${issue.id}/photos`, {
+            method: "POST",
+            headers: { "Content-Type": photo.type || "image/jpeg" },
+            body: photo,
+          });
+        } catch (err) {
+          failed.push(err.message);
+        }
+      }
+
+      await loadSession();
+      if (failed.length > 0) {
+        alert(t("session.reviewPhotoFailed", { count: failed.length }));
+      }
+      return true;
+    } catch (err) {
+      alert(err.message);
+      return false;
+    } finally {
+      setSubmittingIssue(false);
+    }
+  }
+
+  async function handleDeleteIssue(issue) {
+    if (!confirm(t("session.reviewConfirmDelete"))) return;
+    setDeletingIssueId(issue.id);
+    try {
+      const { session: updated } = await api(
+        `/api/sessions/${id}/issues/${issue.id}`,
+        { method: "DELETE" }
+      );
+      setSession(updated);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setDeletingIssueId(null);
+    }
+  }
+
+  async function handleMarkReportSent(sent) {
+    setMarkingReportSent(true);
+    try {
+      const { session: updated } = await api(
+        `/api/sessions/${id}/seller-report/sent`,
+        { method: "POST", body: JSON.stringify({ sent }) }
+      );
+      setSession(updated);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setMarkingReportSent(false);
+    }
+  }
+
   async function handleRefreshAvailability() {
     setRefreshingAvailability(true);
     try {
@@ -379,6 +449,7 @@ export function Session() {
     : sellerMywantsUrl(session.seller_username, user?.discogsUsername);
   const isOpen = isOpenSession(session.status);
   const isArchived = isArchivedSession(session.status);
+  const isReviewable = session.status === "closed";
   const recordCount = session.links?.length ?? 0;
   const canManageOrder = session.canManageOrder;
   const showOrderFooter = true;
@@ -659,6 +730,27 @@ export function Session() {
               canRemoveLink={canRemoveLink}
               unavailableOnly
             />
+          </>
+        )}
+        {isReviewable && recordCount > 0 && (
+          <>
+            <OrderReview
+              session={session}
+              currentUserId={user?.id}
+              submitting={submittingIssue}
+              deletingIssueId={deletingIssueId}
+              onSubmitIssue={handleSubmitIssue}
+              onDeleteIssue={handleDeleteIssue}
+            />
+            {canManageOrder && (
+              <SellerReportPanel
+                session={session}
+                senderName={user?.name}
+                sellerUrl={sellerUrl}
+                marking={markingReportSent}
+                onMarkSent={handleMarkReportSent}
+              />
+            )}
           </>
         )}
         <OrderNotes

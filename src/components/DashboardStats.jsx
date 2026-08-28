@@ -1,11 +1,10 @@
-import { AlertTriangle, Disc3, FolderOpen, Sparkles, Users } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, Disc3, FolderOpen, Zap } from "lucide-react";
 import { useLocale } from "../hooks/useLocale.jsx";
 
 const CARDS = [
-  { key: "open", icon: FolderOpen, tone: "violet" },
-  { key: "members", icon: Users, tone: "pink" },
-  { key: "items", icon: Disc3, tone: "orange" },
-  { key: "activeToday", icon: Sparkles, tone: "green" },
+  { key: "open", icon: FolderOpen, tone: "violet", trend: "openWeek" },
+  { key: "items", icon: Disc3, tone: "orange", trend: "itemsWeek" },
+  { key: "activeToday", icon: Zap, tone: "green", trend: "activeYesterday" },
   { key: "attention", icon: AlertTriangle, tone: "slate", action: true },
 ];
 
@@ -17,10 +16,26 @@ export function DashboardStats({ stats, onAttention }) {
       {CARDS.map((card) => {
         const Icon = card.icon;
         const value = stats?.[card.key] ?? 0;
+        const delta = stats?.trend?.[card.key] ?? 0;
         const clickable = card.action && value > 0 && onAttention;
         const className = `dash-stat dash-stat--${card.tone}${
           clickable ? " dash-stat--action" : ""
         }`;
+
+        let hint = null;
+        if (card.action) {
+          hint = value > 0 ? t("orders.stat.viewNow") : t("orders.statHint.attention");
+        } else if (delta > 0) {
+          hint = (
+            <>
+              <ArrowUpRight size={13} strokeWidth={2.4} aria-hidden />
+              {t(`orders.statTrend.${card.trend}`, { count: delta })}
+            </>
+          );
+        } else {
+          hint = t(`orders.statHint.${card.key}`);
+        }
+
         const body = (
           <>
             <span className="dash-stat-icon" aria-hidden>
@@ -28,11 +43,7 @@ export function DashboardStats({ stats, onAttention }) {
             </span>
             <span className="dash-stat-value">{value}</span>
             <span className="dash-stat-label">{t(`orders.stat.${card.key}`)}</span>
-            {card.action && value > 0 ? (
-              <span className="dash-stat-hint">{t("orders.stat.viewNow")}</span>
-            ) : (
-              <span className="dash-stat-hint">{t(`orders.statHint.${card.key}`)}</span>
-            )}
+            <span className="dash-stat-hint">{hint}</span>
           </>
         );
 

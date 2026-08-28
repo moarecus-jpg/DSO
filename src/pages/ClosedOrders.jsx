@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { OrderDetailPreview } from "../components/OrderDetailPreview.jsx";
 import { OrderList } from "../components/OrderList.jsx";
 import { OrdersPageHeader } from "../components/OrdersPageHeader.jsx";
+import { OrdersPagination } from "../components/OrdersPagination.jsx";
 import { filterSessions } from "../../shared/filterOrders.js";
-import { sortSessions } from "../../shared/orderDashboard.js";
+import { paginate, sortSessions } from "../../shared/orderDashboard.js";
 import { api } from "../api.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { useOrderPreview } from "../hooks/useOrderPreview.js";
@@ -17,6 +18,7 @@ export function ClosedOrders() {
   const [query, setQuery] = useState("");
   const [searchMode, setSearchMode] = useState("creator");
   const [sort, setSort] = useState("recent");
+  const [page, setPage] = useState(1);
 
   const loadSessions = useCallback(async () => {
     const d = await api("/api/sessions?status=closed");
@@ -31,8 +33,13 @@ export function ClosedOrders() {
     () => sortSessions(filterSessions(sessions, { query, searchMode }), sort),
     [sessions, query, searchMode, sort]
   );
+  const pageData = useMemo(() => paginate(filteredSessions, page), [filteredSessions, page]);
 
-  const preview = useOrderPreview(filteredSessions, {
+  useEffect(() => {
+    setPage(1);
+  }, [query, searchMode, sort]);
+
+  const preview = useOrderPreview(pageData.items, {
     onClosed: async () => {
       await loadSessions();
       navigate("/closed");
@@ -58,7 +65,7 @@ export function ClosedOrders() {
       <div className={`orders-split${showDesktopPreview ? " orders-split--preview" : ""}`}>
         <div className="orders-split-list">
           <OrderList
-            sessions={filteredSessions}
+            sessions={pageData.items}
             loading={loading}
             emptyMessage={
               query.trim() ? t("common.noSearchResults") : t("orders.emptyClosed")
@@ -67,6 +74,16 @@ export function ClosedOrders() {
             onSelect={preview.selectSession}
             previewMode={showDesktopPreview}
           />
+          {!loading && (
+            <OrdersPagination
+              page={pageData.page}
+              pageCount={pageData.pageCount}
+              from={pageData.from}
+              to={pageData.to}
+              total={pageData.total}
+              onPageChange={setPage}
+            />
+          )}
         </div>
         {showDesktopPreview && (
           <OrderDetailPreview

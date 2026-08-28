@@ -6,10 +6,13 @@ import { OrderList } from "../components/OrderList.jsx";
 import { OrdersPageHeader } from "../components/OrdersPageHeader.jsx";
 import { DashboardStats } from "../components/DashboardStats.jsx";
 import { OrderChips } from "../components/OrderChips.jsx";
+import { OrdersFilterButton } from "../components/OrdersFilterButton.jsx";
+import { OrdersPagination } from "../components/OrdersPagination.jsx";
 import { filterSessions } from "../../shared/filterOrders.js";
 import {
   computeDashboardStats,
   filterSessionsByChip,
+  paginate,
   sortSessions,
 } from "../../shared/orderDashboard.js";
 import { sessionListPath } from "../../shared/orderStatus.js";
@@ -29,6 +32,7 @@ export function Home() {
   const [searchMode, setSearchMode] = useState("creator");
   const [chip, setChip] = useState("all");
   const [sort, setSort] = useState("recent");
+  const [page, setPage] = useState(1);
 
   const showForm = searchParams.get("new") === "1";
 
@@ -49,6 +53,7 @@ export function Home() {
   const chipCounts = useMemo(
     () => ({
       all: searchedSessions.length,
+      open: filterSessionsByChip(searchedSessions, "open").length,
       waiting: filterSessionsByChip(searchedSessions, "waiting").length,
       recent: filterSessionsByChip(searchedSessions, "recent").length,
       attention: filterSessionsByChip(searchedSessions, "attention").length,
@@ -59,8 +64,14 @@ export function Home() {
     () => sortSessions(filterSessionsByChip(searchedSessions, chip), sort),
     [searchedSessions, chip, sort]
   );
+  const pageData = useMemo(() => paginate(filteredSessions, page), [filteredSessions, page]);
+  const pagedSessions = pageData.items;
 
-  const preview = useOrderPreview(filteredSessions, {
+  useEffect(() => {
+    setPage(1);
+  }, [query, searchMode, chip, sort]);
+
+  const preview = useOrderPreview(pagedSessions, {
     onClosed: async (session) => {
       await loadSessions();
       navigate(sessionListPath(session?.status));
@@ -87,8 +98,8 @@ export function Home() {
     }
   }
 
-  const hasOrders = !loading && filteredSessions.length > 0;
   const showDesktopPreview = preview.isDesktop && !loading && sessions.length > 0;
+  const filtersDirty = query.trim() !== "" || searchMode !== "creator" || chip !== "all";
 
   return (
     <div className={`page page-orders${showForm ? " page-orders--new" : ""}`}>
@@ -105,8 +116,8 @@ export function Home() {
         subtitle={t("orders.openSubtitle")}
         query={query}
         onQueryChange={setQuery}
+        placeholder={t("orders.searchOrders")}
         searchMode={searchMode}
-        onSearchModeChange={setSearchMode}
         sort={sort}
         onSortChange={setSort}
       />
@@ -119,13 +130,29 @@ export function Home() {
       )}
 
       {!showForm && (
-        <OrderChips value={chip} onChange={setChip} counts={chipCounts} />
+        <OrderChips
+          value={chip}
+          onChange={setChip}
+          counts={chipCounts}
+          trailing={
+            <OrdersFilterButton
+              searchMode={searchMode}
+              onSearchModeChange={setSearchMode}
+              dirty={filtersDirty}
+              onReset={() => {
+                setQuery("");
+                setSearchMode("creator");
+                setChip("all");
+              }}
+            />
+          }
+        />
       )}
 
       <div className={`orders-split${showDesktopPreview ? " orders-split--preview" : ""}`}>
         <div className="orders-split-list">
           <OrderList
-            sessions={filteredSessions}
+            sessions={pagedSessions}
             loading={loading}
             emptyMessage={
               query.trim() || chip !== "all"
@@ -136,6 +163,16 @@ export function Home() {
             onSelect={preview.selectSession}
             previewMode={showDesktopPreview}
           />
+          {!loading && (
+            <OrdersPagination
+              page={pageData.page}
+              pageCount={pageData.pageCount}
+              from={pageData.from}
+              to={pageData.to}
+              total={pageData.total}
+              onPageChange={setPage}
+            />
+          )}
         </div>
         {showDesktopPreview && (
           <OrderDetailPreview

@@ -1,16 +1,15 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  ArrowRight,
   Calendar,
   Disc3,
   Lock,
-  MessageSquare,
+  MoreHorizontal,
   RotateCcw,
   Target,
   UserRound,
-  Users,
   X,
-  ChevronRight,
 } from "lucide-react";
 import { displayOrderTitle } from "../../shared/orderTitle.js";
 import {
@@ -26,15 +25,13 @@ import { StatusPill } from "./StatusPill.jsx";
 import { UserAvatar } from "./UserAvatar.jsx";
 
 function formatCreatedAt(createdAt, localeTag) {
-  if (!createdAt) return "—";
+  if (!createdAt) return null;
   const d = new Date(createdAt.includes("T") ? createdAt : `${createdAt}Z`);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString(localeTag, {
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString(localeTag, {
     day: "numeric",
     month: "short",
     year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
   });
 }
 
@@ -129,6 +126,25 @@ export function OrderDetailPreview({
 }) {
   const { t, localeTag } = useLocale();
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    function handlePointerDown(event) {
+      if (!menuRef.current?.contains(event.target)) setMenuOpen(false);
+    }
+    function handleKeyDown(event) {
+      if (event.key === "Escape") setMenuOpen(false);
+    }
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [menuOpen]);
+
   const rootClass =
     variant === "sheet"
       ? "order-preview order-preview--sheet"
@@ -154,12 +170,12 @@ export function OrderDetailPreview({
   const noteCount = detail?.notes?.length ?? 0;
   const itemCount = detail?.links?.length ?? session.link_count ?? 0;
   const memberCount = members.length || session.member_count || 1;
-  const targetLabel = formatTargetDate(
-    detail?.target_date ?? session.target_date,
-    localeTag
-  );
+  const targetDate = detail?.target_date ?? session.target_date;
+  const targetLabel = targetDate ? formatTargetDate(targetDate, localeTag) : null;
+  const createdLabel = formatCreatedAt(session.created_at, localeTag);
   const showClose = canClose && isOpen;
   const showReopen = canReopen && isReopenableSession(session.status);
+  const showMenu = showClose || showReopen;
 
   return (
     <aside className={rootClass} aria-label={t("orders.previewTitle")}>
@@ -179,13 +195,12 @@ export function OrderDetailPreview({
               {t("orders.openedBy", { name: creatorLabel })}
             </p>
           )}
-          <div className="order-preview-badges">
-            <StatusPill status={session.status} />
-            <span className="order-preview-badge-meta">
-              <Users size={14} aria-hidden />
-              {memberCount}
-            </span>
-          </div>
+          {createdLabel && (
+            <p className="order-preview-creator">
+              <Calendar size={14} aria-hidden />
+              {createdLabel}
+            </p>
+          )}
         </div>
         <button
           type="button"
@@ -195,6 +210,64 @@ export function OrderDetailPreview({
         >
           <X size={18} aria-hidden />
         </button>
+      </div>
+
+      <div className="order-preview-badges">
+        <StatusPill status={session.status} />
+        {targetLabel && (
+          <span className="order-preview-badge-meta">
+            <Target size={14} aria-hidden />
+            {targetLabel}
+          </span>
+        )}
+        {showMenu && (
+          <div className="order-preview-menu-wrap" ref={menuRef}>
+            <button
+              type="button"
+              className="order-preview-menu-btn"
+              onClick={() => setMenuOpen((current) => !current)}
+              aria-haspopup="true"
+              aria-expanded={menuOpen}
+              aria-label={t("orders.previewActions")}
+            >
+              <MoreHorizontal size={18} aria-hidden />
+            </button>
+            {menuOpen && (
+              <div className="order-preview-menu" role="menu">
+                {showClose && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="order-preview-menu-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setCloseDialogOpen(true);
+                    }}
+                    disabled={closing}
+                  >
+                    <Lock size={15} aria-hidden />
+                    {closing ? t("session.closing") : t("session.closeOrder")}
+                  </button>
+                )}
+                {showReopen && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="order-preview-menu-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onReopenOrder?.();
+                    }}
+                    disabled={reopening}
+                  >
+                    <RotateCcw size={15} aria-hidden />
+                    {reopening ? t("session.reopening") : t("session.reopenOrder")}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="order-preview-stats">
@@ -208,7 +281,7 @@ export function OrderDetailPreview({
         </div>
         <div className="order-preview-stat">
           <span className="order-preview-stat-value">{loading ? "…" : noteCount}</span>
-          <span className="order-preview-stat-label">{t("orders.previewNotes")}</span>
+          <span className="order-preview-stat-label">{t("orders.previewMessages")}</span>
         </div>
       </div>
 
@@ -240,95 +313,12 @@ export function OrderDetailPreview({
         )}
       </div>
 
-      <div className="order-preview-section">
-        <h3 className="order-preview-section-title">{t("session.participants")}</h3>
-        {loading && !detail ? (
-          <p className="muted fine">{t("common.loading")}</p>
-        ) : error ? (
-          <p className="form-error fine">{error}</p>
-        ) : members.length === 0 ? (
-          <p className="muted fine">{t("orders.previewNoMembers")}</p>
-        ) : (
-          <ul className="order-preview-members">
-            {members.map((member) => (
-              <li key={member.id} className="order-preview-member">
-                {member.picture ? (
-                  <img
-                    src={member.picture}
-                    alt=""
-                    className="order-preview-member-avatar"
-                  />
-                ) : (
-                  <span className="order-preview-member-avatar order-preview-member-avatar--fallback">
-                    <UserRound size={16} aria-hidden />
-                  </span>
-                )}
-                <div className="order-preview-member-text">
-                  <span className="order-preview-member-name">{member.name}</span>
-                  {member.discogs_username ? (
-                    <small>@{member.discogs_username}</small>
-                  ) : null}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <div className="order-preview-meta-row">
-        <div>
-          <span className="order-preview-meta-label">
-            <Calendar size={13} aria-hidden />
-            {t("orders.previewCreated")}
-          </span>
-          <span className="order-preview-meta-value">
-            {formatCreatedAt(session.created_at, localeTag)}
-          </span>
-        </div>
-        <div>
-          <span className="order-preview-meta-label">
-            <Target size={13} aria-hidden />
-            {t("orders.previewTarget")}
-          </span>
-          <span className="order-preview-meta-value">{targetLabel}</span>
-        </div>
-        <div>
-          <span className="order-preview-meta-label">
-            <MessageSquare size={13} aria-hidden />
-            {t("orders.previewNotes")}
-          </span>
-          <span className="order-preview-meta-value">
-            {loading && !detail ? "…" : noteCount}
-          </span>
-        </div>
-      </div>
+      {error && <p className="form-error fine">{error}</p>}
 
       <div className="order-preview-actions">
-        {showClose && (
-          <button
-            type="button"
-            className="btn btn-ghost order-preview-close-btn"
-            onClick={() => setCloseDialogOpen(true)}
-            disabled={closing}
-          >
-            <Lock size={15} aria-hidden />
-            {closing ? t("session.closing") : t("session.closeOrder")}
-          </button>
-        )}
-        {showReopen && (
-          <button
-            type="button"
-            className="btn btn-ghost order-preview-close-btn"
-            onClick={onReopenOrder}
-            disabled={reopening}
-          >
-            <RotateCcw size={15} aria-hidden />
-            {reopening ? t("session.reopening") : t("session.reopenOrder")}
-          </button>
-        )}
         <Link to={`/session/${session.id}`} className="btn btn-primary order-preview-view-btn">
           {t("orders.viewDetails")}
-          <ChevronRight size={18} aria-hidden />
+          <ArrowRight size={18} aria-hidden />
         </Link>
       </div>
 

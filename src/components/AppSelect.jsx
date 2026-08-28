@@ -16,6 +16,7 @@ export function AppSelect({
   className = "",
   disabled = false,
   searchable,
+  prefix = null,
 }) {
   const { t } = useLocale();
   const [open, setOpen] = useState(false);
@@ -130,6 +131,7 @@ export function AppSelect({
         aria-label={ariaLabel}
         disabled={disabled}
       >
+        {prefix && <span className="app-select-prefix">{prefix}</span>}
         <span className="app-select-value">{selected?.label}</span>
         <ChevronDown className="app-select-chevron" size={16} aria-hidden />
       </button>
