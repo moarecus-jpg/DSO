@@ -71,7 +71,9 @@ export function Sidebar() {
           </NavLink>
           <NavLink
             to="/closed"
-            className={({ isActive }) => `sidebar-link-v2${isActive ? " active" : ""}`}
+            className={({ isActive }) =>
+              `sidebar-link-v2 sidebar-link-v2--closed${isActive ? " active" : ""}`
+            }
           >
             <span className="sidebar-link-icon sidebar-link-icon--closed" aria-hidden>
               <Lock size={18} strokeWidth={2.1} />

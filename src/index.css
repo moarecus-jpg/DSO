@@ -4515,7 +4515,21 @@ body.modal-open .order-sticky-backdrop {
 }
 
 .sidebar-link-v2.active .sidebar-link-icon--closed {
-  background: linear-gradient(135deg, #64748b 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #059669 0%, #10b981 55%, #34d399 100%);
+}
+
+.sidebar-link-v2--closed.active {
+  border-color: rgba(16, 185, 129, 0.32);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.18);
+}
+
+.sidebar-link-v2--closed.active::before {
+  background: linear-gradient(180deg, #6ee7b7, #059669);
+}
+
+.sidebar-link-v2--closed.active .sidebar-link-count {
+  background: rgba(16, 185, 129, 0.22);
+  color: #a7f3d0;
 }
 
 .sidebar-link-v2.active .sidebar-link-icon--unplaced {
@@ -5637,7 +5651,7 @@ body.modal-open .order-sticky-backdrop {
 
 .order-list-v2 {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(17.5rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
   gap: 1.15rem;
 }
 
@@ -5647,8 +5661,14 @@ body.modal-open .order-sticky-backdrop {
 }
 
 .orders-split--preview .order-list-v2 {
-  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
+}
+
+@media (min-width: 1280px) {
+  .orders-split:not(.orders-split--preview) .order-list-v2 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .order-card-v2 {
@@ -6193,8 +6213,8 @@ body.modal-open .order-sticky-backdrop {
 }
 
 .status-pill-v2-closed {
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.55);
+  background: rgba(61, 214, 140, 0.18);
+  color: #3dd68c;
 }
 
 .status-pill-v2-unplaced {
@@ -7188,6 +7208,24 @@ body.modal-open .order-sticky-backdrop {
   box-shadow: 0 8px 24px rgba(124, 58, 237, 0.12);
 }
 
+[data-theme="light"] .sidebar-link-v2--closed.active {
+  border-color: rgba(5, 150, 105, 0.24);
+  box-shadow: 0 8px 24px rgba(5, 150, 105, 0.12);
+}
+
+[data-theme="light"] .sidebar-link-v2--closed.active::before {
+  background: linear-gradient(180deg, #34d399, #059669);
+}
+
+[data-theme="light"] .sidebar-link-v2--closed.active .sidebar-link-icon {
+  box-shadow: 0 6px 16px rgba(5, 150, 105, 0.22);
+}
+
+[data-theme="light"] .sidebar-link-v2--closed.active .sidebar-link-count {
+  background: rgba(16, 185, 129, 0.16);
+  color: #047857;
+}
+
 [data-theme="light"] .sidebar-link-icon {
   color: #64748b;
   background: #f1f5f9;
@@ -7424,8 +7462,8 @@ body.modal-open .order-sticky-backdrop {
 }
 
 [data-theme="light"] .status-pill-v2-closed {
-  background: rgba(24, 24, 27, 0.08);
-  color: #52525b;
+  background: rgba(16, 185, 129, 0.16);
+  color: #059669;
 }
 
 [data-theme="light"] .status-pill-v2-unplaced {
