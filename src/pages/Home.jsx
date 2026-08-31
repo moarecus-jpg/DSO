@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { NewOrderForm } from "../components/NewOrderForm.jsx";
+import { useNavigate } from "react-router-dom";
 import { OrderDetailPreview } from "../components/OrderDetailPreview.jsx";
 import { OrderList } from "../components/OrderList.jsx";
 import { OrdersPageHeader } from "../components/OrdersPageHeader.jsx";
@@ -23,19 +22,14 @@ import { useOrderPreview } from "../hooks/useOrderPreview.js";
 
 export function Home() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { t } = useLocale();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
-  const [createError, setCreateError] = useState(null);
   const [query, setQuery] = useState("");
   const [searchMode, setSearchMode] = useState("creator");
   const [chip, setChip] = useState("all");
   const [sort, setSort] = useState("recent");
   const [page, setPage] = useState(1);
-
-  const showForm = searchParams.get("new") === "1";
 
   const loadSessions = useCallback(async () => {
     const d = await api("/api/sessions");
@@ -83,39 +77,11 @@ export function Home() {
     },
   });
 
-  async function handleCreate({ store, sellerUsername }) {
-    setCreateError(null);
-    setCreating(true);
-    try {
-      const body =
-        store && store !== "discogs"
-          ? { store }
-          : { store: "discogs", sellerUsername };
-      const { session } = await api("/api/sessions", {
-        method: "POST",
-        body: JSON.stringify(body),
-      });
-      navigate(`/session/${session.id}?add=1`, { replace: true });
-    } catch (err) {
-      setCreateError(err.message ?? t("orders.createFailed"));
-    } finally {
-      setCreating(false);
-    }
-  }
-
   const showDesktopPreview = preview.isDesktop && !loading && sessions.length > 0;
   const filtersDirty = query.trim() !== "" || searchMode !== "creator" || chip !== "all";
 
   return (
-    <div className={`page page-orders${showForm ? " page-orders--new" : ""}`}>
-      {showForm && (
-        <NewOrderForm
-          onSubmit={handleCreate}
-          creating={creating}
-          error={createError}
-        />
-      )}
-
+    <div className="page page-orders">
       <OrdersPageHeader
         title={t("orders.openTitle")}
         subtitle={t("orders.openSubtitle")}
@@ -129,7 +95,7 @@ export function Home() {
 
       <div className={`orders-split${showDesktopPreview ? " orders-split--preview" : ""}`}>
         <div className="orders-split-main">
-          {!showForm && !loading && (
+          {!loading && (
             <DashboardStats
               stats={stats}
               recentSessions={recentSessions}
@@ -141,25 +107,23 @@ export function Home() {
             />
           )}
 
-          {!showForm && (
-            <OrderChips
-              value={chip}
-              onChange={setChip}
-              counts={chipCounts}
-              trailing={
-                <OrdersFilterButton
-                  searchMode={searchMode}
-                  onSearchModeChange={setSearchMode}
-                  dirty={filtersDirty}
-                  onReset={() => {
-                    setQuery("");
-                    setSearchMode("creator");
-                    setChip("all");
-                  }}
-                />
-              }
-            />
-          )}
+          <OrderChips
+            value={chip}
+            onChange={setChip}
+            counts={chipCounts}
+            trailing={
+              <OrdersFilterButton
+                searchMode={searchMode}
+                onSearchModeChange={setSearchMode}
+                dirty={filtersDirty}
+                onReset={() => {
+                  setQuery("");
+                  setSearchMode("creator");
+                  setChip("all");
+                }}
+              />
+            }
+          />
 
           {!loading && (
             <OrdersPagination

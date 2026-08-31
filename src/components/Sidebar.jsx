@@ -1,4 +1,4 @@
-import { Link, NavLink, useSearchParams } from "react-router-dom";
+import { Link, NavLink, useLocation, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
   CircleOff,
@@ -17,6 +17,7 @@ import { NotificationToggle } from "./NotificationToggle.jsx";
 import { api } from "../api.js";
 
 export function Sidebar() {
+  const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
   const { t } = useLocale();
   const newOrderOpen = searchParams.get("new") === "1";
@@ -37,7 +38,7 @@ export function Sidebar() {
         </Link>
 
         <NavLink
-          to={{ pathname: "/", search: "?new=1" }}
+          to={{ pathname, search: "?new=1" }}
           className={() =>
             `sidebar-cta${newOrderOpen ? " sidebar-cta-active" : ""}`
           }

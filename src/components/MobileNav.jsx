@@ -88,7 +88,7 @@ export function MobileNav() {
       </div>
 
       <NavLink
-        to={{ pathname: "/", search: "?new=1" }}
+        to={{ pathname, search: "?new=1" }}
         className={() => `mobile-nav-fab${newOrderOpen ? " active" : ""}`}
         aria-label={t("nav.newOrder")}
       >

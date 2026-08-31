@@ -14,7 +14,13 @@ import { StoreAvatar } from "./OrderStoreAvatar.jsx";
 
 const STORE_OPTIONS = Object.values(STORES);
 
-export function NewOrderForm({ onSubmit, creating, error }) {
+export function NewOrderForm({
+  onSubmit,
+  creating,
+  error,
+  onCancel,
+  inModal = false,
+}) {
   const { t } = useLocale();
   const [store, setStore] = useState(STORE_DISCOGS);
   const [sellerMode, setSellerMode] = useState("username");
@@ -50,10 +56,8 @@ export function NewOrderForm({ onSubmit, creating, error }) {
   const canSubmit = isShop || Boolean(seller.trim());
   const exampleTitle = `${shopSellerUsername(store)}#0007`;
 
-  return (
-    <form className="card form-card form-card--new-order" onSubmit={handleCreate}>
-      <h2>{t("orders.newOrder")}</h2>
-
+  const fields = (
+    <>
       <div className="tabs store-tabs" role="tablist" aria-label={t("orders.storeLabel")}>
         {STORE_OPTIONS.map((option) => (
           <button
@@ -153,7 +157,34 @@ export function NewOrderForm({ onSubmit, creating, error }) {
       )}
 
       {error && <p className="form-error">{error}</p>}
+    </>
+  );
 
+  if (inModal) {
+    return (
+      <form className="modal-link-form" onSubmit={handleCreate}>
+        <div className="modal-body">{fields}</div>
+        <div className="modal-actions">
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={onCancel}
+            disabled={creating}
+          >
+            {t("common.cancel")}
+          </button>
+          <button className="btn btn-primary" type="submit" disabled={creating || !canSubmit}>
+            {creating ? t("orders.opening") : t("orders.openOrder")}
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  return (
+    <form className="card form-card form-card--new-order" onSubmit={handleCreate}>
+      <h2>{t("orders.newOrder")}</h2>
+      {fields}
       <div className="form-card-actions">
         <button className="btn btn-primary" type="submit" disabled={creating || !canSubmit}>
           {creating ? t("orders.opening") : t("orders.openOrder")}
