@@ -25,11 +25,7 @@ export function Layout() {
         onSession ? " layout-dashboard--session" : ""
       }`}
     >
-      <div className="layout-glow" aria-hidden>
-        <div className="layout-glow-orb layout-glow-orb--violet" />
-        <div className="layout-glow-orb layout-glow-orb--indigo" />
-        <div className="layout-glow-orb layout-glow-orb--magenta" />
-      </div>
+      <div className="layout-vinyl-bg" aria-hidden="true" />
       <MobileTopBar />
       <PersistenceBanner />
       <div className="app-shell app-shell-v2">

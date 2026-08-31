@@ -4008,7 +4008,7 @@ body.modal-open .order-sticky-backdrop {
 /* —— Dashboard v2 (violet glass) —— */
 .layout-dashboard {
   position: relative;
-  background: #09090b;
+  background: transparent;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -4398,6 +4398,12 @@ body.modal-open .order-sticky-backdrop {
   min-height: 0;
 }
 
+.mobile-topbar,
+.persistence-banner {
+  position: relative;
+  z-index: 1;
+}
+
 .app-main-v2 {
   flex: 1;
   min-width: 0;
@@ -4487,8 +4493,8 @@ body.modal-open .order-sticky-backdrop {
   isolation: isolate;
 }
 
-.sidebar-vinyl-bg {
-  position: absolute;
+.layout-vinyl-bg {
+  position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
@@ -4503,57 +4509,57 @@ body.modal-open .order-sticky-backdrop {
     linear-gradient(180deg, #0b0a0e 0%, #09090b 54%, #08080a 100%);
 }
 
-/* Concept 3: sweeping vinyl arc + fine grooves (behind nav, not on cards) */
-.sidebar-vinyl-bg::before {
+/* Concept 3: sweeping vinyl arc + fine grooves across full dashboard */
+.layout-vinyl-bg::before {
   content: "";
   position: absolute;
-  inset: -25% -45% -20% -55%;
+  inset: -20% -35% -15% -45%;
   z-index: 0;
   opacity: 1;
   background-image:
     radial-gradient(
-      circle at -28% 22%,
+      circle at -18% 22%,
       transparent 56%,
       rgba(139, 92, 246, 0.09) 61%,
       rgba(124, 58, 237, 0.045) 65%,
       transparent 71%
     ),
     radial-gradient(
-      circle at -28% 22%,
+      circle at -18% 22%,
       transparent 54%,
       rgba(255, 255, 255, 0.016) 55.5%,
       rgba(255, 255, 255, 0.008) 56.2%,
       transparent 57%
     ),
     repeating-radial-gradient(
-      circle at -28% 22%,
+      circle at -18% 22%,
       rgba(255, 255, 255, 0.026) 0 0.55px,
       transparent 0.55px 4.6px
     ),
     repeating-radial-gradient(
-      circle at -28% 22%,
+      circle at -18% 22%,
       rgba(255, 255, 255, 0.014) 0 0.55px,
       transparent 0.55px 4.6px
     );
   mask-image: linear-gradient(
-    128deg,
-    rgba(0, 0, 0, 0.15) 0%,
-    #000 22%,
-    #000 68%,
-    rgba(0, 0, 0, 0.25) 100%
+    105deg,
+    rgba(0, 0, 0, 0.35) 0%,
+    #000 14%,
+    #000 86%,
+    rgba(0, 0, 0, 0.3) 100%
   );
   -webkit-mask-image: linear-gradient(
-    128deg,
-    rgba(0, 0, 0, 0.15) 0%,
-    #000 22%,
-    #000 68%,
-    rgba(0, 0, 0, 0.25) 100%
+    105deg,
+    rgba(0, 0, 0, 0.35) 0%,
+    #000 14%,
+    #000 86%,
+    rgba(0, 0, 0, 0.3) 100%
   );
-  animation: sidebar-vinyl-drift 64s ease-in-out infinite;
+  animation: layout-vinyl-drift 64s ease-in-out infinite;
 }
 
-/* Concept 3: halftone dots fading in from mid-sidebar downward */
-.sidebar-vinyl-bg::after {
+/* Concept 3: halftone dots fading in across the full layout */
+.layout-vinyl-bg::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -4563,7 +4569,7 @@ body.modal-open .order-sticky-backdrop {
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.32'/%3E%3C/svg%3E"),
     radial-gradient(circle, rgba(167, 139, 250, 0.1) 0.45px, transparent 0.62px),
     radial-gradient(
-      ellipse 95% 75% at 48% 72%,
+      ellipse 120% 80% at 42% 72%,
       rgba(124, 58, 237, 0.06) 0%,
       rgba(124, 58, 237, 0.02) 40%,
       transparent 68%
@@ -4573,22 +4579,22 @@ body.modal-open .order-sticky-backdrop {
   mask-image: linear-gradient(
     180deg,
     transparent 0%,
-    transparent 32%,
-    rgba(0, 0, 0, 0.35) 46%,
-    #000 62%,
-    rgba(0, 0, 0, 0.55) 100%
+    transparent 18%,
+    rgba(0, 0, 0, 0.28) 34%,
+    #000 52%,
+    rgba(0, 0, 0, 0.6) 100%
   );
   -webkit-mask-image: linear-gradient(
     180deg,
     transparent 0%,
-    transparent 32%,
-    rgba(0, 0, 0, 0.35) 46%,
-    #000 62%,
-    rgba(0, 0, 0, 0.55) 100%
+    transparent 18%,
+    rgba(0, 0, 0, 0.28) 34%,
+    #000 52%,
+    rgba(0, 0, 0, 0.6) 100%
   );
 }
 
-@keyframes sidebar-vinyl-drift {
+@keyframes layout-vinyl-drift {
   0%,
   100% {
     transform: translate3d(0, 0, 0) scale(1);
@@ -4600,7 +4606,7 @@ body.modal-open .order-sticky-backdrop {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sidebar-vinyl-bg::before {
+  .layout-vinyl-bg::before {
     animation: none;
   }
 }
