@@ -6100,11 +6100,38 @@ body.modal-open .order-sticky-backdrop {
 .orders-split--preview .order-list-v2 {
   grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
+  align-content: start;
+}
+
+.orders-split-scroll {
+  display: contents;
+}
+
+.orders-split--preview .orders-split-scroll {
+  display: flex;
   flex: 1 1 auto;
+  flex-direction: column;
+  gap: 1rem;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  align-content: start;
+  scrollbar-gutter: stable;
+  padding-bottom: 0.15rem;
+}
+
+.orders-split--preview .orders-split-scroll .order-list-v2 {
+  flex: 0 0 auto;
+  min-height: 0;
+  overflow: visible;
+}
+
+.orders-split--preview .orders-split-scroll .orders-pagination {
+  flex-shrink: 0;
+  margin-top: 0;
+}
+
+.orders-split--preview .order-card-v2 {
+  min-height: 0;
 }
 
 @media (min-width: 1280px) {
@@ -6292,10 +6319,12 @@ body.modal-open .order-sticky-backdrop {
 .orders-split--preview .orders-split-main,
 .orders-split--preview .orders-split-list {
   overflow: hidden;
+  height: 100%;
+  max-height: 100%;
 }
 
-.orders-split--preview .orders-split-main > :not(.order-list-v2),
-.orders-split--preview .orders-split-list > :not(.order-list-v2) {
+.orders-split--preview .orders-split-main > :not(.orders-split-scroll),
+.orders-split--preview .orders-split-list > :not(.orders-split-scroll) {
   flex-shrink: 0;
 }
 

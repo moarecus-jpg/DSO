@@ -161,28 +161,30 @@ export function Home() {
             />
           )}
 
-          <OrderList
-            sessions={pagedSessions}
-            loading={loading}
-            emptyMessage={
-              query.trim() || chip !== "all"
-                ? t("common.noSearchResults")
-                : t("orders.emptyOpen")
-            }
-            selectedId={preview.selectedId}
-            onSelect={preview.selectSession}
-            previewMode={showDesktopPreview}
-          />
-          {!loading && (
-            <OrdersPagination
-              page={pageData.page}
-              pageCount={pageData.pageCount}
-              from={pageData.from}
-              to={pageData.to}
-              total={pageData.total}
-              onPageChange={setPage}
+          <div className="orders-split-scroll">
+            <OrderList
+              sessions={pagedSessions}
+              loading={loading}
+              emptyMessage={
+                query.trim() || chip !== "all"
+                  ? t("common.noSearchResults")
+                  : t("orders.emptyOpen")
+              }
+              selectedId={preview.selectedId}
+              onSelect={preview.selectSession}
+              previewMode={showDesktopPreview}
             />
-          )}
+            {!loading && (
+              <OrdersPagination
+                page={pageData.page}
+                pageCount={pageData.pageCount}
+                from={pageData.from}
+                to={pageData.to}
+                total={pageData.total}
+                onPageChange={setPage}
+              />
+            )}
+          </div>
         </div>
         {showDesktopPreview && (
           <OrderDetailPreview
