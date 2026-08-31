@@ -5990,14 +5990,19 @@ body.modal-open .order-sticky-backdrop {
   gap: 1.15rem;
 }
 
-.orders-split-main .order-list-v2,
-.orders-split-list .order-list-v2 {
+.orders-split:not(.orders-split--preview) .orders-split-main .order-list-v2,
+.orders-split:not(.orders-split--preview) .orders-split-list .order-list-v2 {
   flex: 0 0 auto;
 }
 
 .orders-split--preview .order-list-v2 {
   grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  align-content: start;
 }
 
 @media (min-width: 1280px) {
@@ -6092,12 +6097,20 @@ body.modal-open .order-sticky-backdrop {
   padding-top: 0.15rem;
 }
 
+.orders-split--preview .order-card-v2-footer {
+  flex-wrap: nowrap;
+}
+
 .order-card-v2-meta {
   display: flex;
   align-items: center;
   gap: 0.3rem;
   color: rgba(255, 255, 255, 0.55);
   font-size: 0.82rem;
+}
+
+.orders-split--preview .order-card-v2-meta {
+  flex-shrink: 0;
 }
 
 .order-card-v2-alert {
@@ -6125,6 +6138,7 @@ body.modal-open .order-sticky-backdrop {
   align-items: stretch;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 .orders-split--preview > .order-preview {
@@ -6152,21 +6166,35 @@ body.modal-open .order-sticky-backdrop {
 .orders-split-list {
   min-width: 0;
   min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   gap: 1rem;
   padding-right: 0;
+}
+
+.orders-split:not(.orders-split--preview) .orders-split-main,
+.orders-split:not(.orders-split--preview) .orders-split-list {
+  overflow-y: auto;
+  overscroll-behavior: contain;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
-.orders-split-main::-webkit-scrollbar,
-.orders-split-list::-webkit-scrollbar {
+.orders-split:not(.orders-split--preview) .orders-split-main::-webkit-scrollbar,
+.orders-split:not(.orders-split--preview) .orders-split-list::-webkit-scrollbar {
   width: 0;
   height: 0;
   display: none;
+}
+
+.orders-split--preview .orders-split-main,
+.orders-split--preview .orders-split-list {
+  overflow: hidden;
+}
+
+.orders-split--preview .orders-split-main > :not(.order-list-v2),
+.orders-split--preview .orders-split-list > :not(.order-list-v2) {
+  flex-shrink: 0;
 }
 
 .order-preview {
