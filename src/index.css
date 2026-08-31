@@ -4475,17 +4475,15 @@ body.modal-open .order-sticky-backdrop {
     );
   mask-image: linear-gradient(
     180deg,
-    transparent 0%,
-    transparent 42%,
-    rgba(0, 0, 0, 0.45) 62%,
-    #000 82%
+    rgba(0, 0, 0, 0.55) 0%,
+    #000 16%,
+    #000 100%
   );
   -webkit-mask-image: linear-gradient(
     180deg,
-    transparent 0%,
-    transparent 42%,
-    rgba(0, 0, 0, 0.45) 62%,
-    #000 82%
+    rgba(0, 0, 0, 0.55) 0%,
+    #000 16%,
+    #000 100%
   );
   animation: sidebar-vinyl-drift 56s ease-in-out infinite;
 }
@@ -4550,6 +4548,81 @@ body.modal-open .order-sticky-backdrop {
 .sidebar-v2 .sidebar-link-v2,
 .sidebar-v2 .sidebar-footer-item {
   isolation: isolate;
+}
+
+/* Opaque card surfaces — vinyl stays in sidebar gaps, not on buttons */
+.sidebar-v2 .sidebar-brand {
+  background-color: #101013;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.03)
+  );
+}
+
+.sidebar-v2 .sidebar-brand:hover {
+  background-color: #141418;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.04)
+  );
+}
+
+.sidebar-v2 .sidebar-link-v2 {
+  background-color: #101013;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.025)
+  );
+}
+
+.sidebar-v2 .sidebar-link-icon {
+  background-color: #16161a;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.07),
+    rgba(255, 255, 255, 0.03)
+  );
+}
+
+.sidebar-v2 .sidebar-link-v2:hover {
+  background-color: #141418;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.04)
+  );
+}
+
+.sidebar-v2 .sidebar-link-v2:hover .sidebar-link-icon {
+  background-color: #1a1a1f;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0.05)
+  );
+}
+
+.sidebar-v2 .sidebar-link-v2.active {
+  background-color: #16161c;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.11),
+    rgba(255, 255, 255, 0.06)
+  );
+}
+
+.sidebar-v2 .sidebar-footer-item.sidebar-theme-toggle,
+.sidebar-v2 .sidebar-footer-item.sidebar-lang-toggle {
+  background-color: #101013;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0.02)
+  );
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .sidebar-top {
