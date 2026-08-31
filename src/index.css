@@ -4431,8 +4431,8 @@ body.modal-open .order-sticky-backdrop {
   pointer-events: none;
   overflow: hidden;
   background:
-    radial-gradient(ellipse 130% 95% at 50% 108%, rgba(124, 58, 237, 0.07), transparent 58%),
-    radial-gradient(ellipse 90% 55% at 50% 0%, rgba(76, 29, 149, 0.07), transparent 62%),
+    radial-gradient(ellipse 130% 95% at 50% 108%, rgba(124, 58, 237, 0.05), transparent 58%),
+    radial-gradient(ellipse 80% 45% at 50% 0%, rgba(76, 29, 149, 0.035), transparent 58%),
     linear-gradient(180deg, #0b0a0e 0%, #09090b 52%, #08080a 100%);
 }
 
@@ -4440,38 +4440,53 @@ body.modal-open .order-sticky-backdrop {
   content: "";
   position: absolute;
   inset: -18% -28% -12% -28%;
+  z-index: 0;
   opacity: 1;
   background-image:
     radial-gradient(
       circle at 108% 58%,
       transparent 44%,
-      rgba(139, 92, 246, 0.045) 49%,
-      rgba(124, 58, 237, 0.02) 53%,
+      rgba(139, 92, 246, 0.03) 49%,
+      rgba(124, 58, 237, 0.014) 53%,
       transparent 59%
     ),
     radial-gradient(
       circle at 108% 58%,
-      rgba(8, 7, 12, 0.15) 0%,
+      rgba(8, 7, 12, 0.12) 0%,
       transparent 42%,
-      rgba(255, 255, 255, 0.014) 43.5%,
-      rgba(255, 255, 255, 0.008) 44.2%,
+      rgba(255, 255, 255, 0.008) 43.5%,
+      rgba(255, 255, 255, 0.004) 44.2%,
       transparent 45%
     ),
     repeating-radial-gradient(
       circle at 50% 96%,
-      rgba(255, 255, 255, 0.038) 0 0.55px,
+      rgba(255, 255, 255, 0.028) 0 0.55px,
       transparent 0.55px 4.8px
     ),
     repeating-radial-gradient(
       circle at 50% 96%,
-      rgba(255, 255, 255, 0.024) 0 0.55px,
+      rgba(255, 255, 255, 0.016) 0 0.55px,
       transparent 0.55px 4.8px
     ),
     repeating-radial-gradient(
       circle at 14% 72%,
-      rgba(255, 255, 255, 0.02) 0 0.45px,
+      rgba(255, 255, 255, 0.012) 0 0.45px,
       transparent 0.45px 4.2px
     );
+  mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 42%,
+    rgba(0, 0, 0, 0.45) 62%,
+    #000 82%
+  );
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 42%,
+    rgba(0, 0, 0, 0.45) 62%,
+    #000 82%
+  );
   animation: sidebar-vinyl-drift 56s ease-in-out infinite;
 }
 
@@ -4479,14 +4494,15 @@ body.modal-open .order-sticky-backdrop {
   content: "";
   position: absolute;
   inset: 0;
-  opacity: 0.44;
+  z-index: 0;
+  opacity: 0.32;
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E"),
-    radial-gradient(circle, rgba(255, 255, 255, 0.065) 0.42px, transparent 0.55px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E"),
+    radial-gradient(circle, rgba(255, 255, 255, 0.048) 0.42px, transparent 0.55px),
     radial-gradient(
       ellipse 90% 68% at 56% 90%,
-      rgba(167, 139, 250, 0.055) 0%,
-      rgba(124, 58, 237, 0.02) 38%,
+      rgba(167, 139, 250, 0.04) 0%,
+      rgba(124, 58, 237, 0.014) 38%,
       transparent 72%
     );
   background-size: 180px 180px, 5px 5px, 100% 100%;
@@ -4494,16 +4510,15 @@ body.modal-open .order-sticky-backdrop {
   mask-image: radial-gradient(
     ellipse 88% 70% at 54% 88%,
     #000 0%,
-    rgba(0, 0, 0, 0.55) 52%,
+    rgba(0, 0, 0, 0.45) 52%,
     transparent 80%
   );
   -webkit-mask-image: radial-gradient(
     ellipse 88% 70% at 54% 88%,
     #000 0%,
-    rgba(0, 0, 0, 0.55) 52%,
+    rgba(0, 0, 0, 0.45) 52%,
     transparent 80%
   );
-  mix-blend-mode: soft-light;
 }
 
 @keyframes sidebar-vinyl-drift {
@@ -4527,6 +4542,14 @@ body.modal-open .order-sticky-backdrop {
 .sidebar-v2 > .sidebar-footer {
   position: relative;
   z-index: 1;
+  isolation: isolate;
+}
+
+.sidebar-v2 .sidebar-brand,
+.sidebar-v2 .sidebar-cta,
+.sidebar-v2 .sidebar-link-v2,
+.sidebar-v2 .sidebar-footer-item {
+  isolation: isolate;
 }
 
 .sidebar-top {
