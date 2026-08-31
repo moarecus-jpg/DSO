@@ -3620,6 +3620,12 @@ body.modal-open .order-sticky-backdrop {
   font-size: 0.95rem;
 }
 
+.modal-new-order .modal-actions {
+  background: transparent;
+  margin-top: 0.15rem;
+  padding-top: 0.85rem;
+}
+
 .modal-add-record:has(.app-select--open) {
   overflow: visible;
 }
