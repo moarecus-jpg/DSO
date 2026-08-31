@@ -4482,14 +4482,14 @@ body.modal-open .order-sticky-backdrop {
   display: flex;
   flex-direction: column;
   padding: 1.75rem 1rem 1.25rem;
-  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  border-right: none;
   background: transparent;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow: none;
   height: 100%;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   isolation: isolate;
 }
 
@@ -4500,11 +4500,17 @@ body.modal-open .order-sticky-backdrop {
   pointer-events: none;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% -4%, rgba(124, 58, 237, 0.14) 0%, rgba(124, 58, 237, 0.05) 22%, transparent 48%),
+    radial-gradient(
+      circle at 9% 8%,
+      rgba(124, 58, 237, 0.22) 0%,
+      rgba(124, 58, 237, 0.1) 16%,
+      rgba(124, 58, 237, 0.04) 28%,
+      transparent 46%
+    ),
     repeating-linear-gradient(
       90deg,
-      rgba(255, 255, 255, 0.014) 0 1px,
-      transparent 1px 4px
+      rgba(255, 255, 255, 0.008) 0 1px,
+      transparent 1px 5px
     ),
     linear-gradient(180deg, #0b0a0e 0%, #09090b 54%, #08080a 100%);
 }
@@ -4518,27 +4524,27 @@ body.modal-open .order-sticky-backdrop {
   opacity: 1;
   background-image:
     radial-gradient(
-      circle at -18% 22%,
+      circle at -6% 10%,
       transparent 56%,
-      rgba(139, 92, 246, 0.09) 61%,
-      rgba(124, 58, 237, 0.045) 65%,
-      transparent 71%
+      rgba(139, 92, 246, 0.16) 60.5%,
+      rgba(124, 58, 237, 0.09) 64%,
+      transparent 70%
     ),
     radial-gradient(
-      circle at -18% 22%,
+      circle at -6% 10%,
       transparent 54%,
-      rgba(255, 255, 255, 0.016) 55.5%,
-      rgba(255, 255, 255, 0.008) 56.2%,
+      rgba(255, 255, 255, 0.028) 55.5%,
+      rgba(255, 255, 255, 0.014) 56.2%,
       transparent 57%
     ),
     repeating-radial-gradient(
-      circle at -18% 22%,
-      rgba(255, 255, 255, 0.026) 0 0.55px,
+      circle at -6% 10%,
+      rgba(255, 255, 255, 0.032) 0 0.55px,
       transparent 0.55px 4.6px
     ),
     repeating-radial-gradient(
-      circle at -18% 22%,
-      rgba(255, 255, 255, 0.014) 0 0.55px,
+      circle at -6% 10%,
+      rgba(255, 255, 255, 0.018) 0 0.55px,
       transparent 0.55px 4.6px
     );
   mask-image: linear-gradient(
@@ -4618,30 +4624,61 @@ body.modal-open .order-sticky-backdrop {
   isolation: isolate;
 }
 
-.sidebar-v2 .sidebar-brand,
 .sidebar-v2 .sidebar-cta,
 .sidebar-v2 .sidebar-link-v2,
 .sidebar-v2 .sidebar-footer-item {
   isolation: isolate;
 }
 
-/* Opaque card surfaces — vinyl stays in sidebar gaps, not on buttons */
+/* Logo area shows vinyl arc — keep brand surface transparent */
 .sidebar-v2 .sidebar-brand {
-  background-color: #101013;
-  background-image: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.06),
-    rgba(255, 255, 255, 0.03)
-  );
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+  background: transparent;
+  background-image: none;
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow: none;
+}
+
+.sidebar-v2 .sidebar-brand::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  z-index: -1;
+  width: 18rem;
+  height: 18rem;
+  transform: translate(-54%, -56%);
+  pointer-events: none;
+  border-radius: 50%;
+  background-image:
+    radial-gradient(
+      circle,
+      transparent 51%,
+      rgba(139, 92, 246, 0.34) 56%,
+      rgba(167, 139, 250, 0.42) 57.8%,
+      rgba(124, 58, 237, 0.24) 60.5%,
+      transparent 66%
+    ),
+    radial-gradient(
+      circle,
+      transparent 53.5%,
+      rgba(255, 255, 255, 0.05) 55%,
+      rgba(255, 255, 255, 0.02) 56%,
+      transparent 57.5%
+    ),
+    repeating-radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.03) 0 0.55px,
+      transparent 0.55px 4.6px
+    );
+  opacity: 0.95;
 }
 
 .sidebar-v2 .sidebar-brand:hover {
-  background-color: #141418;
-  background-image: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.08),
-    rgba(255, 255, 255, 0.04)
-  );
+  background-color: rgba(255, 255, 255, 0.03);
+  background-image: none;
 }
 
 .sidebar-v2 .sidebar-link-v2 {
@@ -4706,6 +4743,7 @@ body.modal-open .order-sticky-backdrop {
   gap: 0.5rem;
   flex: 1;
   min-height: 0;
+  overflow-x: visible;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
