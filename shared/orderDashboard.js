@@ -1,7 +1,7 @@
 const DAY_MS = 24 * 60 * 60 * 1000;
 export const ATTENTION_IDLE_DAYS = 10;
 export const RECENT_DAYS = 7;
-export const ORDERS_PAGE_SIZE = 8;
+export const ORDERS_PAGE_SIZE = 4;
 
 export const ORDER_CHIPS = ["all", "open", "waiting", "recent", "attention"];
 export const ORDER_SORTS = ["recent", "oldest", "items", "members"];
