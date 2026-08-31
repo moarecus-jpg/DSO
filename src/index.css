@@ -163,6 +163,7 @@ code {
   width: 100%;
   max-width: 12.469rem;
   height: auto;
+  filter: drop-shadow(0 0 18px rgba(124, 58, 237, 0.28));
 }
 
 .brand-mark--login .brand-mark-logo {
@@ -4501,11 +4502,10 @@ body.modal-open .order-sticky-backdrop {
   overflow: hidden;
   background:
     radial-gradient(
-      circle at 9% 8%,
-      rgba(124, 58, 237, 0.22) 0%,
-      rgba(124, 58, 237, 0.1) 16%,
-      rgba(124, 58, 237, 0.04) 28%,
-      transparent 46%
+      circle at 8.5% 5.5%,
+      rgba(124, 58, 237, 0.1) 0%,
+      rgba(124, 58, 237, 0.04) 12%,
+      transparent 28%
     ),
     repeating-linear-gradient(
       90deg,
@@ -4524,30 +4524,32 @@ body.modal-open .order-sticky-backdrop {
   opacity: 1;
   background-image:
     radial-gradient(
-      circle at -6% 10%,
-      transparent 56%,
-      rgba(139, 92, 246, 0.16) 60.5%,
-      rgba(124, 58, 237, 0.09) 64%,
-      transparent 70%
+      circle at -6% 8%,
+      transparent 58%,
+      rgba(139, 92, 246, 0.1) 62%,
+      rgba(124, 58, 237, 0.05) 65%,
+      transparent 71%
     ),
     radial-gradient(
-      circle at -6% 10%,
-      transparent 54%,
-      rgba(255, 255, 255, 0.028) 55.5%,
-      rgba(255, 255, 255, 0.014) 56.2%,
-      transparent 57%
+      circle at -6% 8%,
+      transparent 56%,
+      rgba(255, 255, 255, 0.018) 57%,
+      transparent 58%
     ),
     repeating-radial-gradient(
-      circle at -6% 10%,
-      rgba(255, 255, 255, 0.032) 0 0.55px,
-      transparent 0.55px 4.6px
-    ),
-    repeating-radial-gradient(
-      circle at -6% 10%,
-      rgba(255, 255, 255, 0.018) 0 0.55px,
+      circle at -6% 8%,
+      rgba(255, 255, 255, 0.022) 0 0.55px,
       transparent 0.55px 4.6px
     );
+  opacity: 0.65;
   mask-image: linear-gradient(
+    180deg,
+    #000 0%,
+    #000 16%,
+    rgba(0, 0, 0, 0.45) 24%,
+    transparent 34%
+  ),
+  linear-gradient(
     105deg,
     rgba(0, 0, 0, 0.35) 0%,
     #000 14%,
@@ -4555,6 +4557,13 @@ body.modal-open .order-sticky-backdrop {
     rgba(0, 0, 0, 0.3) 100%
   );
   -webkit-mask-image: linear-gradient(
+    180deg,
+    #000 0%,
+    #000 16%,
+    rgba(0, 0, 0, 0.45) 24%,
+    transparent 34%
+  ),
+  linear-gradient(
     105deg,
     rgba(0, 0, 0, 0.35) 0%,
     #000 14%,
@@ -4630,7 +4639,7 @@ body.modal-open .order-sticky-backdrop {
   isolation: isolate;
 }
 
-/* Logo area shows vinyl arc — keep brand surface transparent */
+/* Logo — no card frame; vinyl look comes from the SVG mark itself */
 .sidebar-v2 .sidebar-brand {
   position: relative;
   z-index: 1;
@@ -4639,73 +4648,7 @@ body.modal-open .order-sticky-backdrop {
   background-image: none;
   border: none;
   box-shadow: none;
-  padding: 0.35rem 0;
-}
-
-.sidebar-v2 .sidebar-brand::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  z-index: -1;
-  width: 21rem;
-  height: 21rem;
-  transform: translate(-50%, -52%);
-  pointer-events: none;
-  border-radius: 50%;
-  background-image:
-    radial-gradient(
-      circle,
-      transparent 47%,
-      rgba(124, 58, 237, 0.1) 56%,
-      rgba(139, 92, 246, 0.38) 61%,
-      rgba(196, 181, 253, 0.55) 63%,
-      rgba(139, 92, 246, 0.42) 65%,
-      rgba(124, 58, 237, 0.22) 68%,
-      rgba(124, 58, 237, 0.08) 74%,
-      transparent 80%
-    ),
-    radial-gradient(
-      circle,
-      transparent 52.5%,
-      rgba(255, 255, 255, 0.1) 54.8%,
-      rgba(255, 255, 255, 0.04) 55.8%,
-      transparent 57.2%
-    ),
-    repeating-radial-gradient(
-      circle,
-      rgba(255, 255, 255, 0.045) 0 0.5px,
-      transparent 0.5px 4.2px
-    ),
-    repeating-radial-gradient(
-      circle,
-      rgba(255, 255, 255, 0.024) 0 0.5px,
-      transparent 0.5px 4.2px
-    );
-  filter: drop-shadow(0 0 24px rgba(124, 58, 237, 0.42))
-    drop-shadow(0 0 48px rgba(124, 58, 237, 0.18));
-  opacity: 1;
-}
-
-.sidebar-v2 .sidebar-brand::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  z-index: -2;
-  width: 24rem;
-  height: 24rem;
-  transform: translate(-50%, -52%);
-  pointer-events: none;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    transparent 50%,
-    rgba(124, 58, 237, 0.18) 62%,
-    rgba(139, 92, 246, 0.1) 70%,
-    transparent 82%
-  );
-  filter: blur(10px);
+  padding: 0.15rem 0 0.35rem;
 }
 
 .sidebar-v2 .sidebar-brand:hover {
