@@ -5273,8 +5273,10 @@ body.modal-open .order-sticky-backdrop {
 }
 
 .orders-page-header {
+  position: relative;
+  z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 1rem 1.25rem;
   margin-bottom: 1.35rem;
@@ -5307,7 +5309,12 @@ body.modal-open .order-sticky-backdrop {
   max-width: 14rem;
   padding: 0.45rem 0.65rem 0.45rem 0.5rem;
   border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.04);
+  background-color: #101013;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.03)
+  );
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.14);
   color: inherit;
@@ -5318,7 +5325,12 @@ body.modal-open .order-sticky-backdrop {
 }
 
 .header-account-card:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background-color: #141418;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.04)
+  );
   border-color: rgba(255, 255, 255, 0.12);
   color: inherit;
   text-decoration: none;
@@ -5360,7 +5372,12 @@ body.modal-open .order-sticky-backdrop {
   flex-shrink: 0;
   border-radius: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
+  background-color: #101013;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.03)
+  );
   color: rgba(255, 255, 255, 0.55);
   cursor: pointer;
   transition:
@@ -5370,7 +5387,12 @@ body.modal-open .order-sticky-backdrop {
 }
 
 .header-account-logout:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background-color: #141418;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.04)
+  );
   border-color: rgba(255, 255, 255, 0.12);
   color: #fafafa;
 }
@@ -5658,6 +5680,8 @@ body.modal-open .order-sticky-backdrop {
 }
 
 .order-chips-row {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -5681,7 +5705,12 @@ body.modal-open .order-sticky-backdrop {
   padding: 0.45rem 0.85rem;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
+  background-color: #101013;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.03)
+  );
   color: rgba(255, 255, 255, 0.7);
   font-size: 0.82rem;
   font-weight: 600;
@@ -5691,7 +5720,12 @@ body.modal-open .order-sticky-backdrop {
 }
 
 .order-chip.active {
-  background: rgba(139, 92, 246, 0.2);
+  background-color: #1a1528;
+  background-image: linear-gradient(
+    180deg,
+    rgba(139, 92, 246, 0.24),
+    rgba(124, 58, 237, 0.14)
+  );
   border-color: rgba(167, 139, 250, 0.45);
   color: #ddd6fe;
 }
@@ -5756,7 +5790,12 @@ body.modal-open .order-sticky-backdrop {
   padding: 0.5rem 0.95rem;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
+  background-color: #101013;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.03)
+  );
   color: rgba(255, 255, 255, 0.72);
   font: inherit;
   font-size: 0.82rem;
@@ -5767,7 +5806,12 @@ body.modal-open .order-sticky-backdrop {
 .orders-filter-btn:hover,
 .orders-filter-btn.active {
   border-color: rgba(167, 139, 250, 0.45);
-  background: rgba(139, 92, 246, 0.16);
+  background-color: #1a1528;
+  background-image: linear-gradient(
+    180deg,
+    rgba(139, 92, 246, 0.22),
+    rgba(124, 58, 237, 0.12)
+  );
   color: #ddd6fe;
 }
 
@@ -5905,11 +5949,17 @@ body.modal-open .order-sticky-backdrop {
   position: relative;
   display: flex;
   align-items: center;
-  flex: 1 1 25rem;
-  min-width: 15rem;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
+  background-color: #101013;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.03)
+  );
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
@@ -5923,12 +5973,12 @@ body.modal-open .order-sticky-backdrop {
 
 .orders-search-bar {
   grid-column: 2;
-  justify-self: center;
-  width: min(62.5rem, 100%);
-  max-width: 62.5rem;
+  justify-self: stretch;
+  width: 100%;
+  max-width: none;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: stretch;
   gap: 0.65rem;
   flex-shrink: 0;
   min-width: 0;
@@ -6108,7 +6158,12 @@ body.modal-open .order-sticky-backdrop {
 }
 
 .orders-search-filter .app-select-trigger {
-  background: rgba(255, 255, 255, 0.05);
+  background-color: #101013;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.03)
+  );
   backdrop-filter: none;
   border-color: rgba(255, 255, 255, 0.1);
 }
