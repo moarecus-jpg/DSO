@@ -60,18 +60,6 @@ export function CanceledOrders() {
 
       <div className={`orders-split${showDesktopPreview ? " orders-split--preview" : ""}`}>
         <div className="orders-split-list">
-          <div className="orders-split-scroll">
-            <OrderList
-              sessions={pageData.items}
-              loading={loading}
-              emptyMessage={
-                query.trim() ? t("common.noSearchResults") : t("orders.emptyCanceled")
-              }
-              selectedId={preview.selectedId}
-              onSelect={preview.selectSession}
-              previewMode={showDesktopPreview}
-            />
-          </div>
           {!loading && (
             <OrdersPagination
               page={pageData.page}
@@ -82,6 +70,21 @@ export function CanceledOrders() {
               onPageChange={setPage}
             />
           )}
+
+          <div className="orders-split-panel">
+            <div className="orders-split-scroll">
+              <OrderList
+                sessions={pageData.items}
+                loading={loading}
+                emptyMessage={
+                  query.trim() ? t("common.noSearchResults") : t("orders.emptyCanceled")
+                }
+                selectedId={preview.selectedId}
+                onSelect={preview.selectSession}
+                previewMode={showDesktopPreview}
+              />
+            </div>
+          </div>
         </div>
         {showDesktopPreview && (
           <OrderDetailPreview

@@ -64,18 +64,6 @@ export function ClosedOrders() {
 
       <div className={`orders-split${showDesktopPreview ? " orders-split--preview" : ""}`}>
         <div className="orders-split-list">
-          <div className="orders-split-scroll">
-            <OrderList
-              sessions={pageData.items}
-              loading={loading}
-              emptyMessage={
-                query.trim() ? t("common.noSearchResults") : t("orders.emptyClosed")
-              }
-              selectedId={preview.selectedId}
-              onSelect={preview.selectSession}
-              previewMode={showDesktopPreview}
-            />
-          </div>
           {!loading && (
             <OrdersPagination
               page={pageData.page}
@@ -86,6 +74,21 @@ export function ClosedOrders() {
               onPageChange={setPage}
             />
           )}
+
+          <div className="orders-split-panel">
+            <div className="orders-split-scroll">
+              <OrderList
+                sessions={pageData.items}
+                loading={loading}
+                emptyMessage={
+                  query.trim() ? t("common.noSearchResults") : t("orders.emptyClosed")
+                }
+                selectedId={preview.selectedId}
+                onSelect={preview.selectSession}
+                previewMode={showDesktopPreview}
+              />
+            </div>
+          </div>
         </div>
         {showDesktopPreview && (
           <OrderDetailPreview
