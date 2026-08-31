@@ -174,17 +174,17 @@ export function Home() {
               onSelect={preview.selectSession}
               previewMode={showDesktopPreview}
             />
-            {!loading && (
-              <OrdersPagination
-                page={pageData.page}
-                pageCount={pageData.pageCount}
-                from={pageData.from}
-                to={pageData.to}
-                total={pageData.total}
-                onPageChange={setPage}
-              />
-            )}
           </div>
+          {!loading && (
+            <OrdersPagination
+              page={pageData.page}
+              pageCount={pageData.pageCount}
+              from={pageData.from}
+              to={pageData.to}
+              total={pageData.total}
+              onPageChange={setPage}
+            />
+          )}
         </div>
         {showDesktopPreview && (
           <OrderDetailPreview
