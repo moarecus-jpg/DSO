@@ -4637,48 +4637,82 @@ body.modal-open .order-sticky-backdrop {
   overflow: visible;
   background: transparent;
   background-image: none;
-  border-color: rgba(255, 255, 255, 0.06);
+  border: none;
   box-shadow: none;
+  padding: 0.35rem 0;
 }
 
 .sidebar-v2 .sidebar-brand::before {
   content: "";
   position: absolute;
   left: 50%;
-  top: 48%;
+  top: 50%;
   z-index: -1;
-  width: 18rem;
-  height: 18rem;
-  transform: translate(-54%, -56%);
+  width: 21rem;
+  height: 21rem;
+  transform: translate(-50%, -52%);
   pointer-events: none;
   border-radius: 50%;
   background-image:
     radial-gradient(
       circle,
-      transparent 51%,
-      rgba(139, 92, 246, 0.34) 56%,
-      rgba(167, 139, 250, 0.42) 57.8%,
-      rgba(124, 58, 237, 0.24) 60.5%,
-      transparent 66%
+      transparent 47%,
+      rgba(124, 58, 237, 0.1) 56%,
+      rgba(139, 92, 246, 0.38) 61%,
+      rgba(196, 181, 253, 0.55) 63%,
+      rgba(139, 92, 246, 0.42) 65%,
+      rgba(124, 58, 237, 0.22) 68%,
+      rgba(124, 58, 237, 0.08) 74%,
+      transparent 80%
     ),
     radial-gradient(
       circle,
-      transparent 53.5%,
-      rgba(255, 255, 255, 0.05) 55%,
-      rgba(255, 255, 255, 0.02) 56%,
-      transparent 57.5%
+      transparent 52.5%,
+      rgba(255, 255, 255, 0.1) 54.8%,
+      rgba(255, 255, 255, 0.04) 55.8%,
+      transparent 57.2%
     ),
     repeating-radial-gradient(
       circle,
-      rgba(255, 255, 255, 0.03) 0 0.55px,
-      transparent 0.55px 4.6px
+      rgba(255, 255, 255, 0.045) 0 0.5px,
+      transparent 0.5px 4.2px
+    ),
+    repeating-radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.024) 0 0.5px,
+      transparent 0.5px 4.2px
     );
-  opacity: 0.95;
+  filter: drop-shadow(0 0 24px rgba(124, 58, 237, 0.42))
+    drop-shadow(0 0 48px rgba(124, 58, 237, 0.18));
+  opacity: 1;
+}
+
+.sidebar-v2 .sidebar-brand::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: -2;
+  width: 24rem;
+  height: 24rem;
+  transform: translate(-50%, -52%);
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    transparent 50%,
+    rgba(124, 58, 237, 0.18) 62%,
+    rgba(139, 92, 246, 0.1) 70%,
+    transparent 82%
+  );
+  filter: blur(10px);
 }
 
 .sidebar-v2 .sidebar-brand:hover {
-  background-color: rgba(255, 255, 255, 0.03);
+  background: transparent;
   background-image: none;
+  border: none;
+  box-shadow: none;
 }
 
 .sidebar-v2 .sidebar-link-v2 {
