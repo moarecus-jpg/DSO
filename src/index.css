@@ -4670,13 +4670,31 @@ body.modal-open .order-sticky-backdrop {
 
 .sidebar-logo-stage {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 15.5rem;
+  top: -0.35rem;
+  left: -0.75rem;
+  right: -0.75rem;
+  height: 16.5rem;
   z-index: 0;
   pointer-events: none;
-  overflow: hidden;
+  overflow: visible;
+  -webkit-mask-image: radial-gradient(
+    ellipse 94% 90% at 50% 45%,
+    #000 0%,
+    #000 52%,
+    rgba(0, 0, 0, 0.82) 68%,
+    rgba(0, 0, 0, 0.45) 80%,
+    rgba(0, 0, 0, 0.15) 90%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 94% 90% at 50% 45%,
+    #000 0%,
+    #000 52%,
+    rgba(0, 0, 0, 0.82) 68%,
+    rgba(0, 0, 0, 0.45) 80%,
+    rgba(0, 0, 0, 0.15) 90%,
+    transparent 100%
+  );
 }
 
 .sidebar-logo-stage::before {
@@ -4714,6 +4732,8 @@ body.modal-open .order-sticky-backdrop {
     );
   filter: drop-shadow(0 0 26px rgba(124, 58, 237, 0.45))
     drop-shadow(0 0 52px rgba(124, 58, 237, 0.2));
+  -webkit-mask-image: radial-gradient(circle, #000 58%, transparent 100%);
+  mask-image: radial-gradient(circle, #000 58%, transparent 100%);
 }
 
 .sidebar-logo-stage::after {
@@ -4733,6 +4753,8 @@ body.modal-open .order-sticky-backdrop {
     transparent 94%
   );
   filter: blur(11px);
+  -webkit-mask-image: radial-gradient(circle, #000 62%, transparent 100%);
+  mask-image: radial-gradient(circle, #000 62%, transparent 100%);
 }
 
 .sidebar-v2 .sidebar-top {
@@ -4840,9 +4862,9 @@ body.modal-open .order-sticky-backdrop {
   margin-bottom: 0;
   padding: 0.85rem 1rem;
   border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.14);
+  background: transparent;
+  border: none;
+  box-shadow: none;
   text-decoration: none;
   color: inherit;
   transition:
@@ -4854,8 +4876,9 @@ body.modal-open .order-sticky-backdrop {
 .sidebar-brand:hover {
   text-decoration: none;
   color: inherit;
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .sidebar-cta {
