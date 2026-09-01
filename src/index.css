@@ -4533,83 +4533,64 @@ body.modal-open .order-sticky-backdrop {
       rgba(124, 58, 237, 0.04) 32%,
       transparent 58%
     ),
-    repeating-linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.013) 0 1px,
-      transparent 1px 4px
-    ),
-    repeating-linear-gradient(
-      0deg,
-      rgba(255, 255, 255, 0.005) 0 1px,
-      transparent 1px 7px
-    ),
     linear-gradient(180deg, #0b0c15 0%, #09090b 48%, #08080a 100%);
 }
 
-/* Vinyl grooves across the full app — soft fade at the logo column, no hard seam */
+/* Subtle vinyl grooves — main content only, kept out of sidebar gaps */
 .layout-vinyl-bg::before {
   content: "";
   position: absolute;
   inset: -22% -38% -18% -48%;
   z-index: 0;
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='480' viewBox='0 0 320 480'%3E%3Cg fill='none' stroke='%238b5cf6' stroke-opacity='0.12' stroke-width='1'%3E%3Cellipse cx='160' cy='120' rx='140' ry='70'/%3E%3Cellipse cx='160' cy='120' rx='118' ry='58'/%3E%3Cellipse cx='160' cy='120' rx='96' ry='46'/%3E%3Cellipse cx='90' cy='260' rx='120' ry='62'/%3E%3Cellipse cx='90' cy='260' rx='98' ry='50'/%3E%3Cellipse cx='220' cy='380' rx='130' ry='68'/%3E%3C/g%3E%3C/svg%3E"),
-    repeating-radial-gradient(
-      circle at 12% 14%,
-      rgba(255, 255, 255, 0.02) 0 0.55px,
-      transparent 0.55px 4.8px
-    ),
     repeating-radial-gradient(
       circle at 68% 38%,
-      rgba(255, 255, 255, 0.022) 0 0.55px,
-      transparent 0.55px 4.8px
+      rgba(255, 255, 255, 0.014) 0 0.55px,
+      transparent 0.55px 5px
     ),
     repeating-radial-gradient(
       circle at 82% 72%,
-      rgba(255, 255, 255, 0.016) 0 0.55px,
-      transparent 0.55px 5px
+      rgba(255, 255, 255, 0.01) 0 0.55px,
+      transparent 0.55px 5.2px
     );
-  background-size: 22rem auto, auto, auto, auto;
-  background-position: left top, center, center, center;
-  background-repeat: no-repeat, repeat, repeat, repeat;
-  opacity: 0.72;
+  opacity: 0.5;
   mask-image: linear-gradient(
     90deg,
-    rgba(0, 0, 0, 0.55) 0%,
-    rgba(0, 0, 0, 0.75) 12rem,
-    #000 20rem
+    transparent 0%,
+    transparent 19rem,
+    rgba(0, 0, 0, 0.25) 22rem,
+    #000 28rem
   );
   -webkit-mask-image: linear-gradient(
     90deg,
-    rgba(0, 0, 0, 0.55) 0%,
-    rgba(0, 0, 0, 0.75) 12rem,
-    #000 20rem
+    transparent 0%,
+    transparent 19rem,
+    rgba(0, 0, 0, 0.25) 22rem,
+    #000 28rem
   );
   animation: layout-vinyl-drift 64s ease-in-out infinite;
 }
 
-/* Halftone + ambient purple wash in open layout areas */
+/* Ambient wash — no dot grid or line texture */
 .layout-vinyl-bg::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 0;
-  opacity: 0.55;
+  opacity: 0.42;
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.32'/%3E%3C/svg%3E"),
-    radial-gradient(circle, rgba(167, 139, 250, 0.14) 0.45px, transparent 0.62px),
     radial-gradient(
       ellipse 130% 90% at 38% 68%,
-      rgba(124, 58, 237, 0.1) 0%,
-      rgba(124, 58, 237, 0.04) 38%,
+      rgba(124, 58, 237, 0.08) 0%,
+      rgba(124, 58, 237, 0.03) 38%,
       transparent 70%
     ),
     radial-gradient(
       ellipse 80% 60% at 78% 22%,
-      rgba(99, 102, 241, 0.06) 0%,
+      rgba(99, 102, 241, 0.05) 0%,
       transparent 55%
     );
-  background-size: 180px 180px, 5px 5px, 100% 100%, 100% 100%;
+  background-size: 100% 100%, 100% 100%;
   background-position: center;
   mask-image: linear-gradient(
     180deg,
@@ -4721,13 +4702,13 @@ body.modal-open .order-sticky-backdrop {
 }
 
 .sidebar-v2 .sidebar-link-v2 {
-  background-color: rgba(14, 13, 22, 0.72);
+  background-color: rgba(14, 13, 22, 0.82);
   background-image: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.05) 0%,
     rgba(255, 255, 255, 0.02) 100%
   );
-  border-color: rgba(139, 92, 246, 0.14);
+  border-color: rgba(139, 92, 246, 0.1);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
