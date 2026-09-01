@@ -32,6 +32,7 @@ export function Sidebar() {
   return (
     <aside className="sidebar sidebar-v2">
       <div className="sidebar-top">
+        <div className="sidebar-logo-stage" aria-hidden="true" />
         <Link to="/" className="sidebar-brand" title="DSO — Discogs Slovenia Orders">
           <BrandMark variant="sidebar" />
         </Link>

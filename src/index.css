@@ -163,7 +163,8 @@ code {
   width: 100%;
   max-width: 12.469rem;
   height: auto;
-  filter: drop-shadow(0 0 18px rgba(124, 58, 237, 0.28));
+  position: relative;
+  z-index: 1;
 }
 
 .brand-mark--login .brand-mark-logo {
@@ -4503,9 +4504,9 @@ body.modal-open .order-sticky-backdrop {
   background:
     radial-gradient(
       circle at 8.5% 5.5%,
-      rgba(124, 58, 237, 0.1) 0%,
-      rgba(124, 58, 237, 0.04) 12%,
-      transparent 28%
+      rgba(124, 58, 237, 0.08) 0%,
+      rgba(124, 58, 237, 0.03) 10%,
+      transparent 20%
     ),
     repeating-linear-gradient(
       90deg,
@@ -4515,60 +4516,32 @@ body.modal-open .order-sticky-backdrop {
     linear-gradient(180deg, #0b0a0e 0%, #09090b 54%, #08080a 100%);
 }
 
-/* Concept 3: sweeping vinyl arc + fine grooves across full dashboard */
+/* Keep global arc above the fold only — logo glow lives on .sidebar-brand */
 .layout-vinyl-bg::before {
   content: "";
   position: absolute;
   inset: -20% -35% -15% -45%;
   z-index: 0;
-  opacity: 1;
   background-image:
-    radial-gradient(
-      circle at -6% 8%,
-      transparent 58%,
-      rgba(139, 92, 246, 0.1) 62%,
-      rgba(124, 58, 237, 0.05) 65%,
-      transparent 71%
-    ),
-    radial-gradient(
-      circle at -6% 8%,
-      transparent 56%,
-      rgba(255, 255, 255, 0.018) 57%,
-      transparent 58%
-    ),
     repeating-radial-gradient(
       circle at -6% 8%,
-      rgba(255, 255, 255, 0.022) 0 0.55px,
+      rgba(255, 255, 255, 0.018) 0 0.55px,
       transparent 0.55px 4.6px
     );
-  opacity: 0.65;
+  opacity: 0.45;
   mask-image: linear-gradient(
     180deg,
     #000 0%,
-    #000 16%,
-    rgba(0, 0, 0, 0.45) 24%,
-    transparent 34%
-  ),
-  linear-gradient(
-    105deg,
-    rgba(0, 0, 0, 0.35) 0%,
-    #000 14%,
-    #000 86%,
-    rgba(0, 0, 0, 0.3) 100%
+    #000 12%,
+    rgba(0, 0, 0, 0.35) 18%,
+    transparent 24%
   );
   -webkit-mask-image: linear-gradient(
     180deg,
     #000 0%,
-    #000 16%,
-    rgba(0, 0, 0, 0.45) 24%,
-    transparent 34%
-  ),
-  linear-gradient(
-    105deg,
-    rgba(0, 0, 0, 0.35) 0%,
-    #000 14%,
-    #000 86%,
-    rgba(0, 0, 0, 0.3) 100%
+    #000 12%,
+    rgba(0, 0, 0, 0.35) 18%,
+    transparent 24%
   );
   animation: layout-vinyl-drift 64s ease-in-out infinite;
 }
@@ -4630,7 +4603,12 @@ body.modal-open .order-sticky-backdrop {
 .sidebar-v2 > .sidebar-footer {
   position: relative;
   z-index: 1;
-  isolation: isolate;
+}
+
+.sidebar-v2 .sidebar-cta,
+.sidebar-v2 .sidebar-nav-v2 {
+  position: relative;
+  z-index: 2;
 }
 
 .sidebar-v2 .sidebar-cta,
@@ -4639,21 +4617,98 @@ body.modal-open .order-sticky-backdrop {
   isolation: isolate;
 }
 
-/* Logo — no card frame; vinyl look comes from the SVG mark itself */
+.sidebar-logo-stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 15.5rem;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.sidebar-logo-stage::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: 20rem;
+  height: 20rem;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background-image:
+    radial-gradient(
+      circle,
+      transparent 66%,
+      rgba(124, 58, 237, 0.12) 72%,
+      rgba(139, 92, 246, 0.42) 76%,
+      rgba(196, 181, 253, 0.58) 78%,
+      rgba(139, 92, 246, 0.4) 80.5%,
+      rgba(124, 58, 237, 0.22) 84%,
+      rgba(124, 58, 237, 0.08) 90%,
+      transparent 96%
+    ),
+    radial-gradient(
+      circle,
+      transparent 71%,
+      rgba(255, 255, 255, 0.1) 74.5%,
+      rgba(255, 255, 255, 0.04) 76%,
+      transparent 78.5%
+    ),
+    repeating-radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.045) 0 0.5px,
+      transparent 0.5px 4.2px
+    );
+  filter: drop-shadow(0 0 26px rgba(124, 58, 237, 0.45))
+    drop-shadow(0 0 52px rgba(124, 58, 237, 0.2));
+}
+
+.sidebar-logo-stage::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: 22rem;
+  height: 22rem;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    transparent 62%,
+    rgba(124, 58, 237, 0.2) 74%,
+    rgba(139, 92, 246, 0.1) 82%,
+    transparent 94%
+  );
+  filter: blur(11px);
+}
+
+.sidebar-v2 .sidebar-top {
+  position: relative;
+}
+
+/* Logo — no card frame; arc sits in .sidebar-logo-stage behind the mark */
 .sidebar-v2 .sidebar-brand {
   position: relative;
   z-index: 1;
-  overflow: visible;
-  background: transparent;
-  background-image: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 0 0.35rem;
+  padding: 0.55rem 0 0.65rem;
   border: none;
+  background: transparent;
   box-shadow: none;
-  padding: 0.15rem 0 0.35rem;
+}
+
+.sidebar-v2 .sidebar-brand .brand-mark {
+  position: relative;
+  z-index: 1;
 }
 
 .sidebar-v2 .sidebar-brand:hover {
   background: transparent;
-  background-image: none;
   border: none;
   box-shadow: none;
 }
@@ -4803,6 +4858,7 @@ body.modal-open .order-sticky-backdrop {
   border: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: none;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.14);
+  overflow: hidden;
   transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s,
     transform 0.15s;
 }
@@ -4810,11 +4866,11 @@ body.modal-open .order-sticky-backdrop {
 .sidebar-link-v2::before {
   content: "";
   position: absolute;
-  left: 0;
-  top: 0.72rem;
-  bottom: 0.72rem;
+  left: 0.5rem;
+  top: 0.62rem;
+  bottom: 0.62rem;
   width: 3px;
-  border-radius: 0 999px 999px 0;
+  border-radius: 999px;
   background: linear-gradient(180deg, #c4b5fd, #7c3aed);
   opacity: 0;
   transform: scaleY(0.65);

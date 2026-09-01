@@ -112,15 +112,50 @@ export function DsoLogo({ className }) {
             fill="black"
           />
         </mask>
+        <filter
+          id={`${uid}-glow`}
+          x="-40%"
+          y="-40%"
+          width="180%"
+          height="180%"
+          filterUnits="objectBoundingBox"
+        >
+          <feGaussianBlur stdDeviation="3.5" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
       </defs>
+
+      <circle
+        cx={DISC_CENTER}
+        cy={DISC_CENTER}
+        r={DISC_RADIUS + 7}
+        fill="none"
+        stroke="#7c3aed"
+        strokeWidth="2"
+        strokeOpacity="0.28"
+        filter={`url(#${uid}-glow)`}
+      />
+
+      <circle
+        cx={DISC_CENTER}
+        cy={DISC_CENTER}
+        r={DISC_RADIUS + 3}
+        fill="none"
+        stroke="#c4b5fd"
+        strokeWidth="1.8"
+        strokeOpacity="0.42"
+      />
 
       <circle
         cx={DISC_CENTER}
         cy={DISC_CENTER}
         r={DISC_RADIUS}
         fill={`url(#${discId})`}
-        stroke="#a78bfa"
-        strokeWidth="2"
+        stroke="#c4b5fd"
+        strokeWidth="2.6"
       />
 
       <g stroke="#a78bfa" strokeWidth="0.7">
