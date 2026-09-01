@@ -4077,7 +4077,12 @@ body.modal-open .order-sticky-backdrop {
 .layout-dashboard .card {
   border-radius: 1.25rem;
   border: 1px solid var(--glass-border);
-  background: var(--glass-bg);
+  background-color: #141418;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0.02)
+  );
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
@@ -4503,82 +4508,128 @@ body.modal-open .order-sticky-backdrop {
   overflow: hidden;
   background:
     radial-gradient(
-      circle at 8.5% 5.5%,
-      rgba(124, 58, 237, 0.08) 0%,
-      rgba(124, 58, 237, 0.03) 10%,
-      transparent 20%
+      ellipse 95% 75% at 12% 0%,
+      rgba(124, 58, 237, 0.18) 0%,
+      rgba(124, 58, 237, 0.08) 22%,
+      rgba(124, 58, 237, 0.03) 38%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 70% 55% at 88% 8%,
+      rgba(99, 102, 241, 0.12) 0%,
+      rgba(99, 102, 241, 0.04) 30%,
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse 110% 70% at 55% 100%,
+      rgba(124, 58, 237, 0.1) 0%,
+      rgba(124, 58, 237, 0.04) 32%,
+      transparent 58%
     ),
     repeating-linear-gradient(
       90deg,
-      rgba(255, 255, 255, 0.008) 0 1px,
-      transparent 1px 5px
+      rgba(255, 255, 255, 0.013) 0 1px,
+      transparent 1px 4px
     ),
-    linear-gradient(180deg, #0b0a0e 0%, #09090b 54%, #08080a 100%);
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.005) 0 1px,
+      transparent 1px 7px
+    ),
+    linear-gradient(180deg, #0c0a10 0%, #09090b 48%, #08080a 100%);
 }
 
-/* Keep global arc above the fold only — logo glow lives on .sidebar-brand */
+/* Sweeping vinyl grooves + purple arc across the dashboard */
 .layout-vinyl-bg::before {
   content: "";
   position: absolute;
-  inset: -20% -35% -15% -45%;
+  inset: -22% -38% -18% -48%;
   z-index: 0;
   background-image:
+    radial-gradient(
+      circle at -4% 11%,
+      transparent 54%,
+      rgba(139, 92, 246, 0.16) 60%,
+      rgba(124, 58, 237, 0.09) 64.5%,
+      rgba(139, 92, 246, 0.05) 68%,
+      transparent 74%
+    ),
+    radial-gradient(
+      circle at -4% 11%,
+      transparent 52%,
+      rgba(255, 255, 255, 0.03) 54.2%,
+      rgba(255, 255, 255, 0.012) 55.5%,
+      transparent 57%
+    ),
     repeating-radial-gradient(
-      circle at -6% 8%,
-      rgba(255, 255, 255, 0.018) 0 0.55px,
+      circle at -4% 11%,
+      rgba(255, 255, 255, 0.034) 0 0.55px,
       transparent 0.55px 4.6px
+    ),
+    repeating-radial-gradient(
+      circle at 68% 38%,
+      rgba(255, 255, 255, 0.022) 0 0.55px,
+      transparent 0.55px 4.8px
+    ),
+    repeating-radial-gradient(
+      circle at 82% 72%,
+      rgba(255, 255, 255, 0.016) 0 0.55px,
+      transparent 0.55px 5px
     );
-  opacity: 0.45;
+  opacity: 0.88;
   mask-image: linear-gradient(
-    180deg,
-    #000 0%,
+    108deg,
+    rgba(0, 0, 0, 0.55) 0%,
     #000 12%,
-    rgba(0, 0, 0, 0.35) 18%,
-    transparent 24%
+    #000 90%,
+    rgba(0, 0, 0, 0.45) 100%
   );
   -webkit-mask-image: linear-gradient(
-    180deg,
-    #000 0%,
+    108deg,
+    rgba(0, 0, 0, 0.55) 0%,
     #000 12%,
-    rgba(0, 0, 0, 0.35) 18%,
-    transparent 24%
+    #000 90%,
+    rgba(0, 0, 0, 0.45) 100%
   );
   animation: layout-vinyl-drift 64s ease-in-out infinite;
 }
 
-/* Concept 3: halftone dots fading in across the full layout */
+/* Halftone + ambient purple wash in open layout areas */
 .layout-vinyl-bg::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 0;
-  opacity: 0.38;
+  opacity: 0.55;
   background-image:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.32'/%3E%3C/svg%3E"),
-    radial-gradient(circle, rgba(167, 139, 250, 0.1) 0.45px, transparent 0.62px),
+    radial-gradient(circle, rgba(167, 139, 250, 0.14) 0.45px, transparent 0.62px),
     radial-gradient(
-      ellipse 120% 80% at 42% 72%,
-      rgba(124, 58, 237, 0.06) 0%,
-      rgba(124, 58, 237, 0.02) 40%,
-      transparent 68%
+      ellipse 130% 90% at 38% 68%,
+      rgba(124, 58, 237, 0.1) 0%,
+      rgba(124, 58, 237, 0.04) 38%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 80% 60% at 78% 22%,
+      rgba(99, 102, 241, 0.06) 0%,
+      transparent 55%
     );
-  background-size: 180px 180px, 6px 6px, 100% 100%;
+  background-size: 180px 180px, 5px 5px, 100% 100%, 100% 100%;
   background-position: center;
   mask-image: linear-gradient(
     180deg,
-    transparent 0%,
-    transparent 18%,
-    rgba(0, 0, 0, 0.28) 34%,
-    #000 52%,
-    rgba(0, 0, 0, 0.6) 100%
+    rgba(0, 0, 0, 0.35) 0%,
+    #000 14%,
+    #000 88%,
+    rgba(0, 0, 0, 0.5) 100%
   );
   -webkit-mask-image: linear-gradient(
     180deg,
-    transparent 0%,
-    transparent 18%,
-    rgba(0, 0, 0, 0.28) 34%,
-    #000 52%,
-    rgba(0, 0, 0, 0.6) 100%
+    rgba(0, 0, 0, 0.35) 0%,
+    #000 14%,
+    #000 88%,
+    rgba(0, 0, 0, 0.5) 100%
   );
 }
 
