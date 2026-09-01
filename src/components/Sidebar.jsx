@@ -26,7 +26,6 @@ const ORDER_LINKS = [
     icon: Folder,
     iconClass: "open",
     labelKey: "openOrders",
-    descKey: "openOrdersDesc",
     countKey: "open",
     isActive: (isActive, newOrderOpen) => isActive && !newOrderOpen,
   },
@@ -35,7 +34,6 @@ const ORDER_LINKS = [
     icon: Lock,
     iconClass: "closed",
     labelKey: "closedOrders",
-    descKey: "closedOrdersDesc",
     countKey: "closed",
     linkClass: "sidebar-link-v2--closed",
   },
@@ -44,7 +42,6 @@ const ORDER_LINKS = [
     icon: CircleOff,
     iconClass: "unplaced",
     labelKey: "unplacedOrders",
-    descKey: "unplacedOrdersDesc",
     countKey: "unplaced",
   },
   {
@@ -52,7 +49,6 @@ const ORDER_LINKS = [
     icon: Ban,
     iconClass: "canceled",
     labelKey: "canceledOrders",
-    descKey: "canceledOrdersDesc",
     countKey: "canceled",
   },
   {
@@ -60,14 +56,12 @@ const ORDER_LINKS = [
     icon: Package,
     iconClass: "items",
     labelKey: "myItems",
-    descKey: "myItemsDesc",
   },
   {
     to: "/my-statistics",
     icon: BarChart3,
     iconClass: "stats",
     labelKey: "myStatistics",
-    descKey: "myStatisticsDesc",
   },
 ];
 
@@ -97,13 +91,8 @@ export function Sidebar() {
             `sidebar-cta${newOrderOpen ? " sidebar-cta-active" : ""}`
           }
         >
-          <span className="sidebar-cta-icon" aria-hidden>
-            <Plus size={20} strokeWidth={2.5} />
-          </span>
-          <span className="sidebar-cta-text">
-            <span className="sidebar-cta-label">{t("nav.newOrder")}</span>
-            <span className="sidebar-cta-desc">{t("nav.newOrderDesc")}</span>
-          </span>
+          <Plus size={20} strokeWidth={2.5} />
+          {t("nav.newOrder")}
         </NavLink>
 
         <div className="sidebar-section">
@@ -141,10 +130,7 @@ export function Sidebar() {
                   >
                     <Icon size={18} strokeWidth={2.1} />
                   </span>
-                  <span className="sidebar-link-text">
-                    <span className="sidebar-link-label">{t(`nav.${item.labelKey}`)}</span>
-                    <span className="sidebar-link-desc">{t(`nav.${item.descKey}`)}</span>
-                  </span>
+                  <span className="sidebar-link-label">{t(`nav.${item.labelKey}`)}</span>
                   {count > 0 ? (
                     <span className="sidebar-link-count">{count}</span>
                   ) : (

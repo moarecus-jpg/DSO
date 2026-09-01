@@ -4830,55 +4830,22 @@ body.modal-open .order-sticky-backdrop {
 .sidebar-cta {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  justify-content: center;
+  gap: 0.5rem;
   width: 100%;
-  padding: 0.85rem 0.95rem;
+  padding: 0.9rem 1.1rem;
   margin-bottom: 0;
   border: 1px solid rgba(196, 181, 253, 0.22);
   border-radius: 1rem;
   background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 52%, #6366f1 100%);
   color: #fff;
-  font-size: 0.98rem;
+  font-size: 0.96rem;
   font-weight: 600;
   text-decoration: none;
   box-shadow:
     0 10px 30px rgba(124, 58, 237, 0.32),
     inset 0 1px 0 rgba(255, 255, 255, 0.14);
   transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-}
-
-.sidebar-cta-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.35rem;
-  height: 2.35rem;
-  border-radius: 0.72rem;
-  flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
-}
-
-.sidebar-cta-text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.08rem;
-  min-width: 0;
-  text-align: left;
-}
-
-.sidebar-cta-label {
-  font-size: 0.92rem;
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.sidebar-cta-desc {
-  font-size: 0.68rem;
-  font-weight: 500;
-  line-height: 1.2;
-  color: rgba(255, 255, 255, 0.72);
 }
 
 .sidebar-cta:hover {
@@ -5017,25 +4984,11 @@ body.modal-open .order-sticky-backdrop {
 
 .sidebar-link-label {
   min-width: 0;
-  line-height: 1.2;
-  font-size: 0.86rem;
+  flex: 1;
+  line-height: 1.25;
+  font-size: 0.9rem;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.92);
-}
-
-.sidebar-link-text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  min-width: 0;
-  flex: 1;
-}
-
-.sidebar-link-desc {
-  font-size: 0.67rem;
-  font-weight: 500;
-  line-height: 1.25;
-  color: rgba(167, 139, 250, 0.52);
 }
 
 .sidebar-link-chevron {
@@ -5067,10 +5020,6 @@ body.modal-open .order-sticky-backdrop {
 .sidebar-link-v2.active .sidebar-link-chevron {
   opacity: 0;
   transform: translateX(4px);
-}
-
-.sidebar-link-v2.active .sidebar-link-desc {
-  color: rgba(221, 214, 254, 0.72);
 }
 
 .sidebar-link-v2:hover .sidebar-link-chevron {
