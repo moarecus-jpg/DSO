@@ -79,7 +79,7 @@ export function DsoLogo({ className }) {
   return (
     <svg
       className={`dso-logo ${className ?? ""}`.trim()}
-      viewBox="0 0 200 200"
+      viewBox="-14 -14 228 228"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden
