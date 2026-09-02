@@ -35,23 +35,22 @@ export function PlacPageHeader({
           </div>
         </div>
 
-        <HeaderAccount className="plac-page-header-account" />
-      </div>
-
-      <div className="plac-page-header-row plac-page-header-row--bottom">
-        <div className="plac-toolbar-actions">
-          <Link to="/plac/cart" className="btn btn-ghost plac-cart-link">
-            <ShoppingCart size={18} aria-hidden />
-            {t("plac.cart")}
-            {cartCount > 0 && <span className="plac-cart-badge">{cartCount}</span>}
-          </Link>
-          <Link to="/plac/orders" className="btn btn-ghost plac-orders-link">
-            {t("plac.orders")}
-          </Link>
-          <button type="button" className="btn btn-primary plac-sell-btn" onClick={onSell}>
-            <Plus size={18} aria-hidden />
-            {t("plac.sell")}
-          </button>
+        <div className="plac-page-header-end">
+          <div className="plac-toolbar-actions">
+            <Link to="/plac/cart" className="btn btn-ghost plac-cart-link">
+              <ShoppingCart size={18} aria-hidden />
+              {t("plac.cart")}
+              {cartCount > 0 && <span className="plac-cart-badge">{cartCount}</span>}
+            </Link>
+            <Link to="/plac/orders" className="btn btn-ghost plac-orders-link">
+              {t("plac.orders")}
+            </Link>
+            <button type="button" className="btn btn-primary plac-sell-btn" onClick={onSell}>
+              <Plus size={18} aria-hidden />
+              {t("plac.sell")}
+            </button>
+          </div>
+          <HeaderAccount className="plac-page-header-account" />
         </div>
       </div>
     </header>

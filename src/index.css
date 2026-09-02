@@ -21,12 +21,13 @@
 /* App-wide custom scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(167, 139, 250, 0.42) rgba(255, 255, 255, 0.04);
+  scrollbar-color: rgba(167, 139, 250, 0.42) transparent;
 }
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-corner {
@@ -35,8 +36,12 @@
 
 ::-webkit-scrollbar-track {
   background: transparent;
-  margin-block: 6px;
-  margin-inline: 4px;
+  margin-block: 8px;
+  margin-inline: 3px;
+}
+
+::-webkit-scrollbar-track-piece {
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -52,11 +57,43 @@
   background-clip: padding-box;
 }
 
+/* Hide arrow buttons on Windows / legacy WebKit scrollbars */
 ::-webkit-scrollbar-button,
-::-webkit-scrollbar-button:single-button {
+::-webkit-scrollbar-button:single-button,
+::-webkit-scrollbar-button:double-button,
+::-webkit-scrollbar-button:vertical:start:decrement,
+::-webkit-scrollbar-button:vertical:end:increment,
+::-webkit-scrollbar-button:horizontal:start:decrement,
+::-webkit-scrollbar-button:horizontal:end:increment,
+::-webkit-scrollbar-button:single-button:vertical:decrement,
+::-webkit-scrollbar-button:single-button:vertical:increment,
+::-webkit-scrollbar-button:double-button:vertical:decrement,
+::-webkit-scrollbar-button:double-button:vertical:increment,
+::-webkit-scrollbar-button:start:decrement,
+::-webkit-scrollbar-button:end:increment {
+  -webkit-appearance: none;
+  appearance: none;
   display: none;
   width: 0;
   height: 0;
+  background: transparent;
+  border: none;
+}
+
+/* Inset scroll thumb inside rounded panels */
+.order-preview::-webkit-scrollbar-track,
+.orders-split--preview .orders-split-scroll::-webkit-scrollbar-track,
+.modal-body::-webkit-scrollbar-track,
+.sidebar-top::-webkit-scrollbar-track,
+.app-main-v2::-webkit-scrollbar-track {
+  margin-block: 14px;
+  margin-inline: 2px;
+}
+
+.order-preview,
+.orders-split--preview .orders-split-scroll {
+  scrollbar-color: rgba(167, 139, 250, 0.42) transparent;
+  clip-path: inset(0 round 1.35rem);
 }
 
 * {
@@ -8360,11 +8397,6 @@ a.order-preview-item-title:hover {
   gap: 1rem 1.25rem;
 }
 
-.plac-page-header-row--bottom {
-  justify-content: flex-end;
-  flex-wrap: wrap;
-}
-
 .plac-page-header-title {
   justify-self: start;
   min-width: 0;
@@ -8381,8 +8413,16 @@ a.order-preview-item-title:hover {
   width: 100%;
 }
 
-.plac-page-header-account {
+.plac-page-header-end {
   justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.plac-page-header-account {
+  flex-shrink: 0;
 }
 
 .page-plac .orders-page-header {
@@ -9202,28 +9242,19 @@ img.plac-user-avatar {
     justify-self: stretch;
   }
 
-  .plac-page-header-account {
+  .plac-page-header-end {
     margin-left: auto;
-  }
-
-  .plac-page-header-row--bottom {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .plac-toolbar {
-    flex-direction: column;
-    align-items: stretch;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
   .plac-toolbar-actions {
     flex-wrap: wrap;
-    justify-content: stretch;
+    justify-content: flex-end;
   }
 
   .plac-toolbar-actions .btn {
-    flex: 1 1 auto;
-    justify-content: center;
+    flex: 0 1 auto;
   }
 
   .plac-sell-btn {
