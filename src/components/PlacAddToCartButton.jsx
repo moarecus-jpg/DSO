@@ -3,7 +3,7 @@ import { useAuth } from "../hooks/useAuth.jsx";
 import { usePlacCart } from "../hooks/usePlacCart.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
 
-export function PlacAddToCartButton({ listing, className = "", large = false }) {
+export function PlacAddToCartButton({ listing, className = "", large = false, iconOnly = false }) {
   const { user } = useAuth();
   const { t } = useLocale();
   const { addItem, removeItem, isInCart } = usePlacCart();
@@ -20,9 +20,12 @@ export function PlacAddToCartButton({ listing, className = "", large = false }) 
     addItem(listing);
   }
 
+  const label = inCart ? t("plac.inCart") : t("plac.addToCart");
   const baseClass = large
     ? "btn btn-primary plac-add-to-cart plac-add-to-cart--detail"
-    : "btn btn-ghost btn-sm plac-add-to-cart";
+    : iconOnly
+      ? "btn btn-ghost btn-sm plac-add-to-cart plac-card-icon-btn"
+      : "btn btn-ghost btn-sm plac-add-to-cart";
 
   return (
     <button
@@ -30,9 +33,10 @@ export function PlacAddToCartButton({ listing, className = "", large = false }) 
       className={`${baseClass} ${inCart ? "plac-add-to-cart--active" : ""} ${className}`.trim()}
       onClick={handleClick}
       title={inCart ? t("plac.removeFromCart") : t("plac.addToCart")}
+      aria-label={label}
     >
-      {inCart ? <Check size={15} aria-hidden /> : <ShoppingCart size={15} aria-hidden />}
-      {inCart ? t("plac.inCart") : t("plac.addToCart")}
+      {inCart ? <Check size={16} aria-hidden /> : <ShoppingCart size={16} aria-hidden />}
+      {!iconOnly && label}
     </button>
   );
 }

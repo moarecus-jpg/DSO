@@ -101,7 +101,14 @@ export function PlacUser() {
       ) : (
         <div className={`plac-grid plac-user-gallery plac-grid--${view}`}>
           {filteredListings.map((listing) => (
-            <PlacListingCard key={listing.id} listing={listing} showSeller={false} showCart detailLink />
+            <PlacListingCard
+              key={listing.id}
+              listing={listing}
+              showSeller={false}
+              showCart
+              detailLink
+              iconActions={view === "large"}
+            />
           ))}
         </div>
       )}

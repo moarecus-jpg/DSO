@@ -8651,6 +8651,39 @@ a.order-preview-item-title:hover {
   font-size: 1.15rem;
 }
 
+.plac-grid--large .plac-card-bottom {
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.plac-grid--large .plac-card-footer {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.plac-grid--large .plac-card-actions {
+  justify-content: center;
+  flex-wrap: nowrap;
+  width: 100%;
+  min-height: unset;
+  gap: 0.4rem;
+}
+
+.plac-card-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.plac-card-icon-btn svg {
+  flex-shrink: 0;
+}
+
 .plac-grid--list {
   grid-template-columns: 1fr;
   gap: 0.85rem;

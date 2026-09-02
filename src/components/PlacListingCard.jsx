@@ -14,6 +14,7 @@ export function PlacListingCard({
   actions = null,
   showCart = false,
   detailLink = false,
+  iconActions = false,
 }) {
   const { t } = useLocale();
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ export function PlacListingCard({
 
   return (
     <article
-      className={`plac-card${detailLink ? " plac-card--clickable" : ""}`}
+      className={`plac-card${detailLink ? " plac-card--clickable" : ""}${iconActions ? " plac-card--icon-actions" : ""}`}
       onClick={detailLink ? handleCardClick : undefined}
       onKeyDown={detailLink ? handleCardKeyDown : undefined}
       role={detailLink ? "link" : undefined}
@@ -123,7 +124,7 @@ export function PlacListingCard({
           {(actions || showCart) && (
             <div className="plac-card-actions" onClick={(e) => e.stopPropagation()}>
               {showCart && listing.status !== "sold" && listing.status !== "removed" && (
-                <PlacAddToCartButton listing={listing} />
+                <PlacAddToCartButton listing={listing} iconOnly={iconActions} />
               )}
               {actions}
             </div>

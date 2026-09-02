@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Store } from "lucide-react";
+import { Plus, Store, BadgeCheck, Trash2 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { PlacListingCard } from "../components/PlacListingCard.jsx";
 import { PlacPageHeader } from "../components/PlacPageHeader.jsx";
@@ -134,6 +134,7 @@ export function Plac() {
                 listing={listing}
                 showSeller={false}
                 detailLink
+                iconActions={view === "large"}
                 actions={
                   <>
                     {listing.status !== "active" && (
@@ -145,19 +146,25 @@ export function Plac() {
                       <>
                         <button
                           type="button"
-                          className="btn btn-ghost btn-sm"
+                          className={`btn btn-ghost btn-sm${view === "large" ? " plac-card-icon-btn" : ""}`}
                           disabled={busyId === listing.id}
                           onClick={() => handleMarkSold(listing.id)}
+                          title={t("plac.markSold")}
+                          aria-label={t("plac.markSold")}
                         >
-                          {t("plac.markSold")}
+                          <BadgeCheck size={16} aria-hidden />
+                          {view !== "large" && t("plac.markSold")}
                         </button>
                         <button
                           type="button"
-                          className="btn btn-ghost btn-sm btn-danger-text"
+                          className={`btn btn-ghost btn-sm btn-danger-text${view === "large" ? " plac-card-icon-btn" : ""}`}
                           disabled={busyId === listing.id}
                           onClick={() => handleRemove(listing.id)}
+                          title={t("plac.remove")}
+                          aria-label={t("plac.remove")}
                         >
-                          {t("plac.remove")}
+                          <Trash2 size={16} aria-hidden />
+                          {view !== "large" && t("plac.remove")}
                         </button>
                       </>
                     )}
