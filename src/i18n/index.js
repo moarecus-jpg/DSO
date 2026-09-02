@@ -2,8 +2,8 @@ import sl from "./locales/sl.js";
 import en from "./locales/en.js";
 import { isTechnicalError } from "../utils/sanitizeError.js";
 
-export const LOCALES = ["sl", "en"];
-export const DEFAULT_LOCALE = "sl";
+export const LOCALES = ["en"];
+export const DEFAULT_LOCALE = "en";
 export const STORAGE_KEY = "dso_locale";
 
 const catalogs = { sl, en };
@@ -105,12 +105,6 @@ const SERVER_ERROR_MAP = {
 let activeLocale = DEFAULT_LOCALE;
 
 export function readStoredLocale() {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (LOCALES.includes(stored)) return stored;
-  } catch {
-    /* ignore */
-  }
   return DEFAULT_LOCALE;
 }
 
@@ -177,7 +171,7 @@ export function translateApiError(message, locale = activeLocale) {
 }
 
 export function dateLocale(locale = activeLocale) {
-  return locale === "en" ? "en-GB" : "sl-SI";
+  return "en-GB";
 }
 
 export function platCountLabel(n, locale = activeLocale) {

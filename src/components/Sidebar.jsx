@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { BrandMark } from "./BrandMark.jsx";
-import { LanguageToggle } from "./LanguageToggle.jsx";
 import { StealthModeToggle } from "./StealthModeToggle.jsx";
 import { NotificationToggle } from "./NotificationToggle.jsx";
 import { api } from "../api.js";
@@ -216,8 +215,6 @@ export function Sidebar() {
         <StealthModeToggle className="sidebar-footer-item" />
 
         <NotificationToggle className="sidebar-footer-item" />
-
-        <LanguageToggle className="sidebar-footer-item" compact />
       </div>
     </aside>
   );

@@ -13,7 +13,7 @@ function formatPeriodLabel(period, locale, kind) {
   const [year, month] = period.split("-");
   if (!year || !month) return period;
   const date = new Date(Number(year), Number(month) - 1, 1);
-  return date.toLocaleDateString(locale === "sl" ? "sl-SI" : "en-GB", {
+  return date.toLocaleDateString("en-GB", {
     month: "long",
     year: "numeric",
   });

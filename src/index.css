@@ -7993,6 +7993,11 @@ a.order-preview-item-title:hover {
     display: none;
   }
 
+  .plac-page-header-account,
+  .page-header-account {
+    display: none;
+  }
+
   .header-account-card {
     max-width: 11rem;
   }

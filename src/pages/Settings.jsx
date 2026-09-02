@@ -4,7 +4,6 @@ import { Disc3, ExternalLink, Lock, Shield, Unplug } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
-import { LanguageToggle } from "../components/LanguageToggle.jsx";
 
 function discogsCallbackFallback() {
   if (typeof window !== "undefined") {
@@ -90,11 +89,6 @@ export function Settings() {
           {message}
         </div>
       )}
-
-      <div className="card settings-card">
-        <h2>{t("language.label")}</h2>
-        <LanguageToggle />
-      </div>
 
       <div className="card settings-card">
         <h2>{t("settings.privacyTitle")}</h2>

@@ -14,7 +14,7 @@ export function orderPageTitle(session) {
   return name ? `${name} · DSO` : "DSO — Discogs Slovenia Orders";
 }
 
-export function orderShareDescription(session, locale = "sl") {
+export function orderShareDescription(session, locale = "en") {
   if (!session) return "";
 
   const seller = session.seller_username?.trim();
@@ -57,7 +57,7 @@ export function orderShareDescription(session, locale = "sl") {
   return parts.join(" · ");
 }
 
-export function orderEmailLinkLabel(session, { locale = "sl", action = "open" } = {}) {
+export function orderEmailLinkLabel(session, { locale = "en", action = "open" } = {}) {
   const title = displayOrderTitle(session);
   const isSl = locale === "sl";
   const actionLabel =

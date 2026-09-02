@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ChevronDown, LogOut } from "lucide-react";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
+import { useMediaQuery } from "../hooks/useMediaQuery.js";
 import { usePlacCounts } from "../hooks/usePlacCounts.js";
 import { PlacCartLink } from "./PlacCartLink.jsx";
 import { PlacOrdersLink } from "./PlacOrdersLink.jsx";
@@ -11,6 +12,8 @@ export function HeaderAccount({ className = "", compact = false }) {
   const { user, logout } = useAuth();
   const { t } = useLocale();
   const { isSeller } = usePlacCounts();
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const compactActions = compact || isMobile;
 
   if (!user) return null;
 
@@ -36,10 +39,14 @@ export function HeaderAccount({ className = "", compact = false }) {
     );
   }
 
+  if (isMobile) {
+    return null;
+  }
+
   return (
     <div className={`header-account-bar ${className}`.trim()}>
-      <PlacCartLink />
-      {isSeller && <PlacOrdersLink />}
+      <PlacCartLink compact={compactActions} />
+      {isSeller && <PlacOrdersLink compact={compactActions} />}
       <div className="header-account">
         <Link to="/settings" className="header-account-card">
         <UserAvatar

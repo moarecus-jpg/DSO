@@ -1,7 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Settings } from "lucide-react";
 import { BrandMark } from "./BrandMark.jsx";
-import { LanguageToggle } from "./LanguageToggle.jsx";
 import { NotificationToggle } from "./NotificationToggle.jsx";
 import { StealthModeToggle } from "./StealthModeToggle.jsx";
 import { HeaderAccount } from "./HeaderAccount.jsx";
@@ -22,8 +21,6 @@ export function MobileTopBar() {
       </Link>
 
       <div className="mobile-topbar-actions">
-        <LanguageToggle compact hideLabel className="mobile-topbar-lang" />
-
         <StealthModeToggle variant="icon" />
 
         <NotificationToggle variant="icon" />

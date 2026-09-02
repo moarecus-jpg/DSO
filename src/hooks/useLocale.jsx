@@ -1,8 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect } from "react";
 import {
   DEFAULT_LOCALE,
   LOCALES,
-  readStoredLocale,
   setActiveLocale,
   STORAGE_KEY,
   t as translate,
@@ -12,10 +11,9 @@ import {
 } from "../i18n/index.js";
 
 const LocaleContext = createContext(null);
+const locale = DEFAULT_LOCALE;
 
 export function LocaleProvider({ children }) {
-  const [locale, setLocaleState] = useState(readStoredLocale);
-
   useEffect(() => {
     setActiveLocale(locale);
     document.documentElement.lang = locale;
@@ -24,22 +22,17 @@ export function LocaleProvider({ children }) {
     } catch {
       /* ignore */
     }
-  }, [locale]);
-
-  const setLocale = useCallback((next) => {
-    if (LOCALES.includes(next)) setLocaleState(next);
   }, []);
 
-  const t = useCallback((key, params) => translate(key, params, locale), [locale]);
+  const setLocale = useCallback(() => {}, []);
 
-  const tx = useCallback(
-    (message) => translateApiError(message, locale),
-    [locale]
-  );
+  const t = useCallback((key, params) => translate(key, params, locale), []);
+
+  const tx = useCallback((message) => translateApiError(message, locale), []);
 
   const localeTag = dateLocale(locale);
 
-  const recordsLabel = useCallback((n) => platCountLabel(n, locale), [locale]);
+  const recordsLabel = useCallback((n) => platCountLabel(n, locale), []);
 
   return (
     <LocaleContext.Provider
