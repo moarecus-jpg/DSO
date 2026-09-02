@@ -31,7 +31,7 @@ export function MobileNav() {
           }
         >
           <NavIcon>
-            <Folder size={20} strokeWidth={2} />
+            <Folder size={18} strokeWidth={2} />
           </NavIcon>
           <span className="mobile-nav-label">{t("nav.mobileOpen")}</span>
         </NavLink>
@@ -41,7 +41,7 @@ export function MobileNav() {
           className={({ isActive }) => `mobile-nav-link${isActive ? " active" : ""}`}
         >
           <NavIcon>
-            <Lock size={20} strokeWidth={2} />
+            <Lock size={18} strokeWidth={2} />
           </NavIcon>
           <span className="mobile-nav-label">{t("nav.mobileClosed")}</span>
         </NavLink>
@@ -51,7 +51,7 @@ export function MobileNav() {
           className={({ isActive }) => `mobile-nav-link${isActive ? " active" : ""}`}
         >
           <NavIcon>
-            <CircleOff size={20} strokeWidth={2} />
+            <CircleOff size={18} strokeWidth={2} />
           </NavIcon>
           <span className="mobile-nav-label">{t("nav.mobileUnplaced")}</span>
         </NavLink>
@@ -61,7 +61,7 @@ export function MobileNav() {
           className={({ isActive }) => `mobile-nav-link${isActive ? " active" : ""}`}
         >
           <NavIcon>
-            <Ban size={20} strokeWidth={2} />
+            <Ban size={18} strokeWidth={2} />
           </NavIcon>
           <span className="mobile-nav-label">{t("nav.mobileCanceled")}</span>
         </NavLink>
@@ -71,7 +71,7 @@ export function MobileNav() {
           className={({ isActive }) => `mobile-nav-link${isActive ? " active" : ""}`}
         >
           <NavIcon>
-            <Package size={20} strokeWidth={2} />
+            <Package size={18} strokeWidth={2} />
           </NavIcon>
           <span className="mobile-nav-label">{t("nav.mobileItems")}</span>
         </NavLink>
@@ -81,7 +81,7 @@ export function MobileNav() {
           className={({ isActive }) => `mobile-nav-link${isActive ? " active" : ""}`}
         >
           <NavIcon>
-            <Store size={20} strokeWidth={2} />
+            <Store size={18} strokeWidth={2} />
           </NavIcon>
           <span className="mobile-nav-label">{t("nav.mobilePlac")}</span>
         </NavLink>
@@ -91,7 +91,7 @@ export function MobileNav() {
           className={({ isActive }) => `mobile-nav-link${isActive ? " active" : ""}`}
         >
           <NavIcon>
-            <BarChart3 size={20} strokeWidth={2} />
+            <BarChart3 size={18} strokeWidth={2} />
           </NavIcon>
           <span className="mobile-nav-label">{t("nav.mobileStatistics")}</span>
         </NavLink>
@@ -102,7 +102,7 @@ export function MobileNav() {
         className={() => `mobile-nav-fab${newOrderOpen ? " active" : ""}`}
         aria-label={t("nav.newOrder")}
       >
-        <Plus size={26} strokeWidth={2.5} />
+        <Plus size={22} strokeWidth={2.5} />
       </NavLink>
     </nav>
   );
