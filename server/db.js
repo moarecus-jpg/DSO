@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { formatOrderTitle } from "../shared/orderTitle.js";
+import { formatPlacListingFormat, normalizePlacYear } from "../shared/placFormat.js";
 import { normalizeStore } from "../shared/stores.js";
 import { hashPassword, verifyPassword } from "./auth/password.js";
 
@@ -1566,10 +1567,10 @@ function mapPlacListingRow(row) {
     artist: row.artist,
     title: row.title,
     thumbnailUrl: row.thumbnail_url,
-    year: row.year,
+    year: normalizePlacYear(row.year),
     genre: row.genre,
     country: row.country,
-    format: row.format,
+    format: formatPlacListingFormat(row.format) ?? row.format,
     priceValue: row.price_value,
     priceCurrency: row.price_currency ?? "EUR",
     mediaCondition: row.media_condition,

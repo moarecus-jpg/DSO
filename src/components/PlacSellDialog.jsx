@@ -4,6 +4,7 @@ import { Disc3, Loader2, Package, Plus, X } from "lucide-react";
 import { GRADES } from "../../shared/orderReview.js";
 import { parseDiscogsUrlList } from "../../shared/parseRecordUrl.js";
 import { formatPrice } from "../../shared/orderTotals.js";
+import { formatPlacListingFormat, normalizePlacYear } from "../../shared/placFormat.js";
 import {
   isSupportedPlacDiscogsUrl,
   PLAC_CATEGORIES,
@@ -488,8 +489,12 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
                           <div className="plac-preview-body">
                             <p className="plac-preview-title">{releaseTitle(release)}</p>
                             <ul className="plac-preview-meta muted fine">
-                              {release.year != null && <li>{release.year}</li>}
-                              {release.format && <li>{release.format}</li>}
+                              {normalizePlacYear(release.year) != null && (
+                                <li>{normalizePlacYear(release.year)}</li>
+                              )}
+                              {formatPlacListingFormat(release.format) && (
+                                <li>{formatPlacListingFormat(release.format)}</li>
+                              )}
                               {release.genre && <li>{release.genre}</li>}
                               {release.fromListing && release.priceValue != null && (
                                 <li>{formatPrice(release.priceValue)}</li>

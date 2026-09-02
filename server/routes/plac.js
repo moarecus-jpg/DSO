@@ -28,6 +28,7 @@ import {
   isValidPlacCategory,
   isValidPlacOtherCondition,
 } from "../../shared/plac.js";
+import { normalizePlacYear } from "../../shared/placFormat.js";
 import { MOCK_USER } from "../mock.js";
 
 const router = Router();
@@ -130,7 +131,7 @@ async function createVinylPlacListing(userId, url, fields) {
     artist: release.artist,
     title: release.title,
     thumbnailUrl: release.thumbnailUrl,
-    year: release.year,
+    year: normalizePlacYear(release.year),
     genre: release.genre,
     country: release.country,
     format: release.format,

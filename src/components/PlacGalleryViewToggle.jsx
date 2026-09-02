@@ -1,16 +1,14 @@
-import { Grid2x2, LayoutGrid, List, Maximize2 } from "lucide-react";
+import { LayoutGrid, List, Maximize2 } from "lucide-react";
 import { PLAC_GALLERY_VIEWS } from "../hooks/usePlacGalleryView.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 
 const VIEW_ICONS = {
-  compact: Grid2x2,
   default: LayoutGrid,
   large: Maximize2,
   list: List,
 };
 
 const VIEW_LABEL_KEYS = {
-  compact: "plac.viewCompact",
   default: "plac.viewDefault",
   large: "plac.viewLarge",
   list: "plac.viewList",

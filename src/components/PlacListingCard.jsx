@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { ExternalLink } from "lucide-react";
 import { formatPrice } from "../../shared/orderTotals.js";
 import { placListingTitle } from "../../shared/plac.js";
+import { formatPlacListingFormat, normalizePlacYear } from "../../shared/placFormat.js";
 import { PlacAddToCartButton } from "./PlacAddToCartButton.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { resolveUserAvatarUrl } from "../utils/userAvatarUrl.js";
@@ -19,6 +20,8 @@ export function PlacListingCard({
   const isVinyl = listing.listingType !== "other";
   const hasLink = Boolean(listing.releaseUrl);
   const titleText = placListingTitle(listing);
+  const displayYear = normalizePlacYear(listing.year);
+  const displayFormat = formatPlacListingFormat(listing.format);
 
   function handleCardClick(event) {
     if (!detailLink) return;
@@ -71,13 +74,13 @@ export function PlacListingCard({
         {isVinyl ? (
           <div className="plac-card-release-info">
             <div className="plac-card-meta">
-              {listing.year != null && <span>{listing.year}</span>}
+              {displayYear != null && <span>{displayYear}</span>}
               {listing.genre && <span>{listing.genre}</span>}
               {listing.country && <span>{listing.country}</span>}
             </div>
 
-            {listing.format && (
-              <p className="plac-card-format muted fine">{listing.format}</p>
+            {displayFormat && (
+              <p className="plac-card-format muted fine">{displayFormat}</p>
             )}
 
             <div className="plac-card-conditions">

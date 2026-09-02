@@ -1,4 +1,5 @@
 import { toEurPrice } from "../../shared/currency.js";
+import { buildPlacReleaseFormat, normalizePlacYear } from "../../shared/placFormat.js";
 import { parseDiscogsRecordUrl } from "../../shared/parseRecordUrl.js";
 import { MOCK_INVENTORY } from "../mock.js";
 import { assertDiscogsAuth, buildAppDiscogsHeaders } from "./auth.js";
@@ -162,14 +163,6 @@ export async function resolveRecordFromUrl(url, note, options = {}) {
   );
 }
 
-function releaseFormatLabel(formats) {
-  if (!formats?.length) return null;
-  return formats
-    .map((f) => [f.name, f.descriptions?.join(", ")].filter(Boolean).join(" "))
-    .filter(Boolean)
-    .join(" / ");
-}
-
 function fromReleasePayloadPlac(data) {
   const artist = artistsLabel(data.artists) ?? null;
   const title = data.title ?? null;
@@ -179,10 +172,10 @@ function fromReleasePayloadPlac(data) {
     artist,
     title,
     thumbnailUrl,
-    year: data.year ?? null,
+    year: normalizePlacYear(data.year),
     genre: data.genres?.join(", ") ?? null,
     country: data.country ?? null,
-    format: releaseFormatLabel(data.formats),
+    format: buildPlacReleaseFormat(data.formats),
   };
 }
 
