@@ -12,13 +12,13 @@ import {
   computeDashboardStats,
   filterSessionsByChip,
   getRecentlyActiveSessions,
-  paginate,
   sortSessions,
 } from "../../shared/orderDashboard.js";
 import { sessionListPath } from "../../shared/orderStatus.js";
 import { api } from "../api.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { useOrderPreview } from "../hooks/useOrderPreview.js";
+import { useOrdersPageData } from "../hooks/useOrdersPageData.js";
 
 export function Home() {
   const navigate = useNavigate();
@@ -63,7 +63,7 @@ export function Home() {
     () => sortSessions(filterSessionsByChip(searchedSessions, chip), sort),
     [searchedSessions, chip, sort]
   );
-  const pageData = useMemo(() => paginate(filteredSessions, page), [filteredSessions, page]);
+  const { pageData, showPagination } = useOrdersPageData(filteredSessions, page);
   const pagedSessions = pageData.items;
 
   useEffect(() => {
@@ -125,7 +125,7 @@ export function Home() {
             }
           />
 
-          {!loading && (
+          {!loading && showPagination && (
             <OrdersPagination
               page={pageData.page}
               pageCount={pageData.pageCount}

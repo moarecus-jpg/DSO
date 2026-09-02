@@ -111,7 +111,6 @@ export function Plac() {
         query={query}
         onQueryChange={setQuery}
         placeholder={mine ? t("plac.searchPlaceholder") : t("plac.searchSellersPlaceholder")}
-        mine={mine}
         cartCount={cartCount}
         onSell={() => setSellOpen(true)}
       />

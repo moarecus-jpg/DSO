@@ -4,10 +4,11 @@ import { OrderList } from "../components/OrderList.jsx";
 import { OrdersPageHeader } from "../components/OrdersPageHeader.jsx";
 import { OrdersPagination } from "../components/OrdersPagination.jsx";
 import { filterSessions } from "../../shared/filterOrders.js";
-import { paginate, sortSessions } from "../../shared/orderDashboard.js";
+import { sortSessions } from "../../shared/orderDashboard.js";
 import { api } from "../api.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { useOrderPreview } from "../hooks/useOrderPreview.js";
+import { useOrdersPageData } from "../hooks/useOrdersPageData.js";
 
 export function CanceledOrders() {
   const { t } = useLocale();
@@ -32,13 +33,13 @@ export function CanceledOrders() {
     [sessions, query, searchMode, sort]
   );
 
-  const pageData = useMemo(() => paginate(filteredSessions, page), [filteredSessions, page]);
+  const { pageData, showPagination } = useOrdersPageData(filteredSessions, page);
 
   useEffect(() => {
     setPage(1);
   }, [query, searchMode, sort]);
 
-  const preview = useOrderPreview(pageData.items, {
+  const preview = useOrderPreview(filteredSessions, {
     onReopened: loadSessions,
   });
 
@@ -60,7 +61,7 @@ export function CanceledOrders() {
 
       <div className={`orders-split${showDesktopPreview ? " orders-split--preview" : ""}`}>
         <div className="orders-split-list">
-          {!loading && (
+          {!loading && showPagination && (
             <OrdersPagination
               page={pageData.page}
               pageCount={pageData.pageCount}
