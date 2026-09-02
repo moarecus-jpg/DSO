@@ -4909,6 +4909,37 @@ body.modal-open .order-sticky-backdrop {
   box-shadow: none;
 }
 
+/* Desktop: align sidebar vinyl logo top with page titles */
+@media (min-width: 769px) {
+  .layout-dashboard {
+    --page-header-offset: 2rem;
+    --sidebar-logo-size: min(12.469rem, calc(var(--sidebar-width) - 1.8rem));
+    --sidebar-logo-disc-inset: calc(var(--sidebar-logo-size) * 0.101);
+  }
+
+  .sidebar-v2 {
+    padding-top: var(--page-header-offset);
+  }
+
+  .sidebar-v2 .sidebar-brand {
+    align-items: flex-start;
+    margin: calc(-1 * var(--sidebar-logo-disc-inset)) 0 0.35rem;
+    padding: 0;
+  }
+
+  .sidebar-v2 .sidebar-brand .brand-mark--sidebar {
+    display: block;
+    width: var(--sidebar-logo-size);
+    max-width: 100%;
+  }
+
+  .sidebar-v2 .sidebar-brand .brand-mark-logo {
+    width: 100%;
+    max-width: none;
+    transform: none;
+  }
+}
+
 .sidebar-cta {
   display: flex;
   align-items: center;
