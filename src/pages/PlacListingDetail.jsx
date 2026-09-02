@@ -10,7 +10,6 @@ import { UserAvatar } from "../components/UserAvatar.jsx";
 import { api } from "../api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
-import { usePlacCart } from "../hooks/usePlacCart.jsx";
 import { resolveUserAvatarUrl } from "../utils/userAvatarUrl.js";
 
 function sellerLabel(seller) {
@@ -24,7 +23,6 @@ export function PlacListingDetail() {
   const navigate = useNavigate();
   const { t } = useLocale();
   const { user } = useAuth();
-  const { count: cartCount } = usePlacCart();
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -83,7 +81,6 @@ export function PlacListingDetail() {
         title={loading ? t("common.loading") : listing ? titleText : t("plac.listingNotFound")}
         subtitle={listing?.seller ? sellerLabel(listing.seller) : error ?? undefined}
         showSearch={false}
-        cartCount={cartCount}
         onSell={() => setSellOpen(true)}
       />
 

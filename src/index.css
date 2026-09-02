@@ -573,6 +573,10 @@ code {
   flex-wrap: wrap;
 }
 
+.page-header-account {
+  flex-shrink: 0;
+}
+
 .page-header h1 {
   margin: 0;
   font-size: 1.6rem;
@@ -5569,20 +5573,37 @@ body.modal-open .order-sticky-backdrop {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
-.orders-page-header-end {
+.orders-page-header--no-search .orders-page-header-account {
   grid-column: 2;
   grid-row: 1;
   justify-self: end;
   align-self: start;
+}
+
+.header-account-bar {
   display: flex;
   align-items: center;
   gap: 0.65rem;
   min-width: 0;
 }
 
-.orders-page-header--no-search .orders-page-header-account {
-  grid-column: auto;
-  grid-row: auto;
+.header-account-bar--compact {
+  gap: 0.35rem;
+}
+
+.plac-cart-link-compact {
+  position: relative;
+}
+
+.plac-cart-badge--compact {
+  position: absolute;
+  top: 0.1rem;
+  right: 0.1rem;
+  min-width: 1rem;
+  height: 1rem;
+  padding: 0 0.2rem;
+  font-size: 0.62rem;
+  line-height: 1rem;
 }
 
 .header-account {

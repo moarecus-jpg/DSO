@@ -7,13 +7,11 @@ import { PlacSellerCard } from "../components/PlacSellerCard.jsx";
 import { PlacSellDialog } from "../components/PlacSellDialog.jsx";
 import { api } from "../api.js";
 import { useLocale } from "../hooks/useLocale.jsx";
-import { usePlacCart } from "../hooks/usePlacCart.jsx";
 import { usePlacGalleryView } from "../hooks/usePlacGalleryView.js";
 
 export function Plac() {
   const { t } = useLocale();
   const { pathname } = useLocation();
-  const { count: cartCount } = usePlacCart();
   const { view, setView } = usePlacGalleryView();
   const mine = pathname === "/plac/mine";
   const [listings, setListings] = useState([]);
@@ -110,7 +108,6 @@ export function Plac() {
         query={query}
         onQueryChange={setQuery}
         placeholder={mine ? t("plac.searchPlaceholder") : t("plac.searchSellersPlaceholder")}
-        cartCount={cartCount}
         onSell={() => setSellOpen(true)}
         showGalleryView={mine && !loading && displayedListings.length > 0}
         galleryView={view}

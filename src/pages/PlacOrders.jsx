@@ -8,7 +8,6 @@ import { api } from "../api.js";
 import { UserAvatar } from "../components/UserAvatar.jsx";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
-import { usePlacCart } from "../hooks/usePlacCart.jsx";
 import { resolveUserAvatarUrl } from "../utils/userAvatarUrl.js";
 
 function partyLabel(party) {
@@ -20,7 +19,6 @@ function partyLabel(party) {
 export function PlacOrders() {
   const { t } = useLocale();
   const { user } = useAuth();
-  const { count: cartCount } = usePlacCart();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
@@ -55,7 +53,6 @@ export function PlacOrders() {
         title={t("plac.ordersTitle")}
         subtitle={t("plac.ordersSubtitle")}
         showSearch={false}
-        cartCount={cartCount}
         onSell={() => setSellOpen(true)}
       />
 

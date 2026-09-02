@@ -8,6 +8,7 @@ import { DiscogsAddAllToCartButton } from "../components/DiscogsAddAllToCartButt
 import { MemberChips } from "../components/MemberChips.jsx";
 import { OrderStoreAvatar } from "../components/OrderStoreAvatar.jsx";
 import { OrderStickyFooter } from "../components/OrderStickyFooter.jsx";
+import { HeaderAccount } from "../components/HeaderAccount.jsx";
 import { OrderTargetDate } from "../components/OrderTargetDate.jsx";
 import { OrderNotes } from "../components/OrderNotes.jsx";
 import { OrderReview } from "../components/OrderReview.jsx";
@@ -629,6 +630,7 @@ export function Session() {
               {t("session.addItem")}
             </button>
           )}
+          <HeaderAccount className="page-header-account" />
         </div>
       </header>
 

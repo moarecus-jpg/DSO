@@ -61,7 +61,6 @@ export function PlacCart() {
         title={t("plac.cartTitle")}
         subtitle={t("plac.cartSubtitle")}
         showSearch={false}
-        cartCount={items.length}
         onSell={() => setSellOpen(true)}
       />
 

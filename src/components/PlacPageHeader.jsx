@@ -4,7 +4,6 @@ import { HeaderAccount } from "./HeaderAccount.jsx";
 import { PlacGalleryViewToggle } from "./PlacGalleryViewToggle.jsx";
 import { PlacToolbarActions } from "./PlacToolbarActions.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
-import { usePlacCounts } from "../hooks/usePlacCounts.js";
 
 export function PlacPageHeader({
   title,
@@ -12,7 +11,6 @@ export function PlacPageHeader({
   query = "",
   onQueryChange,
   placeholder,
-  cartCount,
   onSell,
   showSell = true,
   showSearch = true,
@@ -23,7 +21,6 @@ export function PlacPageHeader({
   titleLeading,
 }) {
   const { t } = useLocale();
-  const { isSeller } = usePlacCounts();
   const searchEnabled = showSearch && typeof onQueryChange === "function";
 
   return (
@@ -65,12 +62,7 @@ export function PlacPageHeader({
         )}
 
         <div className="plac-page-header-end">
-          <PlacToolbarActions
-            cartCount={cartCount}
-            onSell={onSell}
-            showSell={showSell}
-            showOrders={isSeller}
-          />
+          <PlacToolbarActions onSell={onSell} showSell={showSell} />
           <HeaderAccount className="plac-page-header-account" />
         </div>
       </div>

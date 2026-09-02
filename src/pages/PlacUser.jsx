@@ -7,7 +7,6 @@ import { PlacSellDialog } from "../components/PlacSellDialog.jsx";
 import { UserAvatar } from "../components/UserAvatar.jsx";
 import { api } from "../api.js";
 import { useLocale } from "../hooks/useLocale.jsx";
-import { usePlacCart } from "../hooks/usePlacCart.jsx";
 import { usePlacGalleryView } from "../hooks/usePlacGalleryView.js";
 import { resolveUserAvatarUrl } from "../utils/userAvatarUrl.js";
 
@@ -20,7 +19,6 @@ function sellerLabel(seller) {
 export function PlacUser() {
   const { t } = useLocale();
   const { userId } = useParams();
-  const { count: cartCount } = usePlacCart();
   const { view, setView } = usePlacGalleryView();
   const [seller, setSeller] = useState(null);
   const [listings, setListings] = useState([]);
@@ -87,7 +85,6 @@ export function PlacUser() {
         query={query}
         onQueryChange={setQuery}
         placeholder={t("plac.searchPlaceholder")}
-        cartCount={cartCount}
         onSell={() => setSellOpen(true)}
         showGalleryView={!loading && filteredListings.length > 0}
         galleryView={view}

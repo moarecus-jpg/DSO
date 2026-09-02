@@ -2,11 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { BarChart3, Package, Truck } from "lucide-react";
 import { formatPrice } from "../../shared/orderTotals.js";
 import { HeaderAccount } from "../components/HeaderAccount.jsx";
-import { PlacToolbarActions } from "../components/PlacToolbarActions.jsx";
 import { api } from "../api.js";
 import { useLocale } from "../hooks/useLocale.jsx";
-import { usePlacCart } from "../hooks/usePlacCart.jsx";
-import { usePlacCounts } from "../hooks/usePlacCounts.js";
 
 const STATUS_FILTERS = ["all", "open", "closed"];
 
@@ -91,8 +88,6 @@ function PeriodTable({ title, rows, locale, t, maxTotal, kind = "month" }) {
 
 export function MyStatistics() {
   const { t, locale } = useLocale();
-  const { count: cartCount } = usePlacCart();
-  const { isSeller } = usePlacCounts();
   const [status, setStatus] = useState("all");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -132,10 +127,7 @@ export function MyStatistics() {
           <h1 className="orders-page-title">{t("statistics.title")}</h1>
           <p className="orders-page-subtitle">{subtitle}</p>
         </div>
-        <div className="orders-page-header-end">
-          <PlacToolbarActions cartCount={cartCount} showSell={false} showOrders={isSeller} />
-          <HeaderAccount className="orders-page-header-account" />
-        </div>
+        <HeaderAccount className="orders-page-header-account" />
       </header>
 
       <div className="stats-filter" role="tablist" aria-label={t("statistics.filterLabel")}>
