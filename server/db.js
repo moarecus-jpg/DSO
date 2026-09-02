@@ -1770,6 +1770,16 @@ export function countActivePlacListingsByUser(userId) {
   );
 }
 
+export function countPlacListingsByUser(userId) {
+  return (
+    db.prepare(`SELECT COUNT(*) AS c FROM plac_listings WHERE user_id = ?`).get(userId)?.c ?? 0
+  );
+}
+
+export function userIsPlacSeller(userId) {
+  return countPlacListingsByUser(userId) > 0;
+}
+
 export function updatePlacListing(id, userId, fields) {
   const existing = db
     .prepare("SELECT id FROM plac_listings WHERE id = ? AND user_id = ?")

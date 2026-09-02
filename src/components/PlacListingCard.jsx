@@ -95,33 +95,35 @@ export function PlacListingCard({
 
         {listing.note && <p className="plac-card-note muted fine">{listing.note}</p>}
 
-        <div className="plac-card-footer">
-          <span className="plac-card-price">{formatPrice(listing.priceValue)}</span>
+        <div className="plac-card-bottom">
+          <div className="plac-card-footer">
+            <span className="plac-card-price">{formatPrice(listing.priceValue)}</span>
 
-          {showSeller && listing.seller && (
-            <div className="plac-card-seller">
-              <UserAvatar
-                name={listing.seller.name}
-                avatarUrl={resolveUserAvatarUrl(listing.seller)}
-                size={28}
-              />
-              <span className="plac-card-seller-name">
-                {listing.seller.discogsUsername
-                  ? `@${listing.seller.discogsUsername}`
-                  : listing.seller.name}
-              </span>
+            {showSeller && listing.seller && (
+              <div className="plac-card-seller">
+                <UserAvatar
+                  name={listing.seller.name}
+                  avatarUrl={resolveUserAvatarUrl(listing.seller)}
+                  size={28}
+                />
+                <span className="plac-card-seller-name">
+                  {listing.seller.discogsUsername
+                    ? `@${listing.seller.discogsUsername}`
+                    : listing.seller.name}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {(actions || showCart) && (
+            <div className="plac-card-actions" onClick={(e) => e.stopPropagation()}>
+              {showCart && listing.status !== "sold" && listing.status !== "removed" && (
+                <PlacAddToCartButton listing={listing} />
+              )}
+              {actions}
             </div>
           )}
         </div>
-
-        {(actions || showCart) && (
-          <div className="plac-card-actions" onClick={(e) => e.stopPropagation()}>
-            {showCart && listing.status !== "sold" && listing.status !== "removed" && (
-              <PlacAddToCartButton listing={listing} />
-            )}
-            {actions}
-          </div>
-        )}
       </div>
     </article>
   );

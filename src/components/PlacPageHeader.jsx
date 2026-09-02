@@ -4,6 +4,7 @@ import { HeaderAccount } from "./HeaderAccount.jsx";
 import { PlacGalleryViewToggle } from "./PlacGalleryViewToggle.jsx";
 import { PlacToolbarActions } from "./PlacToolbarActions.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
+import { usePlacCounts } from "../hooks/usePlacCounts.js";
 
 export function PlacPageHeader({
   title,
@@ -22,6 +23,7 @@ export function PlacPageHeader({
   titleLeading,
 }) {
   const { t } = useLocale();
+  const { isSeller } = usePlacCounts();
   const searchEnabled = showSearch && typeof onQueryChange === "function";
 
   return (
@@ -32,12 +34,6 @@ export function PlacPageHeader({
         }`}
       >
         <div className="plac-page-header-title">
-          {backTo && (
-            <Link to={backTo.to} className="plac-page-header-back btn btn-ghost btn-sm">
-              <ArrowLeft size={16} aria-hidden />
-              {backTo.label}
-            </Link>
-          )}
           <div className="plac-page-header-title-main">
             {titleLeading}
             <div className="plac-page-header-title-text">
@@ -45,6 +41,12 @@ export function PlacPageHeader({
               {subtitle && <p className="orders-page-subtitle">{subtitle}</p>}
             </div>
           </div>
+          {backTo && (
+            <Link to={backTo.to} className="plac-page-header-back btn btn-ghost btn-sm">
+              <ArrowLeft size={16} aria-hidden />
+              {backTo.label}
+            </Link>
+          )}
         </div>
 
         {searchEnabled && (
@@ -63,7 +65,12 @@ export function PlacPageHeader({
         )}
 
         <div className="plac-page-header-end">
-          <PlacToolbarActions cartCount={cartCount} onSell={onSell} showSell={showSell} />
+          <PlacToolbarActions
+            cartCount={cartCount}
+            onSell={onSell}
+            showSell={showSell}
+            showOrders={isSeller}
+          />
           <HeaderAccount className="plac-page-header-account" />
         </div>
       </div>

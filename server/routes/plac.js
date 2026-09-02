@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   countActivePlacListingsByUser,
+  userIsPlacSeller,
   createPlacListing,
   createPlacOrder,
   deletePlacListing,
@@ -168,7 +169,10 @@ router.get("/mine", requireUser, (req, res) => {
 
 router.get("/counts", requireUser, (req, res) => {
   const userId = ensureRequestUser(req);
-  res.json({ mine: countActivePlacListingsByUser(userId) });
+  res.json({
+    mine: countActivePlacListingsByUser(userId),
+    isSeller: userIsPlacSeller(userId),
+  });
 });
 
 router.get("/orders", requireUser, (req, res) => {
