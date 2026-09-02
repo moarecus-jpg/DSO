@@ -8690,15 +8690,20 @@ a.order-preview-item-title:hover {
 }
 
 .plac-grid--list .plac-card {
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 0.85rem 1rem;
+  column-gap: 1rem;
   padding: 0.75rem 1rem;
   min-height: unset;
+  position: relative;
+  overflow: visible;
 }
 
 .plac-grid--list .plac-card-cover {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: start;
   width: 4.5rem;
   height: 4.5rem;
   min-width: 4.5rem;
@@ -8706,6 +8711,7 @@ a.order-preview-item-title:hover {
   flex-shrink: 0;
   aspect-ratio: unset;
   border-radius: 0.55rem;
+  z-index: 1;
 }
 
 .plac-grid--list .plac-card-cover img,
@@ -8714,32 +8720,35 @@ a.order-preview-item-title:hover {
 }
 
 .plac-grid--list .plac-card-body {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: row;
+  grid-column: 1 / -1;
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: subgrid;
   align-items: center;
-  gap: 0.5rem 0.75rem;
-  padding: 0;
-  overflow: hidden;
+  min-width: 0;
+  padding: 0 0 0 calc(4.5rem + 1rem);
+  overflow: visible;
 }
 
 .plac-grid--list .plac-card-title {
-  flex: 0 1 32%;
-  min-width: 3rem;
+  grid-column: 1;
+  justify-self: start;
+  min-width: 0;
+  max-width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .plac-grid--list .plac-card-release-info {
-  flex: 1;
+  grid-column: 2;
+  justify-self: center;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem 0.75rem;
-  min-width: 0;
-  overflow: hidden;
+  max-width: 100%;
+  white-space: nowrap;
 }
 
 .plac-grid--list .plac-card-meta {
@@ -8764,6 +8773,8 @@ a.order-preview-item-title:hover {
 }
 
 .plac-grid--list .plac-card-bottom {
+  grid-column: 3;
+  justify-self: end;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -8773,6 +8784,7 @@ a.order-preview-item-title:hover {
   padding-top: 0;
   border-top: none;
   flex-shrink: 0;
+  z-index: 1;
 }
 
 .plac-grid--list .plac-card-footer {
@@ -8801,7 +8813,7 @@ a.order-preview-item-title:hover {
 
 @media (max-width: 640px) {
   .plac-grid--list .plac-card {
-    gap: 0.65rem 0.75rem;
+    column-gap: 0.75rem;
     padding: 0.65rem 0.75rem;
   }
 
@@ -8812,9 +8824,8 @@ a.order-preview-item-title:hover {
     max-width: 3.75rem;
   }
 
-  .plac-grid--list .plac-card-title {
-    flex: 0 1 38%;
-    min-width: 2.5rem;
+  .plac-grid--list .plac-card-body {
+    padding-left: calc(3.75rem + 0.75rem);
   }
 
   .plac-grid--list .plac-card-format,
