@@ -1,28 +1,80 @@
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, X } from "lucide-react";
+import { Disc3, Loader2, Package, Plus, X } from "lucide-react";
 import { GRADES } from "../../shared/orderReview.js";
-import { parseDiscogsRecordUrl } from "../../shared/parseRecordUrl.js";
+import { parseDiscogsRecordUrl, parseDiscogsUrlList } from "../../shared/parseRecordUrl.js";
+import {
+  PLAC_CATEGORIES,
+  PLAC_OTHER_CONDITIONS,
+} from "../../shared/plac.js";
 import { api } from "../api.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { AppSelect } from "./AppSelect.jsx";
 
+function releaseTitle(release) {
+  return [release.artist, release.title].filter(Boolean).join(" — ") || "—";
+}
+
 export function PlacSellDialog({ open, onClose, onCreated }) {
   const { t } = useLocale();
-  const [releaseUrl, setReleaseUrl] = useState("");
-  const [preview, setPreview] = useState(null);
-  const [previewError, setPreviewError] = useState(null);
+  const [listingType, setListingType] = useState("vinyl");
+  const [urlsText, setUrlsText] = useState("");
+  const [previews, setPreviews] = useState([]);
+  const [previewErrors, setPreviewErrors] = useState([]);
   const [previewing, setPreviewing] = useState(false);
+  const [title, setTitle] = useState("");
+  const [brand, setBrand] = useState("");
+  const [category, setCategory] = useState("equipment");
+  const [thumbnailUrl, setThumbnailUrl] = useState("");
+  const [externalUrl, setExternalUrl] = useState("");
   const [priceValue, setPriceValue] = useState("");
   const [mediaCondition, setMediaCondition] = useState(GRADES[2]);
+  const [otherCondition, setOtherCondition] = useState(PLAC_OTHER_CONDITIONS[2]);
   const [sleeveCondition, setSleeveCondition] = useState("");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
+  const { valid: parsedUrls, invalid: invalidUrls } = useMemo(
+    () => parseDiscogsUrlList(urlsText),
+    [urlsText]
+  );
+
+  const validUrls = useMemo(
+    () =>
+      parsedUrls.filter((url) => {
+        const parsed = parseDiscogsRecordUrl(url);
+        return parsed.valid && parsed.releaseId != null;
+      }),
+    [parsedUrls]
+  );
+
+  const nonReleaseUrls = useMemo(
+    () =>
+      parsedUrls.filter((url) => {
+        const parsed = parseDiscogsRecordUrl(url);
+        return !(parsed.valid && parsed.releaseId != null);
+      }),
+    [parsedUrls]
+  );
+
   const gradeOptions = useMemo(
     () => GRADES.map((grade) => ({ value: grade, label: grade })),
     []
+  );
+
+  const otherConditionOptions = useMemo(
+    () => PLAC_OTHER_CONDITIONS.map((value) => ({ value, label: value })),
+    []
+  );
+
+  const categoryOptions = useMemo(
+    () =>
+      PLAC_CATEGORIES.filter((value) => value !== "vinyl").map((value) => ({
+        value,
+        label: t(`plac.category.${value}`),
+      })),
+    [t]
   );
 
   const sleeveOptions = useMemo(
@@ -35,11 +87,18 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
 
   useEffect(() => {
     if (!open) return undefined;
-    setReleaseUrl("");
-    setPreview(null);
-    setPreviewError(null);
+    setListingType("vinyl");
+    setUrlsText("");
+    setPreviews([]);
+    setPreviewErrors([]);
+    setTitle("");
+    setBrand("");
+    setCategory("equipment");
+    setThumbnailUrl("");
+    setExternalUrl("");
     setPriceValue("");
     setMediaCondition(GRADES[2]);
+    setOtherCondition(PLAC_OTHER_CONDITIONS[2]);
     setSleeveCondition("");
     setNote("");
     setError(null);
@@ -64,48 +123,109 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
     };
   }, [open, submitting, onClose]);
 
+  function clearPreviews() {
+    setPreviews([]);
+    setPreviewErrors([]);
+  }
+
   async function handlePreview() {
-    const trimmed = releaseUrl.trim();
-    const parsed = parseDiscogsRecordUrl(trimmed);
-    if (!parsed.valid || parsed.releaseId == null) {
-      setPreview(null);
-      setPreviewError(t("plac.invalidReleaseUrl"));
-      return;
-    }
+    if (validUrls.length === 0) return;
 
     setPreviewing(true);
-    setPreviewError(null);
+    setPreviewErrors([]);
+    setError(null);
     try {
-      const data = await api("/api/plac/preview", {
+      const data = await api("/api/plac/preview-batch", {
         method: "POST",
-        body: JSON.stringify({ releaseUrl: trimmed }),
+        body: JSON.stringify({ releaseUrls: validUrls }),
       });
-      setPreview(data.release);
+      setPreviews(data.releases ?? []);
+      setPreviewErrors(data.errors ?? []);
     } catch (err) {
-      setPreview(null);
-      setPreviewError(err.message);
+      setPreviews([]);
+      setPreviewErrors([]);
+      setError(err.message);
     } finally {
       setPreviewing(false);
     }
   }
+
+  const canSubmitVinyl = previews.length > 0 && Boolean(priceValue);
+  const canSubmitOther = Boolean(title.trim() && priceValue);
+
+  const publishLabel = useMemo(() => {
+    if (submitting) {
+      return previews.length > 1 ? t("plac.publishingMany") : t("plac.publishing");
+    }
+    if (listingType === "vinyl" && previews.length > 1) {
+      return t("plac.publishMany", { count: previews.length });
+    }
+    return t("plac.publish");
+  }, [submitting, listingType, previews.length, t]);
 
   async function handleSubmit(event) {
     event.preventDefault();
     setError(null);
     setSubmitting(true);
     try {
-      const { listing } = await api("/api/plac", {
+      if (listingType === "other") {
+        const { listing } = await api("/api/plac", {
+          method: "POST",
+          body: JSON.stringify({
+            listingType: "other",
+            title: title.trim(),
+            brand: brand.trim() || null,
+            category,
+            thumbnailUrl: thumbnailUrl.trim() || null,
+            externalUrl: externalUrl.trim() || null,
+            priceValue,
+            mediaCondition: otherCondition,
+            note,
+          }),
+        });
+        onCreated?.([listing]);
+        onClose();
+        return;
+      }
+
+      if (previews.length === 1) {
+        const { listing } = await api("/api/plac", {
+          method: "POST",
+          body: JSON.stringify({
+            listingType: "vinyl",
+            releaseUrl: previews[0].releaseUrl ?? validUrls[0],
+            priceValue,
+            mediaCondition,
+            sleeveCondition: sleeveCondition || null,
+            note,
+          }),
+        });
+        onCreated?.([listing]);
+        onClose();
+        return;
+      }
+
+      const { listings, errors } = await api("/api/plac/batch", {
         method: "POST",
         body: JSON.stringify({
-          releaseUrl: releaseUrl.trim(),
+          releaseUrls: previews.map((row) => row.releaseUrl).filter(Boolean),
           priceValue,
           mediaCondition,
           sleeveCondition: sleeveCondition || null,
           note,
         }),
       });
-      onCreated?.(listing);
-      onClose();
+
+      if (errors?.length) {
+        setPreviewErrors(errors);
+      }
+
+      if (listings?.length) {
+        onCreated?.(listings);
+        onClose();
+      } else {
+        setError(errors?.[0]?.error ?? t("plac.batchFailed"));
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -124,8 +244,11 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
         aria-modal="true"
         aria-labelledby="plac-sell-title"
       >
-        <div className="modal-header">
-          <h2 id="plac-sell-title">{t("plac.sellTitle")}</h2>
+        <div className="modal-header plac-sell-header">
+          <div className="plac-sell-header-text">
+            <p className="plac-sell-eyebrow">{t("plac.title")}</p>
+            <h2 id="plac-sell-title">{t("plac.sellTitle")}</h2>
+          </div>
           <button
             type="button"
             className="modal-close"
@@ -137,110 +260,292 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
           </button>
         </div>
 
-        <form className="plac-sell-form" onSubmit={handleSubmit}>
-          <label className="form-field">
-            <span className="label">{t("plac.releaseUrl")}</span>
-            <input
-              type="url"
-              value={releaseUrl}
-              onChange={(e) => {
-                setReleaseUrl(e.target.value);
-                setPreview(null);
-                setPreviewError(null);
-              }}
-              placeholder="https://www.discogs.com/release/..."
-              required
-            />
-            <span className="muted fine">{t("plac.releaseUrlHint")}</span>
-          </label>
-
+        <div className="plac-sell-type-tabs" role="tablist" aria-label={t("plac.listingType")}>
           <button
             type="button"
-            className="btn btn-ghost plac-preview-btn"
-            onClick={handlePreview}
-            disabled={previewing || !releaseUrl.trim()}
+            role="tab"
+            aria-selected={listingType === "vinyl"}
+            className={`plac-sell-type-tab${listingType === "vinyl" ? " active" : ""}`}
+            onClick={() => setListingType("vinyl")}
           >
-            {previewing ? (
+            <Disc3 size={16} aria-hidden />
+            {t("plac.typeVinyl")}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={listingType === "other"}
+            className={`plac-sell-type-tab${listingType === "other" ? " active" : ""}`}
+            onClick={() => setListingType("other")}
+          >
+            <Package size={16} aria-hidden />
+            {t("plac.typeOther")}
+          </button>
+        </div>
+
+        <form className="plac-sell-form" onSubmit={handleSubmit}>
+          <div className="plac-sell-scroll">
+            {listingType === "vinyl" ? (
               <>
-                <Loader2 size={16} className="spin" aria-hidden />
-                {t("plac.previewing")}
+                <section className="plac-sell-section">
+                  <div className="plac-sell-section-head">
+                    <h3>{t("plac.releaseUrl")}</h3>
+                    <p className="muted fine">{t("plac.releaseUrlsHint")}</p>
+                  </div>
+                  <textarea
+                    className="plac-sell-textarea modal-urls-textarea"
+                    value={urlsText}
+                    onChange={(e) => {
+                      setUrlsText(e.target.value);
+                      clearPreviews();
+                      setError(null);
+                    }}
+                    placeholder={"https://www.discogs.com/release/123\nhttps://www.discogs.com/release/456"}
+                    rows={4}
+                    disabled={previewing || submitting}
+                  />
+                  {validUrls.length > 0 && (
+                    <p className="plac-sell-hint muted fine">
+                      {validUrls.length === 1
+                        ? t("items.validLinkOne")
+                        : t("items.validLinkMany", { count: validUrls.length })}
+                    </p>
+                  )}
+                  {invalidUrls.length > 0 && (
+                    <p className="form-error fine">
+                      {invalidUrls.length === 1
+                        ? t("items.invalidLineOne")
+                        : t("items.invalidLineMany", { count: invalidUrls.length })}
+                    </p>
+                  )}
+                  {nonReleaseUrls.length > 0 && (
+                    <p className="form-error fine">{t("plac.releaseOnlyHint")}</p>
+                  )}
+                  <button
+                    type="button"
+                    className="btn btn-ghost plac-preview-btn"
+                    onClick={handlePreview}
+                    disabled={previewing || validUrls.length === 0}
+                  >
+                    {previewing ? (
+                      <>
+                        <Loader2 size={16} className="spin" aria-hidden />
+                        {t("plac.previewing")}
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={16} aria-hidden />
+                        {t("plac.preview")}
+                      </>
+                    )}
+                  </button>
+                </section>
+
+                {previews.length > 0 && (
+                  <section className="plac-sell-section">
+                    <div className="plac-sell-section-head">
+                      <h3>{t("plac.previewSection")}</h3>
+                      <p className="muted fine">
+                        {previews.length === 1
+                          ? t("plac.previewLoadedOne")
+                          : t("plac.previewLoadedMany", { count: previews.length })}
+                      </p>
+                    </div>
+                    <div className="plac-preview-grid">
+                      {previews.map((release) => (
+                        <article key={release.releaseId ?? release.releaseUrl} className="plac-preview-card">
+                          {release.thumbnailUrl ? (
+                            <img src={release.thumbnailUrl} alt="" className="plac-preview-cover" />
+                          ) : (
+                            <div className="plac-preview-cover plac-preview-cover--empty" aria-hidden />
+                          )}
+                          <div className="plac-preview-body">
+                            <p className="plac-preview-title">{releaseTitle(release)}</p>
+                            <ul className="plac-preview-meta muted fine">
+                              {release.year != null && <li>{release.year}</li>}
+                              {release.format && <li>{release.format}</li>}
+                              {release.genre && <li>{release.genre}</li>}
+                            </ul>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {previewErrors.length > 0 && (
+                  <div className="plac-sell-warnings">
+                    {previewErrors.map((row) => (
+                      <p key={row.releaseUrl} className="form-error fine">
+                        {row.releaseUrl}: {row.error}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                <section className="plac-sell-section">
+                  <div className="plac-sell-section-head">
+                    <h3>{t("plac.sharedSettings")}</h3>
+                    {previews.length > 1 && (
+                      <p className="muted fine">{t("plac.sharedSettingsHint")}</p>
+                    )}
+                  </div>
+
+                  <div className="plac-sell-fields">
+                    <label className="plac-sell-field">
+                      <span className="plac-sell-label">{t("plac.price")}</span>
+                      <input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={priceValue}
+                        onChange={(e) => setPriceValue(e.target.value)}
+                        required
+                      />
+                    </label>
+
+                    <label className="plac-sell-field">
+                      <span className="plac-sell-label">{t("plac.mediaCondition")}</span>
+                      <AppSelect
+                        value={mediaCondition}
+                        onChange={setMediaCondition}
+                        options={gradeOptions}
+                        ariaLabel={t("plac.mediaCondition")}
+                      />
+                    </label>
+
+                    <label className="plac-sell-field">
+                      <span className="plac-sell-label">{t("plac.sleeveCondition")}</span>
+                      <AppSelect
+                        value={sleeveCondition}
+                        onChange={setSleeveCondition}
+                        options={sleeveOptions}
+                        ariaLabel={t("plac.sleeveCondition")}
+                      />
+                    </label>
+
+                    <label className="plac-sell-field plac-sell-field--wide">
+                      <span className="plac-sell-label">{t("plac.note")}</span>
+                      <textarea
+                        className="plac-sell-textarea plac-sell-note"
+                        rows={2}
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        placeholder={t("plac.notePlaceholder")}
+                      />
+                    </label>
+                  </div>
+                </section>
               </>
             ) : (
-              t("plac.preview")
+              <section className="plac-sell-section">
+                <div className="plac-sell-fields">
+                  <label className="plac-sell-field plac-sell-field--wide">
+                    <span className="plac-sell-label">{t("plac.itemTitle")}</span>
+                    <input
+                      type="text"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder={t("plac.itemTitlePlaceholder")}
+                      required
+                    />
+                  </label>
+
+                  <label className="plac-sell-field">
+                    <span className="plac-sell-label">{t("plac.brand")}</span>
+                    <input
+                      type="text"
+                      value={brand}
+                      onChange={(e) => setBrand(e.target.value)}
+                      placeholder={t("plac.brandPlaceholder")}
+                    />
+                  </label>
+
+                  <label className="plac-sell-field">
+                    <span className="plac-sell-label">{t("plac.categoryLabel")}</span>
+                    <AppSelect
+                      value={category}
+                      onChange={setCategory}
+                      options={categoryOptions}
+                      ariaLabel={t("plac.categoryLabel")}
+                    />
+                  </label>
+
+                  <label className="plac-sell-field plac-sell-field--wide">
+                    <span className="plac-sell-label">{t("plac.imageUrl")}</span>
+                    <input
+                      type="url"
+                      value={thumbnailUrl}
+                      onChange={(e) => setThumbnailUrl(e.target.value)}
+                      placeholder="https://..."
+                    />
+                    <span className="muted fine">{t("plac.imageUrlHint")}</span>
+                  </label>
+
+                  <label className="plac-sell-field plac-sell-field--wide">
+                    <span className="plac-sell-label">{t("plac.externalUrl")}</span>
+                    <input
+                      type="url"
+                      value={externalUrl}
+                      onChange={(e) => setExternalUrl(e.target.value)}
+                      placeholder="https://..."
+                    />
+                    <span className="muted fine">{t("plac.externalUrlHint")}</span>
+                  </label>
+
+                  <label className="plac-sell-field">
+                    <span className="plac-sell-label">{t("plac.itemCondition")}</span>
+                    <AppSelect
+                      value={otherCondition}
+                      onChange={setOtherCondition}
+                      options={otherConditionOptions}
+                      ariaLabel={t("plac.itemCondition")}
+                    />
+                  </label>
+
+                  <label className="plac-sell-field">
+                    <span className="plac-sell-label">{t("plac.price")}</span>
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={priceValue}
+                      onChange={(e) => setPriceValue(e.target.value)}
+                      required
+                    />
+                  </label>
+
+                  <label className="plac-sell-field plac-sell-field--wide">
+                    <span className="plac-sell-label">{t("plac.note")}</span>
+                    <textarea
+                      className="plac-sell-textarea plac-sell-note"
+                      rows={2}
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                      placeholder={t("plac.notePlaceholder")}
+                    />
+                  </label>
+                </div>
+              </section>
             )}
-          </button>
+          </div>
 
-          {previewError && <p className="form-error">{previewError}</p>}
+          {error && <p className="form-error plac-sell-error">{error}</p>}
 
-          {preview && (
-            <div className="plac-preview-card">
-              {preview.thumbnailUrl && (
-                <img src={preview.thumbnailUrl} alt="" className="plac-preview-cover" />
-              )}
-              <div>
-                <p className="plac-preview-title">
-                  {[preview.artist, preview.title].filter(Boolean).join(" — ")}
-                </p>
-                <ul className="plac-preview-meta muted fine">
-                  {preview.year != null && <li>{t("plac.year")}: {preview.year}</li>}
-                  {preview.genre && <li>{t("plac.genre")}: {preview.genre}</li>}
-                  {preview.country && <li>{t("plac.country")}: {preview.country}</li>}
-                  {preview.format && <li>{t("plac.format")}: {preview.format}</li>}
-                </ul>
-              </div>
-            </div>
-          )}
-
-          <label className="form-field">
-            <span className="label">{t("plac.price")}</span>
-            <input
-              type="number"
-              min="0.01"
-              step="0.01"
-              value={priceValue}
-              onChange={(e) => setPriceValue(e.target.value)}
-              required
-            />
-          </label>
-
-          <label className="form-field">
-            <span className="label">{t("plac.mediaCondition")}</span>
-            <AppSelect
-              value={mediaCondition}
-              onChange={setMediaCondition}
-              options={gradeOptions}
-              ariaLabel={t("plac.mediaCondition")}
-            />
-          </label>
-
-          <label className="form-field">
-            <span className="label">{t("plac.sleeveCondition")}</span>
-            <AppSelect
-              value={sleeveCondition}
-              onChange={setSleeveCondition}
-              options={sleeveOptions}
-              ariaLabel={t("plac.sleeveCondition")}
-            />
-          </label>
-
-          <label className="form-field">
-            <span className="label">{t("plac.note")}</span>
-            <textarea
-              rows={3}
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder={t("plac.notePlaceholder")}
-            />
-          </label>
-
-          {error && <p className="form-error">{error}</p>}
-
-          <div className="form-card-actions">
+          <div className="plac-sell-actions">
             <button type="button" className="btn btn-ghost" onClick={onClose} disabled={submitting}>
               {t("common.cancel")}
             </button>
-            <button type="submit" className="btn btn-primary" disabled={submitting || !preview}>
-              {submitting ? t("plac.publishing") : t("plac.publish")}
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={
+                submitting ||
+                (listingType === "vinyl" ? !canSubmitVinyl : !canSubmitOther)
+              }
+            >
+              {submitting && <Loader2 size={16} className="spin" aria-hidden />}
+              {publishLabel}
             </button>
           </div>
         </form>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Plus, Store } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { PlacListingCard } from "../components/PlacListingCard.jsx";
+import { PlacSellerCard } from "../components/PlacSellerCard.jsx";
 import { PlacSellDialog } from "../components/PlacSellDialog.jsx";
 import { OrdersPageHeader } from "../components/OrdersPageHeader.jsx";
 import { api } from "../api.js";
@@ -12,6 +13,7 @@ export function Plac() {
   const { pathname } = useLocation();
   const mine = pathname === "/plac/mine";
   const [listings, setListings] = useState([]);
+  const [sellers, setSellers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [sellOpen, setSellOpen] = useState(false);
@@ -19,15 +21,25 @@ export function Plac() {
 
   useEffect(() => {
     setLoading(true);
-    const path = mine ? "/api/plac/mine" : "/api/plac";
-    const url = !mine && query.trim() ? `${path}?q=${encodeURIComponent(query.trim())}` : path;
+    if (mine) {
+      api("/api/plac/mine")
+        .then((d) => setListings(d.listings ?? []))
+        .catch(console.error)
+        .finally(() => setLoading(false));
+      return;
+    }
+
+    const url = query.trim()
+      ? `/api/plac/sellers?q=${encodeURIComponent(query.trim())}`
+      : "/api/plac/sellers";
     api(url)
-      .then((d) => setListings(d.listings ?? []))
+      .then((d) => setSellers(d.sellers ?? []))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [mine, query]);
 
   const displayedListings = useMemo(() => {
+    if (!mine) return listings;
     const q = query.trim().toLowerCase();
     if (!q) return listings;
     return listings.filter(
@@ -36,9 +48,9 @@ export function Plac() {
         listing.title?.toLowerCase().includes(q) ||
         listing.genre?.toLowerCase().includes(q) ||
         listing.country?.toLowerCase().includes(q) ||
-        listing.seller?.name?.toLowerCase().includes(q)
+        listing.category?.toLowerCase().includes(q)
     );
-  }, [listings, query]);
+  }, [listings, query, mine]);
 
   const subtitle = useMemo(() => {
     if (loading) return t("common.loading");
@@ -48,10 +60,10 @@ export function Plac() {
         ? t("plac.emptyMine")
         : t("plac.myListingCount", { count: active });
     }
-    return displayedListings.length === 0
+    return sellers.length === 0
       ? t("plac.subtitle")
-      : t("plac.listingCount", { count: displayedListings.length });
-  }, [loading, listings, displayedListings, mine, t]);
+      : t("plac.sellerCount", { count: sellers.length });
+  }, [loading, listings, sellers, mine, t]);
 
   async function handleMarkSold(id) {
     setBusyId(id);
@@ -81,8 +93,9 @@ export function Plac() {
     }
   }
 
-  function handleCreated(listing) {
-    setListings((prev) => [listing, ...prev]);
+  function handleCreated(newListings) {
+    const rows = Array.isArray(newListings) ? newListings : [newListings];
+    setListings((prev) => [...rows, ...prev]);
   }
 
   return (
@@ -92,7 +105,7 @@ export function Plac() {
         subtitle={subtitle}
         query={query}
         onQueryChange={setQuery}
-        placeholder={t("plac.searchPlaceholder")}
+        placeholder={mine ? t("plac.searchPlaceholder") : t("plac.searchSellersPlaceholder")}
       />
 
       <div className="plac-toolbar">
@@ -124,24 +137,24 @@ export function Plac() {
 
       {loading ? (
         <p className="orders-loading">{t("common.loadingItems")}</p>
-      ) : displayedListings.length === 0 ? (
-        <div className="orders-empty plac-empty">
-          <Store size={40} strokeWidth={1.2} />
-          <p>{mine ? t("plac.emptyMine") : t("plac.empty")}</p>
-          <button type="button" className="btn btn-primary" onClick={() => setSellOpen(true)}>
-            <Plus size={18} aria-hidden />
-            {t("plac.sell")}
-          </button>
-        </div>
-      ) : (
-        <div className="plac-grid">
-          {displayedListings.map((listing) => (
-            <PlacListingCard
-              key={listing.id}
-              listing={listing}
-              showSeller={!mine}
-              actions={
-                mine ? (
+      ) : mine ? (
+        displayedListings.length === 0 ? (
+          <div className="orders-empty plac-empty">
+            <Store size={40} strokeWidth={1.2} />
+            <p>{t("plac.emptyMine")}</p>
+            <button type="button" className="btn btn-primary" onClick={() => setSellOpen(true)}>
+              <Plus size={18} aria-hidden />
+              {t("plac.sell")}
+            </button>
+          </div>
+        ) : (
+          <div className="plac-grid">
+            {displayedListings.map((listing) => (
+              <PlacListingCard
+                key={listing.id}
+                listing={listing}
+                showSeller={false}
+                actions={
                   <>
                     {listing.status !== "active" && (
                       <span className={`plac-status plac-status--${listing.status}`}>
@@ -169,9 +182,24 @@ export function Plac() {
                       </>
                     )}
                   </>
-                ) : null
-              }
-            />
+                }
+              />
+            ))}
+          </div>
+        )
+      ) : sellers.length === 0 ? (
+        <div className="orders-empty plac-empty">
+          <Store size={40} strokeWidth={1.2} />
+          <p>{t("plac.empty")}</p>
+          <button type="button" className="btn btn-primary" onClick={() => setSellOpen(true)}>
+            <Plus size={18} aria-hidden />
+            {t("plac.sell")}
+          </button>
+        </div>
+      ) : (
+        <div className="plac-seller-grid">
+          {sellers.map((seller) => (
+            <PlacSellerCard key={seller.id} seller={seller} />
           ))}
         </div>
       )}

@@ -156,6 +156,8 @@ for (const sql of [
   "ALTER TABLE session_links ADD COLUMN availability TEXT DEFAULT 'available'",
   "ALTER TABLE session_links ADD COLUMN availability_note TEXT",
   "ALTER TABLE group_sessions ADD COLUMN seller_report_sent_at TEXT",
+  "ALTER TABLE plac_listings ADD COLUMN listing_type TEXT DEFAULT 'vinyl'",
+  "ALTER TABLE plac_listings ADD COLUMN category TEXT DEFAULT 'vinyl'",
 ]) {
   try {
     db.exec(sql);
@@ -1514,8 +1516,8 @@ export function publicUser(user) {
 }
 
 const PLAC_LISTING_SELECT = `
-  pl.id, pl.user_id, pl.release_url, pl.release_id, pl.artist, pl.title,
-  pl.thumbnail_url, pl.year, pl.genre, pl.country, pl.format,
+  pl.id, pl.user_id, pl.listing_type, pl.category, pl.release_url, pl.release_id,
+  pl.artist, pl.title, pl.thumbnail_url, pl.year, pl.genre, pl.country, pl.format,
   pl.price_value, pl.price_currency, pl.media_condition, pl.sleeve_condition,
   pl.note, pl.status, pl.created_at,
   u.name as seller_name, u.username as seller_username, u.picture as seller_picture,
@@ -1527,7 +1529,9 @@ function mapPlacListingRow(row) {
   return {
     id: row.id,
     userId: row.user_id,
-    releaseUrl: row.release_url,
+    listingType: row.listing_type ?? "vinyl",
+    category: row.category ?? "vinyl",
+    releaseUrl: row.release_url || null,
     releaseId: row.release_id,
     artist: row.artist,
     title: row.title,
@@ -1553,8 +1557,23 @@ function mapPlacListingRow(row) {
   };
 }
 
+function mapPlacSellerRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    name: row.name,
+    username: row.username,
+    picture: row.picture,
+    discogsUsername: row.discogs_username,
+    listingCount: row.listing_count,
+    latestAt: row.latest_at,
+  };
+}
+
 export function createPlacListing({
   userId,
+  listingType = "vinyl",
+  category = "vinyl",
   releaseUrl,
   releaseId,
   artist,
@@ -1573,14 +1592,16 @@ export function createPlacListing({
   const id = randomUUID();
   db.prepare(
     `INSERT INTO plac_listings (
-       id, user_id, release_url, release_id, artist, title, thumbnail_url,
-       year, genre, country, format, price_value, price_currency,
+       id, user_id, listing_type, category, release_url, release_id, artist, title,
+       thumbnail_url, year, genre, country, format, price_value, price_currency,
        media_condition, sleeve_condition, note, status
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`
   ).run(
     id,
     userId,
-    releaseUrl,
+    listingType,
+    category,
+    releaseUrl ?? "",
     releaseId ?? null,
     artist ?? null,
     title ?? null,
@@ -1625,15 +1646,72 @@ export function listActivePlacListings({ query } = {}) {
       OR lower(COALESCE(pl.title, '')) LIKE ?
       OR lower(COALESCE(pl.genre, '')) LIKE ?
       OR lower(COALESCE(pl.country, '')) LIKE ?
+      OR lower(COALESCE(pl.category, '')) LIKE ?
       OR lower(COALESCE(u.name, '')) LIKE ?
       OR lower(COALESCE(u.username, '')) LIKE ?
     )`;
     const like = `%${q}%`;
-    params.push(like, like, like, like, like, like);
+    params.push(like, like, like, like, like, like, like);
   }
 
   sql += " ORDER BY pl.created_at DESC";
   return db.prepare(sql).all(...params).map(mapPlacListingRow);
+}
+
+export function listActivePlacListingsByUser(userId) {
+  return db
+    .prepare(
+      `SELECT ${PLAC_LISTING_SELECT}
+       FROM plac_listings pl
+       JOIN users u ON u.id = pl.user_id
+       WHERE pl.user_id = ? AND pl.status = 'active'
+       ORDER BY pl.created_at DESC`
+    )
+    .all(userId)
+    .map(mapPlacListingRow);
+}
+
+export function listPlacSellers({ query } = {}) {
+  const q = query?.trim().toLowerCase();
+  let sql = `
+    SELECT u.id, u.name, u.username, u.picture, u.discogs_username,
+           COUNT(pl.id) AS listing_count,
+           MAX(pl.created_at) AS latest_at
+    FROM plac_listings pl
+    JOIN users u ON u.id = pl.user_id
+    WHERE pl.status = 'active'`;
+  const params = [];
+
+  if (q) {
+    sql += ` AND (
+      lower(COALESCE(u.name, '')) LIKE ?
+      OR lower(COALESCE(u.username, '')) LIKE ?
+      OR lower(COALESCE(u.discogs_username, '')) LIKE ?
+    )`;
+    const like = `%${q}%`;
+    params.push(like, like, like);
+  }
+
+  sql += `
+    GROUP BY u.id
+    ORDER BY latest_at DESC`;
+
+  return db.prepare(sql).all(...params).map(mapPlacSellerRow);
+}
+
+export function getPlacSeller(userId) {
+  const row = db
+    .prepare(
+      `SELECT u.id, u.name, u.username, u.picture, u.discogs_username,
+              COUNT(pl.id) AS listing_count,
+              MAX(pl.created_at) AS latest_at
+       FROM users u
+       LEFT JOIN plac_listings pl ON pl.user_id = u.id AND pl.status = 'active'
+       WHERE u.id = ?
+       GROUP BY u.id`
+    )
+    .get(userId);
+  return mapPlacSellerRow(row);
 }
 
 export function listPlacListingsByUser(userId) {

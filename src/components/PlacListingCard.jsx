@@ -1,13 +1,14 @@
 import { ExternalLink } from "lucide-react";
 import { formatPrice } from "../../shared/orderTotals.js";
+import { placListingTitle } from "../../shared/plac.js";
+import { useLocale } from "../hooks/useLocale.jsx";
 import { UserAvatar } from "./UserAvatar.jsx";
 
-function placTitle(listing) {
-  if (listing.artist && listing.title) return `${listing.artist} — ${listing.title}`;
-  return listing.title || listing.artist || "—";
-}
-
 export function PlacListingCard({ listing, showSeller = true, actions = null }) {
+  const { t } = useLocale();
+  const isVinyl = listing.listingType !== "other";
+  const hasLink = Boolean(listing.releaseUrl);
+  const titleText = placListingTitle(listing);
 
   return (
     <article className="plac-card">
@@ -17,39 +18,50 @@ export function PlacListingCard({ listing, showSeller = true, actions = null }) 
         ) : (
           <div className="plac-card-cover-fallback" aria-hidden />
         )}
+        {listing.category && listing.category !== "vinyl" && (
+          <span className="plac-card-category">{t(`plac.category.${listing.category}`)}</span>
+        )}
       </div>
 
       <div className="plac-card-body">
-        <a
-          href={listing.releaseUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="plac-card-title"
-        >
-          {placTitle(listing)}
-          <ExternalLink size={14} aria-hidden />
-        </a>
-
-        <div className="plac-card-meta">
-          {listing.year != null && (
-            <span>{listing.year}</span>
-          )}
-          {listing.genre && <span>{listing.genre}</span>}
-          {listing.country && <span>{listing.country}</span>}
-        </div>
-
-        {listing.format && (
-          <p className="plac-card-format muted fine">{listing.format}</p>
+        {hasLink ? (
+          <a
+            href={listing.releaseUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="plac-card-title"
+          >
+            {titleText}
+            <ExternalLink size={14} aria-hidden />
+          </a>
+        ) : (
+          <p className="plac-card-title plac-card-title--plain">{titleText}</p>
         )}
 
-        <div className="plac-card-conditions">
-          <span className="plac-card-condition">{listing.mediaCondition}</span>
-          {listing.sleeveCondition && (
-            <span className="plac-card-condition muted">
-              {listing.sleeveCondition}
-            </span>
-          )}
-        </div>
+        {isVinyl ? (
+          <>
+            <div className="plac-card-meta">
+              {listing.year != null && <span>{listing.year}</span>}
+              {listing.genre && <span>{listing.genre}</span>}
+              {listing.country && <span>{listing.country}</span>}
+            </div>
+
+            {listing.format && (
+              <p className="plac-card-format muted fine">{listing.format}</p>
+            )}
+
+            <div className="plac-card-conditions">
+              <span className="plac-card-condition">{listing.mediaCondition}</span>
+              {listing.sleeveCondition && (
+                <span className="plac-card-condition muted">{listing.sleeveCondition}</span>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="plac-card-conditions">
+            <span className="plac-card-condition">{listing.mediaCondition}</span>
+          </div>
+        )}
 
         {listing.note && <p className="plac-card-note muted fine">{listing.note}</p>}
 

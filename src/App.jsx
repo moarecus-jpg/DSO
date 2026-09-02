@@ -11,6 +11,7 @@ import { CanceledOrders } from "./pages/CanceledOrders.jsx";
 import { MyItems } from "./pages/MyItems.jsx";
 import { MyStatistics } from "./pages/MyStatistics.jsx";
 import { Plac } from "./pages/Plac.jsx";
+import { PlacUser } from "./pages/PlacUser.jsx";
 import { Session } from "./pages/Session.jsx";
 import { Settings } from "./pages/Settings.jsx";
 import { AdminUsers } from "./pages/AdminUsers.jsx";
@@ -43,6 +44,7 @@ function AppRoutes() {
         <Route path="/my-statistics" element={<MyStatistics />} />
         <Route path="/plac" element={<Plac />} />
         <Route path="/plac/mine" element={<Plac />} />
+        <Route path="/plac/u/:userId" element={<PlacUser />} />
         <Route path="/session/:id" element={<Session />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/admin/users" element={<AdminUsers />} />
