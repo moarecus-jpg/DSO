@@ -8725,11 +8725,21 @@ a.order-preview-item-title:hover {
 }
 
 .plac-grid--list .plac-card-title {
-  flex: 1 1 0;
+  flex: 0 1 32%;
   min-width: 3rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.plac-grid--list .plac-card-release-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 0.75rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .plac-grid--list .plac-card-meta {
@@ -8760,7 +8770,6 @@ a.order-preview-item-title:hover {
   justify-content: flex-end;
   gap: 0.75rem;
   margin-top: 0;
-  margin-left: auto;
   padding-top: 0;
   border-top: none;
   flex-shrink: 0;
@@ -8804,7 +8813,7 @@ a.order-preview-item-title:hover {
   }
 
   .plac-grid--list .plac-card-title {
-    flex: 1 1 0;
+    flex: 0 1 38%;
     min-width: 2.5rem;
   }
 

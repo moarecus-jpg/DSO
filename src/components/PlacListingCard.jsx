@@ -69,7 +69,7 @@ export function PlacListingCard({
         )}
 
         {isVinyl ? (
-          <>
+          <div className="plac-card-release-info">
             <div className="plac-card-meta">
               {listing.year != null && <span>{listing.year}</span>}
               {listing.genre && <span>{listing.genre}</span>}
@@ -86,10 +86,12 @@ export function PlacListingCard({
                 <span className="plac-card-condition muted">{listing.sleeveCondition}</span>
               )}
             </div>
-          </>
+          </div>
         ) : (
-          <div className="plac-card-conditions">
-            <span className="plac-card-condition">{listing.mediaCondition}</span>
+          <div className="plac-card-release-info">
+            <div className="plac-card-conditions">
+              <span className="plac-card-condition">{listing.mediaCondition}</span>
+            </div>
           </div>
         )}
 
