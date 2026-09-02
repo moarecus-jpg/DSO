@@ -1,17 +1,47 @@
+import { useNavigate } from "react-router-dom";
 import { ExternalLink } from "lucide-react";
 import { formatPrice } from "../../shared/orderTotals.js";
 import { placListingTitle } from "../../shared/plac.js";
+import { PlacAddToCartButton } from "./PlacAddToCartButton.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
+import { resolveUserAvatarUrl } from "../utils/userAvatarUrl.js";
 import { UserAvatar } from "./UserAvatar.jsx";
 
-export function PlacListingCard({ listing, showSeller = true, actions = null }) {
+export function PlacListingCard({
+  listing,
+  showSeller = true,
+  actions = null,
+  showCart = false,
+  detailLink = false,
+}) {
   const { t } = useLocale();
+  const navigate = useNavigate();
   const isVinyl = listing.listingType !== "other";
   const hasLink = Boolean(listing.releaseUrl);
   const titleText = placListingTitle(listing);
 
+  function handleCardClick(event) {
+    if (!detailLink) return;
+    if (event.target.closest("a, button")) return;
+    navigate(`/plac/item/${listing.id}`);
+  }
+
+  function handleCardKeyDown(event) {
+    if (!detailLink) return;
+    if (event.key !== "Enter" && event.key !== " ") return;
+    if (event.target.closest("a, button")) return;
+    event.preventDefault();
+    navigate(`/plac/item/${listing.id}`);
+  }
+
   return (
-    <article className="plac-card">
+    <article
+      className={`plac-card${detailLink ? " plac-card--clickable" : ""}`}
+      onClick={detailLink ? handleCardClick : undefined}
+      onKeyDown={detailLink ? handleCardKeyDown : undefined}
+      role={detailLink ? "link" : undefined}
+      tabIndex={detailLink ? 0 : undefined}
+    >
       <div className="plac-card-cover">
         {listing.thumbnailUrl ? (
           <img src={listing.thumbnailUrl} alt="" loading="lazy" />
@@ -24,7 +54,7 @@ export function PlacListingCard({ listing, showSeller = true, actions = null }) 
       </div>
 
       <div className="plac-card-body">
-        {hasLink ? (
+        {hasLink && !detailLink ? (
           <a
             href={listing.releaseUrl}
             target="_blank"
@@ -72,7 +102,7 @@ export function PlacListingCard({ listing, showSeller = true, actions = null }) 
             <div className="plac-card-seller">
               <UserAvatar
                 name={listing.seller.name}
-                avatarUrl={listing.seller.picture}
+                avatarUrl={resolveUserAvatarUrl(listing.seller)}
                 size={28}
               />
               <span className="plac-card-seller-name">
@@ -84,7 +114,14 @@ export function PlacListingCard({ listing, showSeller = true, actions = null }) 
           )}
         </div>
 
-        {actions && <div className="plac-card-actions">{actions}</div>}
+        {(actions || showCart) && (
+          <div className="plac-card-actions" onClick={(e) => e.stopPropagation()}>
+            {showCart && listing.status !== "sold" && listing.status !== "removed" && (
+              <PlacAddToCartButton listing={listing} />
+            )}
+            {actions}
+          </div>
+        )}
       </div>
     </article>
   );

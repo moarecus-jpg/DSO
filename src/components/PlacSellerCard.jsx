@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { UserAvatar } from "./UserAvatar.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
+import { resolveUserAvatarUrl } from "../utils/userAvatarUrl.js";
 
 function sellerLabel(seller) {
   if (seller.discogsUsername) return `@${seller.discogsUsername}`;
@@ -16,7 +17,7 @@ export function PlacSellerCard({ seller }) {
       <div className="plac-seller-avatar-wrap">
         <UserAvatar
           name={seller.name}
-          avatarUrl={seller.picture}
+          avatarUrl={resolveUserAvatarUrl(seller)}
           className="plac-seller-avatar"
           size={88}
         />

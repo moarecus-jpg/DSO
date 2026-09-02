@@ -2,14 +2,18 @@ import { Router } from "express";
 import {
   countActivePlacListingsByUser,
   createPlacListing,
+  createPlacOrder,
   deletePlacListing,
   findUserById,
   getPlacSeller,
+  getPlacListingById,
   listActivePlacListings,
   listActivePlacListingsByUser,
   listPlacListingsByUser,
+  listPlacOrdersForUser,
   listPlacSellers,
   updatePlacListing,
+  updatePlacOrderStatus,
   upsertGoogleUser,
 } from "../db.js";
 import {
@@ -165,6 +169,54 @@ router.get("/mine", requireUser, (req, res) => {
 router.get("/counts", requireUser, (req, res) => {
   const userId = ensureRequestUser(req);
   res.json({ mine: countActivePlacListingsByUser(userId) });
+});
+
+router.get("/orders", requireUser, (req, res) => {
+  const userId = ensureRequestUser(req);
+  const orders = listPlacOrdersForUser(userId);
+  res.json({ orders });
+});
+
+router.post("/orders", requireUser, (req, res) => {
+  const buyerId = ensureRequestUser(req);
+  const { sellerId, listingIds, note } = req.body ?? {};
+
+  if (!sellerId || !Array.isArray(listingIds) || listingIds.length === 0) {
+    return res.status(400).json({ error: "Izberi vsaj en artikel." });
+  }
+  if (sellerId === buyerId) {
+    return res.status(400).json({ error: "Ne moreš naročiti lastnih artiklov." });
+  }
+  if (!findUserById(sellerId)) {
+    return res.status(404).json({ error: "Prodajalec ni bil najden." });
+  }
+
+  const order = createPlacOrder({
+    buyerId,
+    sellerId,
+    listingIds,
+    note: note?.trim() || null,
+  });
+
+  if (!order) {
+    return res.status(400).json({ error: "Artikli niso na voljo ali so neveljavni." });
+  }
+
+  res.status(201).json({ order });
+});
+
+router.patch("/orders/:id", requireUser, (req, res) => {
+  const userId = ensureRequestUser(req);
+  const { status } = req.body ?? {};
+  if (!status) {
+    return res.status(400).json({ error: "Manjka status." });
+  }
+
+  const order = updatePlacOrderStatus(req.params.id, userId, status);
+  if (!order) {
+    return res.status(400).json({ error: "Naročila ni bilo mogoče posodobiti." });
+  }
+  res.json({ order });
 });
 
 router.post("/preview", requireUser, async (req, res) => {
@@ -354,6 +406,19 @@ router.post("/batch", requireUser, async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: err.message ?? "Oglasov ni bilo mogoče ustvariti." });
   }
+});
+
+router.get("/:id", requireUser, (req, res) => {
+  const userId = ensureRequestUser(req);
+  const listing = getPlacListingById(req.params.id);
+  if (!listing) {
+    return res.status(404).json({ error: "Oglas ni bil najden." });
+  }
+  const isOwner = listing.userId === userId;
+  if (!isOwner && listing.status !== "active") {
+    return res.status(404).json({ error: "Oglas ni bil najden." });
+  }
+  res.json({ listing });
 });
 
 router.patch("/:id", requireUser, (req, res) => {

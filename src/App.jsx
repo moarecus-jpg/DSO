@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth.jsx";
 import { LocaleProvider, useLocale } from "./hooks/useLocale.jsx";
+import { PlacCartProvider } from "./hooks/usePlacCart.jsx";
 import { Layout } from "./components/Layout.jsx";
 import { Login } from "./pages/Login.jsx";
 import { ResetPassword } from "./pages/ResetPassword.jsx";
@@ -11,6 +12,9 @@ import { CanceledOrders } from "./pages/CanceledOrders.jsx";
 import { MyItems } from "./pages/MyItems.jsx";
 import { MyStatistics } from "./pages/MyStatistics.jsx";
 import { Plac } from "./pages/Plac.jsx";
+import { PlacCart } from "./pages/PlacCart.jsx";
+import { PlacListingDetail } from "./pages/PlacListingDetail.jsx";
+import { PlacOrders } from "./pages/PlacOrders.jsx";
 import { PlacUser } from "./pages/PlacUser.jsx";
 import { Session } from "./pages/Session.jsx";
 import { Settings } from "./pages/Settings.jsx";
@@ -44,6 +48,9 @@ function AppRoutes() {
         <Route path="/my-statistics" element={<MyStatistics />} />
         <Route path="/plac" element={<Plac />} />
         <Route path="/plac/mine" element={<Plac />} />
+        <Route path="/plac/cart" element={<PlacCart />} />
+        <Route path="/plac/orders" element={<PlacOrders />} />
+        <Route path="/plac/item/:listingId" element={<PlacListingDetail />} />
         <Route path="/plac/u/:userId" element={<PlacUser />} />
         <Route path="/session/:id" element={<Session />} />
         <Route path="/settings" element={<Settings />} />
@@ -58,9 +65,11 @@ export default function App() {
   return (
     <LocaleProvider>
       <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
+        <PlacCartProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </PlacCartProvider>
       </AuthProvider>
     </LocaleProvider>
   );

@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Store } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
+import { PlacGalleryViewToggle } from "../components/PlacGalleryViewToggle.jsx";
 import { PlacListingCard } from "../components/PlacListingCard.jsx";
 import { UserAvatar } from "../components/UserAvatar.jsx";
 import { api } from "../api.js";
 import { useLocale } from "../hooks/useLocale.jsx";
+import { usePlacGalleryView } from "../hooks/usePlacGalleryView.js";
+import { resolveUserAvatarUrl } from "../utils/userAvatarUrl.js";
 
 function sellerLabel(seller) {
   if (seller?.discogsUsername) return `@${seller.discogsUsername}`;
@@ -19,6 +22,7 @@ export function PlacUser() {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { view, setView } = usePlacGalleryView();
 
   useEffect(() => {
     setLoading(true);
@@ -55,7 +59,7 @@ export function PlacUser() {
           <div className="plac-user-profile">
             <UserAvatar
               name={seller.name}
-              avatarUrl={seller.picture}
+              avatarUrl={resolveUserAvatarUrl(seller)}
               className="plac-user-avatar"
               size={72}
             />
@@ -82,11 +86,16 @@ export function PlacUser() {
           <p>{error ? error : t("plac.sellerEmpty")}</p>
         </div>
       ) : (
-        <div className="plac-grid plac-user-gallery">
-          {listings.map((listing) => (
-            <PlacListingCard key={listing.id} listing={listing} showSeller={false} />
-          ))}
-        </div>
+        <>
+          <div className="plac-gallery-toolbar">
+            <PlacGalleryViewToggle view={view} onChange={setView} />
+          </div>
+          <div className={`plac-grid plac-user-gallery plac-grid--${view}`}>
+            {listings.map((listing) => (
+              <PlacListingCard key={listing.id} listing={listing} showSeller={false} showCart detailLink />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

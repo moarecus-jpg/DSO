@@ -1,16 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Store } from "lucide-react";
+import { Plus, ShoppingCart, Store } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { PlacGalleryViewToggle } from "../components/PlacGalleryViewToggle.jsx";
 import { PlacListingCard } from "../components/PlacListingCard.jsx";
 import { PlacSellerCard } from "../components/PlacSellerCard.jsx";
 import { PlacSellDialog } from "../components/PlacSellDialog.jsx";
 import { OrdersPageHeader } from "../components/OrdersPageHeader.jsx";
 import { api } from "../api.js";
 import { useLocale } from "../hooks/useLocale.jsx";
+import { usePlacCart } from "../hooks/usePlacCart.jsx";
+import { usePlacGalleryView } from "../hooks/usePlacGalleryView.js";
 
 export function Plac() {
   const { t } = useLocale();
   const { pathname } = useLocation();
+  const { count: cartCount } = usePlacCart();
+  const { view, setView } = usePlacGalleryView();
   const mine = pathname === "/plac/mine";
   const [listings, setListings] = useState([]);
   const [sellers, setSellers] = useState([]);
@@ -129,10 +134,20 @@ export function Plac() {
           </Link>
         </div>
 
-        <button type="button" className="btn btn-primary plac-sell-btn" onClick={() => setSellOpen(true)}>
-          <Plus size={18} aria-hidden />
-          {t("plac.sell")}
-        </button>
+        <div className="plac-toolbar-actions">
+          <Link to="/plac/cart" className="btn btn-ghost plac-cart-link">
+            <ShoppingCart size={18} aria-hidden />
+            {t("plac.cart")}
+            {cartCount > 0 && <span className="plac-cart-badge">{cartCount}</span>}
+          </Link>
+          <Link to="/plac/orders" className="btn btn-ghost plac-orders-link">
+            {t("plac.orders")}
+          </Link>
+          <button type="button" className="btn btn-primary plac-sell-btn" onClick={() => setSellOpen(true)}>
+            <Plus size={18} aria-hidden />
+            {t("plac.sell")}
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -148,12 +163,17 @@ export function Plac() {
             </button>
           </div>
         ) : (
-          <div className="plac-grid">
-            {displayedListings.map((listing) => (
+          <>
+            <div className="plac-gallery-toolbar">
+              <PlacGalleryViewToggle view={view} onChange={setView} />
+            </div>
+            <div className={`plac-grid plac-grid--${view}`}>
+              {displayedListings.map((listing) => (
               <PlacListingCard
                 key={listing.id}
                 listing={listing}
                 showSeller={false}
+                detailLink
                 actions={
                   <>
                     {listing.status !== "active" && (
@@ -185,7 +205,8 @@ export function Plac() {
                 }
               />
             ))}
-          </div>
+            </div>
+          </>
         )
       ) : sellers.length === 0 ? (
         <div className="orders-empty plac-empty">

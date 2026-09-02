@@ -235,6 +235,36 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_plac_listings_user
     ON plac_listings (user_id);
+
+  CREATE TABLE IF NOT EXISTS plac_orders (
+    id TEXT PRIMARY KEY,
+    buyer_id TEXT NOT NULL,
+    seller_id TEXT NOT NULL,
+    status TEXT DEFAULT 'pending',
+    note TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (buyer_id) REFERENCES users(id),
+    FOREIGN KEY (seller_id) REFERENCES users(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS plac_order_items (
+    id TEXT PRIMARY KEY,
+    order_id TEXT NOT NULL,
+    listing_id TEXT NOT NULL,
+    price_value REAL NOT NULL,
+    price_currency TEXT DEFAULT 'EUR',
+    artist TEXT,
+    title TEXT,
+    thumbnail_url TEXT,
+    FOREIGN KEY (order_id) REFERENCES plac_orders(id),
+    FOREIGN KEY (listing_id) REFERENCES plac_listings(id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_plac_orders_buyer
+    ON plac_orders (buyer_id);
+
+  CREATE INDEX IF NOT EXISTS idx_plac_orders_seller
+    ON plac_orders (seller_id);
 `);
 
 const needsBackfill = db
@@ -1521,7 +1551,7 @@ const PLAC_LISTING_SELECT = `
   pl.price_value, pl.price_currency, pl.media_condition, pl.sleeve_condition,
   pl.note, pl.status, pl.created_at,
   u.name as seller_name, u.username as seller_username, u.picture as seller_picture,
-  u.discogs_username as seller_discogs_username
+  u.discogs_username as seller_discogs_username, u.discogs_avatar_url as seller_discogs_avatar_url
 `;
 
 function mapPlacListingRow(row) {
@@ -1553,6 +1583,7 @@ function mapPlacListingRow(row) {
       username: row.seller_username,
       picture: row.seller_picture,
       discogsUsername: row.seller_discogs_username,
+      discogsAvatarUrl: row.seller_discogs_avatar_url ?? null,
     },
   };
 }
@@ -1565,6 +1596,7 @@ function mapPlacSellerRow(row) {
     username: row.username,
     picture: row.picture,
     discogsUsername: row.discogs_username,
+    discogsAvatarUrl: row.discogs_avatar_url ?? null,
     listingCount: row.listing_count,
     latestAt: row.latest_at,
   };
@@ -1674,7 +1706,7 @@ export function listActivePlacListingsByUser(userId) {
 export function listPlacSellers({ query } = {}) {
   const q = query?.trim().toLowerCase();
   let sql = `
-    SELECT u.id, u.name, u.username, u.picture, u.discogs_username,
+    SELECT u.id, u.name, u.username, u.picture, u.discogs_username, u.discogs_avatar_url,
            COUNT(pl.id) AS listing_count,
            MAX(pl.created_at) AS latest_at
     FROM plac_listings pl
@@ -1702,7 +1734,7 @@ export function listPlacSellers({ query } = {}) {
 export function getPlacSeller(userId) {
   const row = db
     .prepare(
-      `SELECT u.id, u.name, u.username, u.picture, u.discogs_username,
+      `SELECT u.id, u.name, u.username, u.picture, u.discogs_username, u.discogs_avatar_url,
               COUNT(pl.id) AS listing_count,
               MAX(pl.created_at) AS latest_at
        FROM users u
@@ -1784,6 +1816,186 @@ export function deletePlacListing(id, userId) {
     .prepare("DELETE FROM plac_listings WHERE id = ? AND user_id = ?")
     .run(id, userId);
   return result.changes > 0;
+}
+
+const PLAC_ORDER_SELECT = `
+  o.id, o.buyer_id, o.seller_id, o.status, o.note, o.created_at,
+  buyer.name as buyer_name, buyer.username as buyer_username,
+  buyer.picture as buyer_picture, buyer.discogs_username as buyer_discogs_username,
+  buyer.discogs_avatar_url as buyer_discogs_avatar_url,
+  seller.name as seller_name, seller.username as seller_username,
+  seller.picture as seller_picture, seller.discogs_username as seller_discogs_username,
+  seller.discogs_avatar_url as seller_discogs_avatar_url
+`;
+
+function mapPlacOrderRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    buyerId: row.buyer_id,
+    sellerId: row.seller_id,
+    status: row.status,
+    note: row.note,
+    createdAt: row.created_at,
+    buyer: {
+      id: row.buyer_id,
+      name: row.buyer_name,
+      username: row.buyer_username,
+      picture: row.buyer_picture,
+      discogsUsername: row.buyer_discogs_username,
+      discogsAvatarUrl: row.buyer_discogs_avatar_url ?? null,
+    },
+    seller: {
+      id: row.seller_id,
+      name: row.seller_name,
+      username: row.seller_username,
+      picture: row.seller_picture,
+      discogsUsername: row.seller_discogs_username,
+      discogsAvatarUrl: row.seller_discogs_avatar_url ?? null,
+    },
+  };
+}
+
+function mapPlacOrderItemRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    orderId: row.order_id,
+    listingId: row.listing_id,
+    priceValue: row.price_value,
+    priceCurrency: row.price_currency ?? "EUR",
+    artist: row.artist,
+    title: row.title,
+    thumbnailUrl: row.thumbnail_url,
+  };
+}
+
+function attachPlacOrderItems(orders) {
+  if (!orders.length) return orders;
+  const ids = orders.map((o) => o.id);
+  const placeholders = ids.map(() => "?").join(", ");
+  const items = db
+    .prepare(
+      `SELECT id, order_id, listing_id, price_value, price_currency, artist, title, thumbnail_url
+       FROM plac_order_items
+       WHERE order_id IN (${placeholders})`
+    )
+    .all(...ids)
+    .map(mapPlacOrderItemRow);
+
+  const byOrder = new Map();
+  for (const item of items) {
+    if (!byOrder.has(item.orderId)) byOrder.set(item.orderId, []);
+    byOrder.get(item.orderId).push(item);
+  }
+
+  return orders.map((order) => ({
+    ...order,
+    items: byOrder.get(order.id) ?? [],
+    totalValue: (byOrder.get(order.id) ?? []).reduce((sum, item) => sum + item.priceValue, 0),
+  }));
+}
+
+export function createPlacOrder({ buyerId, sellerId, listingIds, note }) {
+  const uniqueIds = [...new Set(listingIds)];
+  if (!uniqueIds.length) return null;
+
+  const listings = uniqueIds
+    .map((id) => getPlacListingById(id))
+    .filter((listing) => listing && listing.status === "active" && listing.userId === sellerId);
+
+  if (listings.length !== uniqueIds.length) return null;
+
+  const orderId = randomUUID();
+  const insertOrder = db.prepare(
+    `INSERT INTO plac_orders (id, buyer_id, seller_id, status, note)
+     VALUES (?, ?, ?, 'pending', ?)`
+  );
+  const insertItem = db.prepare(
+    `INSERT INTO plac_order_items (
+       id, order_id, listing_id, price_value, price_currency, artist, title, thumbnail_url
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  );
+
+  const tx = db.transaction(() => {
+    insertOrder.run(orderId, buyerId, sellerId, note ?? null);
+    for (const listing of listings) {
+      insertItem.run(
+        randomUUID(),
+        orderId,
+        listing.id,
+        listing.priceValue,
+        listing.priceCurrency ?? "EUR",
+        listing.artist ?? null,
+        listing.title ?? null,
+        listing.thumbnailUrl ?? null
+      );
+    }
+  });
+  tx();
+
+  return getPlacOrderById(orderId);
+}
+
+export function getPlacOrderById(id) {
+  const row = db
+    .prepare(
+      `SELECT ${PLAC_ORDER_SELECT}
+       FROM plac_orders o
+       JOIN users buyer ON buyer.id = o.buyer_id
+       JOIN users seller ON seller.id = o.seller_id
+       WHERE o.id = ?`
+    )
+    .get(id);
+  const order = mapPlacOrderRow(row);
+  if (!order) return null;
+  return attachPlacOrderItems([order])[0];
+}
+
+export function listPlacOrdersForUser(userId) {
+  const rows = db
+    .prepare(
+      `SELECT ${PLAC_ORDER_SELECT}
+       FROM plac_orders o
+       JOIN users buyer ON buyer.id = o.buyer_id
+       JOIN users seller ON seller.id = o.seller_id
+       WHERE o.buyer_id = ? OR o.seller_id = ?
+       ORDER BY o.created_at DESC`
+    )
+    .all(userId, userId)
+    .map(mapPlacOrderRow);
+  return attachPlacOrderItems(rows);
+}
+
+export function updatePlacOrderStatus(id, userId, status) {
+  const allowed = ["pending", "accepted", "declined", "completed", "cancelled"];
+  if (!allowed.includes(status)) return null;
+
+  const order = db.prepare("SELECT * FROM plac_orders WHERE id = ?").get(id);
+  if (!order) return null;
+
+  const isBuyer = order.buyer_id === userId;
+  const isSeller = order.seller_id === userId;
+  if (!isBuyer && !isSeller) return null;
+
+  if (isBuyer && !["cancelled"].includes(status)) return null;
+  if (isSeller && !["accepted", "declined", "completed"].includes(status)) return null;
+
+  db.prepare("UPDATE plac_orders SET status = ? WHERE id = ?").run(status, id);
+
+  if (status === "accepted" || status === "completed") {
+    const items = db
+      .prepare("SELECT listing_id FROM plac_order_items WHERE order_id = ?")
+      .all(id);
+    const markSold = db.prepare(
+      "UPDATE plac_listings SET status = 'sold' WHERE id = ? AND user_id = ?"
+    );
+    for (const item of items) {
+      markSold.run(item.listing_id, order.seller_id);
+    }
+  }
+
+  return getPlacOrderById(id);
 }
 
 export function getDatabaseInfo() {

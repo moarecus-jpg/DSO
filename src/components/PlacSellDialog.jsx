@@ -17,6 +17,35 @@ function releaseTitle(release) {
   return [release.artist, release.title].filter(Boolean).join(" — ") || "—";
 }
 
+function PlacBatchProgress({ progress, t }) {
+  if (!progress || progress.total <= 1) return null;
+
+  const pct = Math.min(100, Math.round((progress.current / progress.total) * 100));
+  const label =
+    progress.phase === "publish"
+      ? t("plac.publishProgress", { current: progress.current, total: progress.total })
+      : t("plac.previewProgress", { current: progress.current, total: progress.total });
+
+  return (
+    <div
+      className="plac-batch-progress"
+      role="progressbar"
+      aria-valuenow={progress.current}
+      aria-valuemin={0}
+      aria-valuemax={progress.total}
+      aria-label={label}
+    >
+      <div className="plac-batch-progress-head">
+        <span className="plac-batch-progress-label">{label}</span>
+        <span className="plac-batch-progress-pct muted fine">{pct}%</span>
+      </div>
+      <div className="plac-batch-progress-track">
+        <div className="plac-batch-progress-fill" style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
 export function PlacSellDialog({ open, onClose, onCreated }) {
   const { t } = useLocale();
   const [listingType, setListingType] = useState("vinyl");
@@ -35,6 +64,7 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
   const [sleeveCondition, setSleeveCondition] = useState("");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [batchProgress, setBatchProgress] = useState(null);
   const [error, setError] = useState(null);
 
   const { valid: parsedUrls, invalid: invalidUrls } = useMemo(
@@ -102,6 +132,7 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
     setNote("");
     setError(null);
     setSubmitting(false);
+    setBatchProgress(null);
   }, [open]);
 
   useEffect(() => {
@@ -111,7 +142,7 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
     document.body.style.overflow = "hidden";
 
     function onKeyDown(event) {
-      if (event.key === "Escape" && !submitting) onClose();
+      if (event.key === "Escape" && !submitting && !previewing) onClose();
     }
 
     window.addEventListener("keydown", onKeyDown);
@@ -120,7 +151,7 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [open, submitting, onClose]);
+  }, [open, submitting, previewing, onClose]);
 
   function clearPreviews() {
     setPreviews([]);
@@ -158,18 +189,35 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
     }
 
     setPreviewing(true);
+    setBatchProgress({ current: 0, total: validUrls.length, phase: "preview" });
+    const releases = [];
+    const errors = [];
+
     try {
-      const data = await api("/api/plac/preview-batch", {
-        method: "POST",
-        body: JSON.stringify({ releaseUrls: validUrls }),
-      });
-      const releases = data.releases ?? [];
+      for (let index = 0; index < validUrls.length; index += 1) {
+        const releaseUrl = validUrls[index];
+        try {
+          const data = await api("/api/plac/preview-batch", {
+            method: "POST",
+            body: JSON.stringify({ releaseUrls: [releaseUrl] }),
+          });
+          releases.push(...(data.releases ?? []));
+          errors.push(...(data.errors ?? []));
+        } catch (err) {
+          errors.push({ releaseUrl, error: err.message });
+        }
+        setBatchProgress({ current: index + 1, total: validUrls.length, phase: "preview" });
+        if (releases.length > 0) {
+          setPreviews([...releases]);
+        }
+      }
+
       setPreviews(releases);
-      setPreviewErrors(data.errors ?? []);
+      setPreviewErrors(errors);
       if (releases.length > 0) {
         applyPreviewDefaults(releases);
       } else {
-        setError(t("plac.previewFailed"));
+        setError(errors[0]?.error ?? t("plac.previewFailed"));
       }
     } catch (err) {
       setPreviews([]);
@@ -177,6 +225,7 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
       setError(err.message);
     } finally {
       setPreviewing(false);
+      setBatchProgress(null);
     }
   }
 
@@ -187,6 +236,12 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
   const canSubmitOther = Boolean(title.trim() && priceValue);
 
   const publishLabel = useMemo(() => {
+    if (submitting && batchProgress?.phase === "publish") {
+      return t("plac.publishProgress", {
+        current: batchProgress.current,
+        total: batchProgress.total,
+      });
+    }
     if (submitting) {
       return previews.length > 1 ? t("plac.publishingMany") : t("plac.publishing");
     }
@@ -194,7 +249,7 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
       return t("plac.publishMany", { count: previews.length });
     }
     return t("plac.publish");
-  }, [submitting, listingType, previews.length, t]);
+  }, [submitting, batchProgress, listingType, previews.length, t]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -238,38 +293,57 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
         return;
       }
 
-      const { listings, errors } = await api("/api/plac/batch", {
-        method: "POST",
-        body: JSON.stringify({
-          releaseUrls: previews.map((row) => row.releaseUrl).filter(Boolean),
-          priceValue,
-          mediaCondition,
-          sleeveCondition: sleeveCondition || null,
-          note,
-        }),
-      });
+      const publishUrls = previews.map((row) => row.releaseUrl).filter(Boolean);
+      const listings = [];
+      const errors = [];
 
-      if (errors?.length) {
+      setBatchProgress({ current: 0, total: publishUrls.length, phase: "publish" });
+
+      for (let index = 0; index < publishUrls.length; index += 1) {
+        const releaseUrl = publishUrls[index];
+        try {
+          const data = await api("/api/plac/batch", {
+            method: "POST",
+            body: JSON.stringify({
+              releaseUrls: [releaseUrl],
+              priceValue,
+              mediaCondition,
+              sleeveCondition: sleeveCondition || null,
+              note,
+            }),
+          });
+          listings.push(...(data.listings ?? []));
+          errors.push(...(data.errors ?? []));
+        } catch (err) {
+          errors.push({ releaseUrl, error: err.message });
+        }
+        setBatchProgress({ current: index + 1, total: publishUrls.length, phase: "publish" });
+      }
+
+      setBatchProgress(null);
+
+      if (errors.length) {
         setPreviewErrors(errors);
       }
 
-      if (listings?.length) {
+      if (listings.length) {
         onCreated?.(listings);
         onClose();
       } else {
-        setError(errors?.[0]?.error ?? t("plac.batchFailed"));
+        setError(errors[0]?.error ?? t("plac.batchFailed"));
       }
     } catch (err) {
       setError(err.message);
     } finally {
       setSubmitting(false);
+      setBatchProgress(null);
     }
   }
 
   if (!open) return null;
 
   return createPortal(
-    <div className="modal-overlay" onClick={() => !submitting && onClose()}>
+    <div className="modal-overlay" onClick={() => !submitting && !previewing && onClose()}>
       <div
         className="modal card modal-new-order plac-sell-dialog"
         onClick={(e) => e.stopPropagation()}
@@ -286,7 +360,7 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
             type="button"
             className="modal-close"
             onClick={onClose}
-            disabled={submitting}
+            disabled={submitting || previewing}
             aria-label={t("common.close")}
           >
             <X size={20} />
@@ -364,6 +438,7 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
                       ))}
                     </div>
                   )}
+                  <PlacBatchProgress progress={previewing ? batchProgress : null} t={t} />
                   <button
                     type="button"
                     className="btn btn-ghost plac-preview-btn"
@@ -373,7 +448,12 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
                     {previewing ? (
                       <>
                         <Loader2 size={16} className="spin" aria-hidden />
-                        {t("plac.previewing")}
+                        {batchProgress
+                          ? t("plac.previewProgress", {
+                              current: batchProgress.current,
+                              total: batchProgress.total,
+                            })
+                          : t("plac.previewing")}
                       </>
                     ) : (
                       <>
@@ -592,10 +672,12 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
             )}
           </div>
 
+          <PlacBatchProgress progress={submitting ? batchProgress : null} t={t} />
+
           {error && <p className="form-error plac-sell-error">{error}</p>}
 
           <div className="plac-sell-actions">
-            <button type="button" className="btn btn-ghost" onClick={onClose} disabled={submitting}>
+            <button type="button" className="btn btn-ghost" onClick={onClose} disabled={submitting || previewing}>
               {t("common.cancel")}
             </button>
             <button
@@ -603,6 +685,7 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
               className="btn btn-primary"
               disabled={
                 submitting ||
+                previewing ||
                 (listingType === "vinyl" ? !canSubmitVinyl : !canSubmitOther)
               }
             >
