@@ -252,32 +252,47 @@ export function mockResolvePlacReleaseFromUrl(url) {
 
   if (parsed.listingId != null) {
     const listing = MOCK_INVENTORY.find((l) => l.id === parsed.listingId);
-    if (!listing) {
-      throw new Error(
-        "Listing ni v demo podatkih. Uporabi pravo Discogs povezavo (API) ali demo listing 8821003."
-      );
+    if (listing) {
+      const release = listing.release ?? {};
+      const artist = release.artist ?? "Demo Artist";
+      const title = release.title ?? `Listing #${parsed.listingId}`;
+      const price = listingPrice(listing);
+
+      return {
+        releaseId: release.id ?? parsed.listingId,
+        releaseUrl: url.trim(),
+        listingId: parsed.listingId,
+        fromListing: true,
+        artist,
+        title,
+        thumbnailUrl: null,
+        year: 1984,
+        genre: "Electronic",
+        country: "Slovenia",
+        format: release.format ?? "Vinyl, LP",
+        priceValue: price.value,
+        priceCurrency: price.currency ?? "EUR",
+        mediaCondition: listing.condition ?? "Very Good Plus (VG+)",
+        sleeveCondition: listing.sleeve_condition ?? null,
+      };
     }
-    const release = listing.release ?? {};
-    const artist = release.artist ?? "Demo Artist";
-    const title = release.title ?? `Listing #${parsed.listingId}`;
-    const price = listingPrice(listing);
 
     return {
-      releaseId: release.id ?? parsed.listingId,
+      releaseId: parsed.listingId,
       releaseUrl: url.trim(),
       listingId: parsed.listingId,
       fromListing: true,
-      artist,
-      title,
+      artist: "Demo Artist",
+      title: `Listing #${parsed.listingId}`,
       thumbnailUrl: null,
       year: 1984,
       genre: "Electronic",
       country: "Slovenia",
-      format: release.format ?? "Vinyl, LP",
-      priceValue: price.value,
-      priceCurrency: price.currency ?? "EUR",
-      mediaCondition: listing.condition ?? "Very Good Plus (VG+)",
-      sleeveCondition: listing.sleeve_condition ?? null,
+      format: "Vinyl, LP",
+      priceValue: 24.99,
+      priceCurrency: "EUR",
+      mediaCondition: "Very Good Plus (VG+)",
+      sleeveCondition: "Very Good Plus (VG+)",
     };
   }
 

@@ -57,14 +57,16 @@ function requireUser(req, res, next) {
   next();
 }
 
-function useMockDiscogs() {
-  return useMockAuth() || !discogsAppConfigured();
-}
-
 async function fetchReleaseMeta(url) {
-  return useMockDiscogs()
-    ? mockResolvePlacReleaseFromUrl(url)
-    : resolvePlacReleaseFromUrl(url);
+  if (!discogsAppConfigured()) {
+    if (useMockAuth()) {
+      return mockResolvePlacReleaseFromUrl(url);
+    }
+    throw new Error(
+      "Discogs API ni konfiguriran. Na strežniku nastavi DISCOGS_CONSUMER_KEY in DISCOGS_CONSUMER_SECRET."
+    );
+  }
+  return resolvePlacReleaseFromUrl(url);
 }
 
 function parsePrice(value) {
