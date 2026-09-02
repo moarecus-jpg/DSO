@@ -8685,22 +8685,28 @@ a.order-preview-item-title:hover {
 }
 
 .plac-grid--list {
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.85rem;
+}
+
+@media (max-width: 720px) {
+  .plac-grid--list {
+    grid-template-columns: 1fr;
+  }
 }
 
 .plac-grid--list .plac-card {
   display: grid;
-  grid-template-columns: 6.5rem minmax(0, 1fr);
-  grid-template-rows: auto auto;
-  gap: 0.65rem 1rem;
+  grid-template-columns: 6.5rem minmax(0, 1fr) auto;
+  gap: 0.75rem 1rem;
   padding: 0.85rem 1rem;
+  align-items: center;
   min-height: unset;
 }
 
 .plac-grid--list .plac-card-cover {
   grid-column: 1;
-  grid-row: 1;
+  grid-row: 1 / -1;
   width: 6.5rem;
   height: 6.5rem;
   min-width: 6.5rem;
@@ -8708,7 +8714,7 @@ a.order-preview-item-title:hover {
   flex-shrink: 0;
   aspect-ratio: unset;
   border-radius: 0.65rem;
-  align-self: start;
+  align-self: center;
 }
 
 .plac-grid--list .plac-card-cover img,
@@ -8729,15 +8735,18 @@ a.order-preview-item-title:hover {
 }
 
 .plac-grid--list .plac-card-bottom {
-  grid-column: 1 / -1;
+  grid-column: 3;
+  grid-row: 1 / -1;
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  justify-content: flex-end;
+  gap: 0.75rem;
   margin-top: 0;
-  padding-top: 0.65rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding-top: 0;
+  border-top: none;
+  align-self: center;
+  flex-shrink: 0;
 }
 
 .plac-grid--list .plac-card-footer {
@@ -8747,43 +8756,39 @@ a.order-preview-item-title:hover {
 }
 
 .plac-grid--list .plac-card-price {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   white-space: nowrap;
 }
 
 .plac-grid--list .plac-card-actions {
   margin-top: 0;
-  margin-left: auto;
+  margin-left: 0;
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 @media (max-width: 640px) {
   .plac-grid--list .plac-card {
-    grid-template-columns: 5.5rem minmax(0, 1fr);
-    gap: 0.55rem 0.85rem;
+    grid-template-columns: 5rem minmax(0, 1fr) auto;
+    gap: 0.55rem 0.75rem;
     padding: 0.75rem;
   }
 
   .plac-grid--list .plac-card-cover {
-    width: 5.5rem;
-    height: 5.5rem;
-    min-width: 5.5rem;
-    max-width: 5.5rem;
+    width: 5rem;
+    height: 5rem;
+    min-width: 5rem;
+    max-width: 5rem;
   }
 
   .plac-grid--list .plac-card-bottom {
     flex-direction: column;
-    align-items: stretch;
-    gap: 0.5rem;
+    align-items: flex-end;
+    gap: 0.45rem;
   }
 
-  .plac-grid--list .plac-card-footer {
-    justify-content: space-between;
-  }
-
-  .plac-grid--list .plac-card-actions {
-    margin-left: 0;
-    justify-content: flex-start;
+  .plac-grid--list .plac-card-price {
+    font-size: 1rem;
   }
 }
 
