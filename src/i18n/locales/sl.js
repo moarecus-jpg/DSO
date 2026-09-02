@@ -745,6 +745,7 @@ export default {
     empty: "Še ni oglasov. Bodi prvi!",
     emptyMine: "Nimaš še nobenega oglasa.",
     searchPlaceholder: "Išči izvajalca, naslov, žanr…",
+    emptySearch: "Noben oglas ne ustreza iskanju.",
     listingCount: "{{count}} oglasov",
     myListingCount: "{{count}} aktivnih oglasov",
     markSold: "Označi kot prodano",

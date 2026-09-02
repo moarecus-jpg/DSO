@@ -8454,6 +8454,24 @@ a.order-preview-item-title:hover {
   min-width: 0;
 }
 
+.plac-page-header-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.65rem;
+}
+
+.plac-page-header-title-main {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.plac-page-header-title-text {
+  min-width: 0;
+}
+
 .plac-page-header-search {
   justify-self: center;
   width: 100%;

@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Store } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
-import { PlacGalleryViewToggle } from "../components/PlacGalleryViewToggle.jsx";
+import { Store } from "lucide-react";
+import { useParams } from "react-router-dom";
 import { PlacListingCard } from "../components/PlacListingCard.jsx";
+import { PlacPageHeader } from "../components/PlacPageHeader.jsx";
+import { PlacSellDialog } from "../components/PlacSellDialog.jsx";
 import { UserAvatar } from "../components/UserAvatar.jsx";
 import { api } from "../api.js";
 import { useLocale } from "../hooks/useLocale.jsx";
+import { usePlacCart } from "../hooks/usePlacCart.jsx";
 import { usePlacGalleryView } from "../hooks/usePlacGalleryView.js";
 import { resolveUserAvatarUrl } from "../utils/userAvatarUrl.js";
 
@@ -18,11 +20,14 @@ function sellerLabel(seller) {
 export function PlacUser() {
   const { t } = useLocale();
   const { userId } = useParams();
+  const { count: cartCount } = usePlacCart();
+  const { view, setView } = usePlacGalleryView();
   const [seller, setSeller] = useState(null);
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { view, setView } = usePlacGalleryView();
+  const [query, setQuery] = useState("");
+  const [sellOpen, setSellOpen] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -40,63 +45,71 @@ export function PlacUser() {
       .finally(() => setLoading(false));
   }, [userId]);
 
-  const subtitle = useMemo(() => {
+  const filteredListings = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return listings;
+    return listings.filter(
+      (listing) =>
+        listing.artist?.toLowerCase().includes(q) ||
+        listing.title?.toLowerCase().includes(q) ||
+        listing.genre?.toLowerCase().includes(q) ||
+        listing.country?.toLowerCase().includes(q) ||
+        listing.category?.toLowerCase().includes(q)
+    );
+  }, [listings, query]);
+
+  const headerSubtitle = useMemo(() => {
     if (loading) return t("common.loading");
     if (error) return error;
     if (!seller) return t("plac.sellerNotFound");
-    return t("plac.sellerListingCount", { count: listings.length });
+    const parts = [];
+    if (seller.name && seller.discogsUsername) parts.push(seller.name);
+    parts.push(t("plac.sellerListingCount", { count: listings.length }));
+    return parts.join(" · ");
   }, [loading, error, seller, listings.length, t]);
 
   return (
     <div className="page page-orders page-plac page-plac-user">
-      <div className="plac-user-header">
-        <Link to="/plac" className="plac-user-back btn btn-ghost btn-sm">
-          <ArrowLeft size={16} aria-hidden />
-          {t("plac.backToMarketplace")}
-        </Link>
-
-        {seller && (
-          <div className="plac-user-profile">
+      <PlacPageHeader
+        backTo={{ to: "/plac", label: t("plac.backToMarketplace") }}
+        titleLeading={
+          seller ? (
             <UserAvatar
               name={seller.name}
               avatarUrl={resolveUserAvatarUrl(seller)}
               className="plac-user-avatar"
-              size={72}
+              size={56}
             />
-            <div>
-              <h1 className="plac-user-title">{sellerLabel(seller)}</h1>
-              {seller.name && seller.discogsUsername && (
-                <p className="muted fine">{seller.name}</p>
-              )}
-              <p className="muted fine">{subtitle}</p>
-            </div>
-          </div>
-        )}
-
-        {!seller && !loading && (
-          <h1 className="plac-user-title">{t("plac.sellerNotFound")}</h1>
-        )}
-      </div>
+          ) : null
+        }
+        title={seller ? sellerLabel(seller) : t("plac.sellerNotFound")}
+        subtitle={headerSubtitle}
+        query={query}
+        onQueryChange={setQuery}
+        placeholder={t("plac.searchPlaceholder")}
+        cartCount={cartCount}
+        onSell={() => setSellOpen(true)}
+        showGalleryView={!loading && filteredListings.length > 0}
+        galleryView={view}
+        onGalleryViewChange={setView}
+      />
 
       {loading ? (
         <p className="orders-loading">{t("common.loadingItems")}</p>
-      ) : listings.length === 0 ? (
+      ) : filteredListings.length === 0 ? (
         <div className="orders-empty plac-empty">
           <Store size={40} strokeWidth={1.2} />
-          <p>{error ? error : t("plac.sellerEmpty")}</p>
+          <p>{error ? error : query.trim() ? t("plac.emptySearch") : t("plac.sellerEmpty")}</p>
         </div>
       ) : (
-        <>
-          <div className="plac-gallery-toolbar">
-            <PlacGalleryViewToggle view={view} onChange={setView} />
-          </div>
-          <div className={`plac-grid plac-user-gallery plac-grid--${view}`}>
-            {listings.map((listing) => (
-              <PlacListingCard key={listing.id} listing={listing} showSeller={false} showCart detailLink />
-            ))}
-          </div>
-        </>
+        <div className={`plac-grid plac-user-gallery plac-grid--${view}`}>
+          {filteredListings.map((listing) => (
+            <PlacListingCard key={listing.id} listing={listing} showSeller={false} showCart detailLink />
+          ))}
+        </div>
       )}
+
+      <PlacSellDialog open={sellOpen} onClose={() => setSellOpen(false)} />
     </div>
   );
 }

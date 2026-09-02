@@ -1,4 +1,4 @@
-import { Plus, Search, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Plus, Search, ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { HeaderAccount } from "./HeaderAccount.jsx";
 import { PlacGalleryViewToggle } from "./PlacGalleryViewToggle.jsx";
@@ -15,6 +15,8 @@ export function PlacPageHeader({
   showGalleryView = false,
   galleryView,
   onGalleryViewChange,
+  backTo,
+  titleLeading,
 }) {
   const { t } = useLocale();
 
@@ -22,8 +24,19 @@ export function PlacPageHeader({
     <header className="plac-page-header">
       <div className="plac-page-header-row plac-page-header-row--top">
         <div className="plac-page-header-title">
-          <h1 className="orders-page-title">{title}</h1>
-          {subtitle && <p className="orders-page-subtitle">{subtitle}</p>}
+          {backTo && (
+            <Link to={backTo.to} className="plac-page-header-back btn btn-ghost btn-sm">
+              <ArrowLeft size={16} aria-hidden />
+              {backTo.label}
+            </Link>
+          )}
+          <div className="plac-page-header-title-main">
+            {titleLeading}
+            <div className="plac-page-header-title-text">
+              <h1 className="orders-page-title">{title}</h1>
+              {subtitle && <p className="orders-page-subtitle">{subtitle}</p>}
+            </div>
+          </div>
         </div>
 
         <div className="plac-page-header-search">

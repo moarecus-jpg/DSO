@@ -733,6 +733,7 @@ export default {
     empty: "No listings yet. Be the first to sell!",
     emptyMine: "You have no listings yet.",
     searchPlaceholder: "Search artist, title, genre…",
+    emptySearch: "No listings match your search.",
     listingCount: "{{count}} listings",
     myListingCount: "{{count}} active listings",
     markSold: "Mark as sold",
