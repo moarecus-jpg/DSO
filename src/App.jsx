@@ -19,6 +19,7 @@ import { PlacUser } from "./pages/PlacUser.jsx";
 import { Session } from "./pages/Session.jsx";
 import { Settings } from "./pages/Settings.jsx";
 import { AdminUsers } from "./pages/AdminUsers.jsx";
+import { MarketplaceBuyerPreview } from "./pages/MarketplaceBuyerPreview.jsx";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -52,6 +53,7 @@ function AppRoutes() {
         <Route path="/plac/orders" element={<PlacOrders />} />
         <Route path="/plac/item/:listingId" element={<PlacListingDetail />} />
         <Route path="/plac/u/:userId" element={<PlacUser />} />
+        <Route path="/marketplace-buyer-preview" element={<MarketplaceBuyerPreview />} />
         <Route path="/session/:id" element={<Session />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/admin/users" element={<AdminUsers />} />
