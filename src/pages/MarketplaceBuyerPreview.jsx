@@ -108,7 +108,7 @@ export function MarketplaceBuyerPreview() {
           onSell={() => {}}
         />
 
-        <div className="plac-grid plac-user-gallery plac-grid--default">
+        <div className="plac-grid plac-user-gallery plac-grid--large">
           {SAMPLE_LISTINGS.map((listing) => (
             <PlacListingCard
               key={listing.id}

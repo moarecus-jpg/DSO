@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 
-export const PLAC_GALLERY_VIEWS = ["default", "large", "list"];
+export const PLAC_GALLERY_VIEWS = ["large", "list"];
 
 const STORAGE_KEY = "dso_plac_gallery_view";
+const DEFAULT_VIEW = "large";
 
 function readStoredView() {
   try {
     const value = localStorage.getItem(STORAGE_KEY);
-    if (value === "compact") return "default";
-    return PLAC_GALLERY_VIEWS.includes(value) ? value : "default";
+    if (value === "compact" || value === "default") return DEFAULT_VIEW;
+    return PLAC_GALLERY_VIEWS.includes(value) ? value : DEFAULT_VIEW;
   } catch {
-    return "default";
+    return DEFAULT_VIEW;
   }
 }
 
