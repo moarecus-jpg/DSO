@@ -8449,6 +8449,10 @@ a.order-preview-item-title:hover {
   gap: 1rem 1.25rem;
 }
 
+.plac-page-header-row--top.plac-page-header-row--no-search {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
 .plac-page-header-title {
   justify-self: start;
   min-width: 0;
@@ -9409,6 +9413,13 @@ img.plac-user-avatar {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+}
+
+.plac-cart-link.active,
+.plac-orders-link.active {
+  border-color: rgba(139, 92, 246, 0.45);
+  background: rgba(124, 58, 237, 0.16);
+  color: #fff;
 }
 
 .plac-cart-badge {

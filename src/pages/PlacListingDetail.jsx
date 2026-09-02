@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, ExternalLink, Store } from "lucide-react";
+import { ExternalLink, Store } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { formatPrice } from "../../shared/orderTotals.js";
 import { placListingTitle } from "../../shared/plac.js";
 import { PlacAddToCartButton } from "../components/PlacAddToCartButton.jsx";
+import { PlacPageHeader } from "../components/PlacPageHeader.jsx";
+import { PlacSellDialog } from "../components/PlacSellDialog.jsx";
 import { UserAvatar } from "../components/UserAvatar.jsx";
 import { api } from "../api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
+import { usePlacCart } from "../hooks/usePlacCart.jsx";
 import { resolveUserAvatarUrl } from "../utils/userAvatarUrl.js";
 
 function sellerLabel(seller) {
@@ -21,10 +24,12 @@ export function PlacListingDetail() {
   const navigate = useNavigate();
   const { t } = useLocale();
   const { user } = useAuth();
+  const { count: cartCount } = usePlacCart();
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [sellOpen, setSellOpen] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -73,10 +78,14 @@ export function PlacListingDetail() {
 
   return (
     <div className="page page-orders page-plac page-plac-detail">
-      <Link to={backTo} className="plac-user-back btn btn-ghost btn-sm">
-        <ArrowLeft size={16} aria-hidden />
-        {t("plac.backToSeller")}
-      </Link>
+      <PlacPageHeader
+        backTo={{ to: backTo, label: t("plac.backToSeller") }}
+        title={loading ? t("common.loading") : listing ? titleText : t("plac.listingNotFound")}
+        subtitle={listing?.seller ? sellerLabel(listing.seller) : error ?? undefined}
+        showSearch={false}
+        cartCount={cartCount}
+        onSell={() => setSellOpen(true)}
+      />
 
       {loading ? (
         <p className="orders-loading">{t("common.loadingItems")}</p>
@@ -200,6 +209,8 @@ export function PlacListingDetail() {
           </div>
         </article>
       )}
+
+      <PlacSellDialog open={sellOpen} onClose={() => setSellOpen(false)} />
     </div>
   );
 }

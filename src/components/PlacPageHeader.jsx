@@ -1,17 +1,20 @@
-import { ArrowLeft, Plus, Search, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { HeaderAccount } from "./HeaderAccount.jsx";
 import { PlacGalleryViewToggle } from "./PlacGalleryViewToggle.jsx";
+import { PlacToolbarActions } from "./PlacToolbarActions.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
 
 export function PlacPageHeader({
   title,
   subtitle,
-  query,
+  query = "",
   onQueryChange,
   placeholder,
   cartCount,
   onSell,
+  showSell = true,
+  showSearch = true,
   showGalleryView = false,
   galleryView,
   onGalleryViewChange,
@@ -19,10 +22,15 @@ export function PlacPageHeader({
   titleLeading,
 }) {
   const { t } = useLocale();
+  const searchEnabled = showSearch && typeof onQueryChange === "function";
 
   return (
     <header className="plac-page-header">
-      <div className="plac-page-header-row plac-page-header-row--top">
+      <div
+        className={`plac-page-header-row plac-page-header-row--top${
+          searchEnabled ? "" : " plac-page-header-row--no-search"
+        }`}
+      >
         <div className="plac-page-header-title">
           {backTo && (
             <Link to={backTo.to} className="plac-page-header-back btn btn-ghost btn-sm">
@@ -39,34 +47,23 @@ export function PlacPageHeader({
           </div>
         </div>
 
-        <div className="plac-page-header-search">
-          <div className="orders-search-wrap">
-            <Search className="orders-search-icon" size={20} aria-hidden />
-            <input
-              type="search"
-              className="orders-search-input"
-              value={query}
-              onChange={(e) => onQueryChange(e.target.value)}
-              placeholder={placeholder}
-            />
+        {searchEnabled && (
+          <div className="plac-page-header-search">
+            <div className="orders-search-wrap">
+              <Search className="orders-search-icon" size={20} aria-hidden />
+              <input
+                type="search"
+                className="orders-search-input"
+                value={query}
+                onChange={(e) => onQueryChange(e.target.value)}
+                placeholder={placeholder ?? t("plac.searchPlaceholder")}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="plac-page-header-end">
-          <div className="plac-toolbar-actions">
-            <Link to="/plac/cart" className="btn btn-ghost plac-cart-link">
-              <ShoppingCart size={18} aria-hidden />
-              {t("plac.cart")}
-              {cartCount > 0 && <span className="plac-cart-badge">{cartCount}</span>}
-            </Link>
-            <Link to="/plac/orders" className="btn btn-ghost plac-orders-link">
-              {t("plac.orders")}
-            </Link>
-            <button type="button" className="btn btn-primary plac-sell-btn" onClick={onSell}>
-              <Plus size={18} aria-hidden />
-              {t("plac.sell")}
-            </button>
-          </div>
+          <PlacToolbarActions cartCount={cartCount} onSell={onSell} showSell={showSell} />
           <HeaderAccount className="plac-page-header-account" />
         </div>
       </div>

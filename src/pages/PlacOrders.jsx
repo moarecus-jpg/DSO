@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Package } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Package } from "lucide-react";
 import { formatPrice } from "../../shared/orderTotals.js";
 import { placListingTitle } from "../../shared/plac.js";
+import { PlacPageHeader } from "../components/PlacPageHeader.jsx";
+import { PlacSellDialog } from "../components/PlacSellDialog.jsx";
 import { api } from "../api.js";
 import { UserAvatar } from "../components/UserAvatar.jsx";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
+import { usePlacCart } from "../hooks/usePlacCart.jsx";
 import { resolveUserAvatarUrl } from "../utils/userAvatarUrl.js";
 
 function partyLabel(party) {
@@ -18,9 +20,11 @@ function partyLabel(party) {
 export function PlacOrders() {
   const { t } = useLocale();
   const { user } = useAuth();
+  const { count: cartCount } = usePlacCart();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
+  const [sellOpen, setSellOpen] = useState(false);
 
   useEffect(() => {
     api("/api/plac/orders")
@@ -46,14 +50,14 @@ export function PlacOrders() {
 
   return (
     <div className="page page-orders page-plac page-plac-orders">
-      <div className="plac-cart-header">
-        <Link to="/plac" className="plac-user-back btn btn-ghost btn-sm">
-          <ArrowLeft size={16} aria-hidden />
-          {t("plac.backToMarketplace")}
-        </Link>
-        <h1 className="plac-cart-title">{t("plac.ordersTitle")}</h1>
-        <p className="muted fine">{t("plac.ordersSubtitle")}</p>
-      </div>
+      <PlacPageHeader
+        backTo={{ to: "/plac", label: t("plac.backToMarketplace") }}
+        title={t("plac.ordersTitle")}
+        subtitle={t("plac.ordersSubtitle")}
+        showSearch={false}
+        cartCount={cartCount}
+        onSell={() => setSellOpen(true)}
+      />
 
       {loading ? (
         <p className="orders-loading">{t("common.loadingItems")}</p>
@@ -157,6 +161,8 @@ export function PlacOrders() {
           })}
         </div>
       )}
+
+      <PlacSellDialog open={sellOpen} onClose={() => setSellOpen(false)} />
     </div>
   );
 }

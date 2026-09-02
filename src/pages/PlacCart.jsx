@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { ArrowLeft, ShoppingCart, Trash2 } from "lucide-react";
+import { ShoppingCart, Trash2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { formatPrice } from "../../shared/orderTotals.js";
 import { placListingTitle } from "../../shared/plac.js";
+import { PlacPageHeader } from "../components/PlacPageHeader.jsx";
+import { PlacSellDialog } from "../components/PlacSellDialog.jsx";
 import { api } from "../api.js";
 import { UserAvatar } from "../components/UserAvatar.jsx";
 import { useAuth } from "../hooks/useAuth.jsx";
@@ -24,6 +26,7 @@ export function PlacCart() {
   const [note, setNote] = useState("");
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState(null);
+  const [sellOpen, setSellOpen] = useState(false);
 
   async function handlePlaceOrder() {
     if (!items.length) return;
@@ -53,14 +56,14 @@ export function PlacCart() {
 
   return (
     <div className="page page-orders page-plac page-plac-cart">
-      <div className="plac-cart-header">
-        <Link to="/plac" className="plac-user-back btn btn-ghost btn-sm">
-          <ArrowLeft size={16} aria-hidden />
-          {t("plac.backToMarketplace")}
-        </Link>
-        <h1 className="plac-cart-title">{t("plac.cartTitle")}</h1>
-        <p className="muted fine">{t("plac.cartSubtitle")}</p>
-      </div>
+      <PlacPageHeader
+        backTo={{ to: "/plac", label: t("plac.backToMarketplace") }}
+        title={t("plac.cartTitle")}
+        subtitle={t("plac.cartSubtitle")}
+        showSearch={false}
+        cartCount={items.length}
+        onSell={() => setSellOpen(true)}
+      />
 
       {items.length === 0 ? (
         <div className="orders-empty plac-empty">
@@ -157,6 +160,8 @@ export function PlacCart() {
           </div>
         </>
       )}
+
+      <PlacSellDialog open={sellOpen} onClose={() => setSellOpen(false)} />
     </div>
   );
 }
