@@ -8329,6 +8329,52 @@ a.order-preview-item-title:hover {
 }
 
 /* —— Plac marketplace —— */
+.plac-page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+
+.plac-page-header-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.plac-page-header-row--top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, 18rem) minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem 1.25rem;
+}
+
+.plac-page-header-row--bottom {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.plac-page-header-title {
+  justify-self: start;
+  min-width: 0;
+}
+
+.plac-page-header-search {
+  justify-self: center;
+  width: 100%;
+  max-width: 18rem;
+  min-width: 0;
+}
+
+.plac-page-header-search .orders-search-wrap {
+  width: 100%;
+}
+
+.plac-page-header-account {
+  justify-self: end;
+}
+
 .page-plac .orders-page-header {
   margin-bottom: 1rem;
 }
@@ -8983,7 +9029,8 @@ a.order-preview-item-title:hover {
 
 .plac-seller-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(10.5rem, 10.5rem));
+  justify-content: center;
   gap: 1rem;
 }
 
@@ -9132,6 +9179,28 @@ img.plac-user-avatar {
 }
 
 @media (max-width: 768px) {
+  .plac-page-header-row--top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .plac-page-header-search {
+    order: 3;
+    flex: 1 1 100%;
+    max-width: none;
+    justify-self: stretch;
+  }
+
+  .plac-page-header-account {
+    margin-left: auto;
+  }
+
+  .plac-page-header-row--bottom {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .plac-toolbar {
     flex-direction: column;
     align-items: stretch;

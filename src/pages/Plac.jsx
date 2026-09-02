@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, ShoppingCart, Store } from "lucide-react";
+import { Plus, Store } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { PlacGalleryViewToggle } from "../components/PlacGalleryViewToggle.jsx";
 import { PlacListingCard } from "../components/PlacListingCard.jsx";
+import { PlacPageHeader } from "../components/PlacPageHeader.jsx";
 import { PlacSellerCard } from "../components/PlacSellerCard.jsx";
 import { PlacSellDialog } from "../components/PlacSellDialog.jsx";
-import { OrdersPageHeader } from "../components/OrdersPageHeader.jsx";
 import { api } from "../api.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { usePlacCart } from "../hooks/usePlacCart.jsx";
@@ -105,50 +105,16 @@ export function Plac() {
 
   return (
     <div className="page page-orders page-plac">
-      <OrdersPageHeader
+      <PlacPageHeader
         title={t("plac.title")}
         subtitle={subtitle}
         query={query}
         onQueryChange={setQuery}
         placeholder={mine ? t("plac.searchPlaceholder") : t("plac.searchSellersPlaceholder")}
+        mine={mine}
+        cartCount={cartCount}
+        onSell={() => setSellOpen(true)}
       />
-
-      <div className="plac-toolbar">
-        <div className="plac-tabs" role="tablist" aria-label={t("plac.title")}>
-          <Link
-            to="/plac"
-            className={`plac-tab${!mine ? " active" : ""}`}
-            role="tab"
-            aria-selected={!mine}
-          >
-            <Store size={16} aria-hidden />
-            {t("plac.browse")}
-          </Link>
-          <Link
-            to="/plac/mine"
-            className={`plac-tab${mine ? " active" : ""}`}
-            role="tab"
-            aria-selected={mine}
-          >
-            {t("plac.mine")}
-          </Link>
-        </div>
-
-        <div className="plac-toolbar-actions">
-          <Link to="/plac/cart" className="btn btn-ghost plac-cart-link">
-            <ShoppingCart size={18} aria-hidden />
-            {t("plac.cart")}
-            {cartCount > 0 && <span className="plac-cart-badge">{cartCount}</span>}
-          </Link>
-          <Link to="/plac/orders" className="btn btn-ghost plac-orders-link">
-            {t("plac.orders")}
-          </Link>
-          <button type="button" className="btn btn-primary plac-sell-btn" onClick={() => setSellOpen(true)}>
-            <Plus size={18} aria-hidden />
-            {t("plac.sell")}
-          </button>
-        </div>
-      </div>
 
       {loading ? (
         <p className="orders-loading">{t("common.loadingItems")}</p>

@@ -10,7 +10,6 @@ import {
   Package,
   Plus,
   Settings,
-  LayoutGrid,
   Store,
 } from "lucide-react";
 import { useLocale } from "../hooks/useLocale.jsx";
@@ -118,11 +117,6 @@ export function Sidebar() {
         </NavLink>
 
         <div className="sidebar-section">
-          <p className="sidebar-section-label">
-            <LayoutGrid size={13} strokeWidth={2.2} aria-hidden />
-            {t("nav.sectionOrders")}
-          </p>
-
           <nav className="sidebar-nav sidebar-nav-v2" aria-label={t("nav.mainNav")}>
             {ORDER_LINKS.map((item) => {
               const Icon = item.icon;
@@ -171,12 +165,7 @@ export function Sidebar() {
         </div>
 
         <div className="sidebar-section">
-          <p className="sidebar-section-label">
-            <Store size={13} strokeWidth={2.2} aria-hidden />
-            {t("nav.sectionPlac")}
-          </p>
-
-          <nav className="sidebar-nav sidebar-nav-v2" aria-label={t("plac.title")}>
+          <nav className="sidebar-nav sidebar-nav-v2" aria-label={t("nav.plac")}>
             {PLAC_LINKS.map((item) => {
               const Icon = item.icon;
               const count =
