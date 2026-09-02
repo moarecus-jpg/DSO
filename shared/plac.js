@@ -1,3 +1,5 @@
+import { parseDiscogsRecordUrl } from "./parseRecordUrl.js";
+
 export const PLAC_LISTING_TYPES = ["vinyl", "other"];
 
 export const PLAC_CATEGORIES = [
@@ -33,4 +35,9 @@ export function placListingTitle(listing) {
     return `${listing.artist} — ${listing.title}`;
   }
   return listing?.title || listing?.artist || "—";
+}
+
+export function isSupportedPlacDiscogsUrl(url) {
+  const parsed = parseDiscogsRecordUrl(url);
+  return parsed.valid && (parsed.releaseId != null || parsed.listingId != null);
 }

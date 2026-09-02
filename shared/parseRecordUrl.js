@@ -39,7 +39,7 @@ export function isDiscogsRecordUrl(url) {
   );
 }
 
-/** One Discogs URL per line; ignores prazne in podvojene. */
+/** One Discogs URL per line (or comma/semicolon separated); ignores prazne in podvojene. */
 export function parseDiscogsUrlList(text) {
   if (!text?.trim()) return { valid: [], invalid: [] };
 
@@ -48,16 +48,19 @@ export function parseDiscogsUrlList(text) {
   const invalid = [];
 
   for (const line of text.split(/[\r\n]+/)) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    const key = trimmed.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
+    const parts = line.split(/[,;]+/);
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (!trimmed) continue;
+      const key = trimmed.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
 
-    if (isDiscogsRecordUrl(trimmed)) {
-      valid.push(trimmed);
-    } else {
-      invalid.push(trimmed);
+      if (isDiscogsRecordUrl(trimmed)) {
+        valid.push(trimmed);
+      } else {
+        invalid.push(trimmed);
+      }
     }
   }
 

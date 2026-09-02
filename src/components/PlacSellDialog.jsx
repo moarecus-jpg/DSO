@@ -2,8 +2,10 @@ import { createPortal } from "react-dom";
 import { useEffect, useMemo, useState } from "react";
 import { Disc3, Loader2, Package, Plus, X } from "lucide-react";
 import { GRADES } from "../../shared/orderReview.js";
-import { parseDiscogsRecordUrl, parseDiscogsUrlList } from "../../shared/parseRecordUrl.js";
+import { parseDiscogsUrlList } from "../../shared/parseRecordUrl.js";
+import { formatPrice } from "../../shared/orderTotals.js";
 import {
+  isSupportedPlacDiscogsUrl,
   PLAC_CATEGORIES,
   PLAC_OTHER_CONDITIONS,
 } from "../../shared/plac.js";
@@ -41,21 +43,18 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
   );
 
   const validUrls = useMemo(
-    () =>
-      parsedUrls.filter((url) => {
-        const parsed = parseDiscogsRecordUrl(url);
-        return parsed.valid && parsed.releaseId != null;
-      }),
+    () => parsedUrls.filter((url) => isSupportedPlacDiscogsUrl(url)),
     [parsedUrls]
   );
 
-  const nonReleaseUrls = useMemo(
-    () =>
-      parsedUrls.filter((url) => {
-        const parsed = parseDiscogsRecordUrl(url);
-        return !(parsed.valid && parsed.releaseId != null);
-      }),
+  const unsupportedUrls = useMemo(
+    () => parsedUrls.filter((url) => !isSupportedPlacDiscogsUrl(url)),
     [parsedUrls]
+  );
+
+  const previewsFromListings = useMemo(
+    () => previews.some((row) => row.fromListing),
+    [previews]
   );
 
   const gradeOptions = useMemo(
@@ -128,19 +127,50 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
     setPreviewErrors([]);
   }
 
-  async function handlePreview() {
-    if (validUrls.length === 0) return;
+  function applyPreviewDefaults(releases) {
+    const firstWithPrice = releases.find((row) => row.priceValue != null);
+    if (firstWithPrice?.priceValue != null) {
+      setPriceValue(String(firstWithPrice.priceValue));
+    }
+    const firstWithMedia = releases.find((row) => row.mediaCondition);
+    if (firstWithMedia?.mediaCondition) {
+      setMediaCondition(firstWithMedia.mediaCondition);
+    }
+    const firstWithSleeve = releases.find((row) => row.sleeveCondition);
+    if (firstWithSleeve?.sleeveCondition) {
+      setSleeveCondition(firstWithSleeve.sleeveCondition);
+    }
+  }
 
-    setPreviewing(true);
+  async function handlePreview() {
     setPreviewErrors([]);
     setError(null);
+
+    if (validUrls.length === 0) {
+      if (!urlsText.trim()) {
+        setError(t("plac.noUrlsEntered"));
+      } else if (parsedUrls.length > 0) {
+        setError(t("plac.noSupportedUrls"));
+      } else {
+        setError(t("plac.invalidUrls"));
+      }
+      return;
+    }
+
+    setPreviewing(true);
     try {
       const data = await api("/api/plac/preview-batch", {
         method: "POST",
         body: JSON.stringify({ releaseUrls: validUrls }),
       });
-      setPreviews(data.releases ?? []);
+      const releases = data.releases ?? [];
+      setPreviews(releases);
       setPreviewErrors(data.errors ?? []);
+      if (releases.length > 0) {
+        applyPreviewDefaults(releases);
+      } else {
+        setError(t("plac.previewFailed"));
+      }
     } catch (err) {
       setPreviews([]);
       setPreviewErrors([]);
@@ -150,7 +180,10 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
     }
   }
 
-  const canSubmitVinyl = previews.length > 0 && Boolean(priceValue);
+  const canSubmitVinyl =
+    previews.length > 0 &&
+    (previews.every((row) => row.fromListing && row.priceValue != null) ||
+      (Boolean(priceValue) && Boolean(mediaCondition)));
   const canSubmitOther = Boolean(title.trim() && priceValue);
 
   const publishLabel = useMemo(() => {
@@ -300,7 +333,7 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
                       clearPreviews();
                       setError(null);
                     }}
-                    placeholder={"https://www.discogs.com/release/123\nhttps://www.discogs.com/release/456"}
+                    placeholder={"https://www.discogs.com/sell/item/123\nhttps://www.discogs.com/release/456"}
                     rows={4}
                     disabled={previewing || submitting}
                   />
@@ -318,14 +351,24 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
                         : t("items.invalidLineMany", { count: invalidUrls.length })}
                     </p>
                   )}
-                  {nonReleaseUrls.length > 0 && (
-                    <p className="form-error fine">{t("plac.releaseOnlyHint")}</p>
+                  {unsupportedUrls.length > 0 && (
+                    <p className="form-error fine">{t("plac.unsupportedUrlHint")}</p>
+                  )}
+                  {(error || previewErrors.length > 0) && (
+                    <div className="plac-sell-inline-errors">
+                      {error && <p className="form-error fine">{error}</p>}
+                      {previewErrors.map((row) => (
+                        <p key={row.releaseUrl} className="form-error fine">
+                          {row.releaseUrl}: {row.error}
+                        </p>
+                      ))}
+                    </div>
                   )}
                   <button
                     type="button"
                     className="btn btn-ghost plac-preview-btn"
                     onClick={handlePreview}
-                    disabled={previewing || validUrls.length === 0}
+                    disabled={previewing || submitting}
                   >
                     {previewing ? (
                       <>
@@ -353,7 +396,10 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
                     </div>
                     <div className="plac-preview-grid">
                       {previews.map((release) => (
-                        <article key={release.releaseId ?? release.releaseUrl} className="plac-preview-card">
+                        <article
+                          key={release.listingId ?? release.releaseUrl ?? release.releaseId}
+                          className="plac-preview-card"
+                        >
                           {release.thumbnailUrl ? (
                             <img src={release.thumbnailUrl} alt="" className="plac-preview-cover" />
                           ) : (
@@ -365,7 +411,16 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
                               {release.year != null && <li>{release.year}</li>}
                               {release.format && <li>{release.format}</li>}
                               {release.genre && <li>{release.genre}</li>}
+                              {release.fromListing && release.priceValue != null && (
+                                <li>{formatPrice(release.priceValue)}</li>
+                              )}
+                              {release.fromListing && release.mediaCondition && (
+                                <li>{release.mediaCondition}</li>
+                              )}
                             </ul>
+                            {release.fromListing && (
+                              <span className="plac-preview-badge">{t("plac.fromDiscogsListing")}</span>
+                            )}
                           </div>
                         </article>
                       ))}
@@ -373,7 +428,7 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
                   </section>
                 )}
 
-                {previewErrors.length > 0 && (
+                {previewErrors.length > 0 && previews.length > 0 && (
                   <div className="plac-sell-warnings">
                     {previewErrors.map((row) => (
                       <p key={row.releaseUrl} className="form-error fine">
@@ -387,7 +442,11 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
                   <div className="plac-sell-section-head">
                     <h3>{t("plac.sharedSettings")}</h3>
                     {previews.length > 1 && (
-                      <p className="muted fine">{t("plac.sharedSettingsHint")}</p>
+                      <p className="muted fine">
+                        {previewsFromListings
+                          ? t("plac.sharedSettingsListingHint")
+                          : t("plac.sharedSettingsHint")}
+                      </p>
                     )}
                   </div>
 
@@ -400,8 +459,11 @@ export function PlacSellDialog({ open, onClose, onCreated }) {
                         step="0.01"
                         value={priceValue}
                         onChange={(e) => setPriceValue(e.target.value)}
-                        required
+                        required={!previews.every((row) => row.fromListing && row.priceValue != null)}
                       />
+                      {previewsFromListings && (
+                        <span className="muted fine">{t("plac.priceListingHint")}</span>
+                      )}
                     </label>
 
                     <label className="plac-sell-field">

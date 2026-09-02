@@ -186,47 +186,124 @@ function fromReleasePayloadPlac(data) {
   };
 }
 
-/** Plac marketplace: release URL only, enriched metadata for listing form. */
+/** Plac marketplace: release or marketplace listing URL with enriched metadata. */
 export async function resolvePlacReleaseFromUrl(url) {
   const parsed = parseDiscogsRecordUrl(url);
   if (!parsed.valid) {
     throw new Error("Neveljavna Discogs povezava.");
   }
+
   if (parsed.listingId != null) {
-    throw new Error("Za Plac uporabi povezavo do release (/release/), ne marketplace listinga.");
-  }
-  if (parsed.releaseId == null) {
-    throw new Error("Podprte so samo Discogs release povezave (/release/).");
+    const data = await discogsGet(
+      `/marketplace/listings/${parsed.listingId}?curr_abbr=EUR`
+    );
+    const releaseId = data.release?.id;
+    if (releaseId == null) {
+      throw new Error("Listing nima povezanega release.");
+    }
+
+    const releaseData = await discogsGet(`/releases/${releaseId}`);
+    const price = listingPrice(data);
+    const placRelease = fromReleasePayloadPlac(releaseData);
+
+    return {
+      releaseId,
+      releaseUrl: url.trim(),
+      listingId: parsed.listingId,
+      fromListing: true,
+      ...placRelease,
+      thumbnailUrl:
+        placRelease.thumbnailUrl ??
+        data.release?.thumb ??
+        data.release?.thumbnail ??
+        null,
+      priceValue: price.value,
+      priceCurrency: price.currency ?? "EUR",
+      mediaCondition: data.condition ?? null,
+      sleeveCondition: data.sleeve_condition ?? null,
+    };
   }
 
-  const data = await discogsGet(`/releases/${parsed.releaseId}`);
-  return {
-    releaseId: parsed.releaseId,
-    releaseUrl: url.trim(),
-    ...fromReleasePayloadPlac(data),
-  };
+  if (parsed.releaseId != null) {
+    const data = await discogsGet(`/releases/${parsed.releaseId}`);
+    return {
+      releaseId: parsed.releaseId,
+      releaseUrl: url.trim(),
+      listingId: null,
+      fromListing: false,
+      ...fromReleasePayloadPlac(data),
+      priceValue: null,
+      priceCurrency: null,
+      mediaCondition: null,
+      sleeveCondition: null,
+    };
+  }
+
+  throw new Error(
+    "Podprte so Discogs release (/release/) ali listing (/sell/item/, /shop/item/) povezave."
+  );
 }
 
 export function mockResolvePlacReleaseFromUrl(url) {
   const parsed = parseDiscogsRecordUrl(url);
-  if (!parsed.valid || parsed.releaseId == null) {
-    throw new Error("Podprte so samo Discogs release povezave (/release/).");
-  }
-  if (parsed.listingId != null) {
-    throw new Error("Za Plac uporabi povezavo do release (/release/), ne marketplace listinga.");
+  if (!parsed.valid) {
+    throw new Error("Neveljavna Discogs povezava.");
   }
 
-  return {
-    releaseId: parsed.releaseId,
-    releaseUrl: url.trim(),
-    artist: "Demo Artist",
-    title: `Release #${parsed.releaseId}`,
-    thumbnailUrl: null,
-    year: 1984,
-    genre: "Electronic",
-    country: "Slovenia",
-    format: "Vinyl, LP",
-  };
+  if (parsed.listingId != null) {
+    const listing = MOCK_INVENTORY.find((l) => l.id === parsed.listingId);
+    if (!listing) {
+      throw new Error(
+        "Listing ni v demo podatkih. Uporabi pravo Discogs povezavo (API) ali demo listing 8821003."
+      );
+    }
+    const release = listing.release ?? {};
+    const artist = release.artist ?? "Demo Artist";
+    const title = release.title ?? `Listing #${parsed.listingId}`;
+    const price = listingPrice(listing);
+
+    return {
+      releaseId: release.id ?? parsed.listingId,
+      releaseUrl: url.trim(),
+      listingId: parsed.listingId,
+      fromListing: true,
+      artist,
+      title,
+      thumbnailUrl: null,
+      year: 1984,
+      genre: "Electronic",
+      country: "Slovenia",
+      format: release.format ?? "Vinyl, LP",
+      priceValue: price.value,
+      priceCurrency: price.currency ?? "EUR",
+      mediaCondition: listing.condition ?? "Very Good Plus (VG+)",
+      sleeveCondition: listing.sleeve_condition ?? null,
+    };
+  }
+
+  if (parsed.releaseId != null) {
+    return {
+      releaseId: parsed.releaseId,
+      releaseUrl: url.trim(),
+      listingId: null,
+      fromListing: false,
+      artist: "Demo Artist",
+      title: `Release #${parsed.releaseId}`,
+      thumbnailUrl: null,
+      year: 1984,
+      genre: "Electronic",
+      country: "Slovenia",
+      format: "Vinyl, LP",
+      priceValue: null,
+      priceCurrency: null,
+      mediaCondition: null,
+      sleeveCondition: null,
+    };
+  }
+
+  throw new Error(
+    "Podprte so Discogs release (/release/) ali listing (/sell/item/, /shop/item/) povezave."
+  );
 }
 
 export function mockResolveRecordFromUrl(url, note, options = {}) {

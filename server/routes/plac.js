@@ -17,9 +17,9 @@ import {
   resolvePlacReleaseFromUrl,
 } from "../discogs/recordMeta.js";
 import { discogsAppConfigured } from "../discogs/auth.js";
-import { parseDiscogsRecordUrl } from "../../shared/parseRecordUrl.js";
 import { isValidGrade } from "../../shared/orderReview.js";
 import {
+  isSupportedPlacDiscogsUrl,
   isValidPlacCategory,
   isValidPlacOtherCondition,
 } from "../../shared/plac.js";
@@ -73,6 +73,68 @@ function parsePrice(value) {
   return Math.round(n * 100) / 100;
 }
 
+function resolveListingFields(release, { priceValue, mediaCondition, sleeveCondition }) {
+  const price =
+    release.fromListing && release.priceValue != null
+      ? release.priceValue
+      : priceValue;
+
+  const media =
+    release.fromListing &&
+    release.mediaCondition &&
+    isValidGrade(release.mediaCondition)
+      ? release.mediaCondition
+      : mediaCondition;
+
+  const sleeve =
+    release.fromListing &&
+    release.sleeveCondition &&
+    isValidGrade(release.sleeveCondition)
+      ? release.sleeveCondition
+      : sleeveCondition || null;
+
+  return { price, media, sleeve };
+}
+
+async function createVinylPlacListing(userId, url, fields) {
+  if (!isSupportedPlacDiscogsUrl(url)) {
+    throw new Error("Neveljavna Discogs povezava.");
+  }
+
+  const release = await fetchReleaseMeta(url.trim());
+  const { price, media, sleeve } = resolveListingFields(release, fields);
+
+  if (price == null) {
+    throw new Error("Vnesi veljavno ceno.");
+  }
+  if (!media || !isValidGrade(media)) {
+    throw new Error("Izberi stanje medija.");
+  }
+  if (sleeve && !isValidGrade(sleeve)) {
+    throw new Error("Neveljavno stanje ovoja.");
+  }
+
+  return createPlacListing({
+    userId,
+    listingType: "vinyl",
+    category: "vinyl",
+    releaseUrl: release.releaseUrl,
+    releaseId: release.releaseId,
+    artist: release.artist,
+    title: release.title,
+    thumbnailUrl: release.thumbnailUrl,
+    year: release.year,
+    genre: release.genre,
+    country: release.country,
+    format: release.format,
+    priceValue: price,
+    priceCurrency: "EUR",
+    mediaCondition: media,
+    sleeveCondition: sleeve,
+    note: fields.note?.trim() || null,
+  });
+}
+
 router.get("/sellers", requireUser, (req, res) => {
   const sellers = listPlacSellers({ query: req.query.q });
   res.json({ sellers });
@@ -107,20 +169,19 @@ router.post("/preview", requireUser, async (req, res) => {
   try {
     const { releaseUrl } = req.body ?? {};
     if (!releaseUrl?.trim()) {
-      return res.status(400).json({ error: "Vnesi Discogs release povezavo." });
+      return res.status(400).json({ error: "Vnesi Discogs povezavo." });
     }
 
-    const parsed = parseDiscogsRecordUrl(releaseUrl);
-    if (!parsed.valid || parsed.releaseId == null) {
+    if (!isSupportedPlacDiscogsUrl(releaseUrl)) {
       return res.status(400).json({
-        error: "Podprte so samo Discogs release povezave (/release/).",
+        error: "Podprte so release (/release/) ali listing (/sell/item/, /shop/item/) povezave.",
       });
     }
 
     const release = await fetchReleaseMeta(releaseUrl.trim());
     res.json({ release });
   } catch (err) {
-    res.status(400).json({ error: err.message ?? "Release ni bilo mogoče naložiti." });
+    res.status(400).json({ error: err.message ?? "Podatkov ni bilo mogoče naložiti." });
   }
 });
 
@@ -130,7 +191,7 @@ router.post("/preview-batch", requireUser, async (req, res) => {
     const trimmed = urls.map((url) => url?.trim()).filter(Boolean);
 
     if (trimmed.length === 0) {
-      return res.status(400).json({ error: "Vnesi vsaj eno Discogs release povezavo." });
+      return res.status(400).json({ error: "Vnesi vsaj eno Discogs povezavo." });
     }
 
     const releases = [];
@@ -138,30 +199,32 @@ router.post("/preview-batch", requireUser, async (req, res) => {
 
     await Promise.all(
       trimmed.map(async (releaseUrl) => {
-        const parsed = parseDiscogsRecordUrl(releaseUrl);
-        if (!parsed.valid || parsed.releaseId == null) {
-          errors.push({ releaseUrl, error: "Neveljavna Discogs release povezava." });
+        if (!isSupportedPlacDiscogsUrl(releaseUrl)) {
+          errors.push({ releaseUrl, error: "Neveljavna Discogs povezava." });
           return;
         }
         try {
           const release = await fetchReleaseMeta(releaseUrl);
           releases.push({ ...release, releaseUrl });
         } catch (err) {
-          errors.push({ releaseUrl, error: err.message ?? "Release ni bilo mogoče naložiti." });
+          errors.push({
+            releaseUrl,
+            error: err.message ?? "Podatkov ni bilo mogoče naložiti.",
+          });
         }
       })
     );
 
     if (releases.length === 0) {
       return res.status(400).json({
-        error: errors[0]?.error ?? "Release ni bilo mogoče naložiti.",
+        error: errors[0]?.error ?? "Podatkov ni bilo mogoče naložiti.",
         errors,
       });
     }
 
     res.json({ releases, errors });
   } catch (err) {
-    res.status(400).json({ error: err.message ?? "Release ni bilo mogoče naložiti." });
+    res.status(400).json({ error: err.message ?? "Podatkov ni bilo mogoče naložiti." });
   }
 });
 
@@ -171,12 +234,11 @@ router.post("/", requireUser, async (req, res) => {
     const body = req.body ?? {};
     const listingType = body.listingType === "other" ? "other" : "vinyl";
 
-    const price = parsePrice(body.priceValue);
-    if (price == null) {
-      return res.status(400).json({ error: "Vnesi veljavno ceno." });
-    }
-
     if (listingType === "other") {
+      const price = parsePrice(body.priceValue);
+      if (price == null) {
+        return res.status(400).json({ error: "Vnesi veljavno ceno." });
+      }
       const title = body.title?.trim();
       if (!title) {
         return res.status(400).json({ error: "Vnesi naslov oglasa." });
@@ -210,38 +272,25 @@ router.post("/", requireUser, async (req, res) => {
     }
 
     const { releaseUrl, mediaCondition, sleeveCondition, note } = body;
+    const price = parsePrice(body.priceValue);
 
     if (!releaseUrl?.trim()) {
-      return res.status(400).json({ error: "Vnesi Discogs release povezavo." });
+      return res.status(400).json({ error: "Vnesi Discogs povezavo." });
     }
 
-    if (!mediaCondition || !isValidGrade(mediaCondition)) {
-      return res.status(400).json({ error: "Izberi stanje medija." });
+    if (mediaCondition && !isValidGrade(mediaCondition)) {
+      return res.status(400).json({ error: "Neveljavno stanje medija." });
     }
 
     if (sleeveCondition && !isValidGrade(sleeveCondition)) {
       return res.status(400).json({ error: "Neveljavno stanje ovoja." });
     }
 
-    const release = await fetchReleaseMeta(releaseUrl.trim());
-    const listing = createPlacListing({
-      userId,
-      listingType: "vinyl",
-      category: "vinyl",
-      releaseUrl: release.releaseUrl,
-      releaseId: release.releaseId,
-      artist: release.artist,
-      title: release.title,
-      thumbnailUrl: release.thumbnailUrl,
-      year: release.year,
-      genre: release.genre,
-      country: release.country,
-      format: release.format,
+    const listing = await createVinylPlacListing(userId, releaseUrl, {
       priceValue: price,
-      priceCurrency: "EUR",
       mediaCondition,
-      sleeveCondition: sleeveCondition || null,
-      note: note?.trim() || null,
+      sleeveCondition,
+      note,
     });
 
     res.status(201).json({ listing });
@@ -258,18 +307,14 @@ router.post("/batch", requireUser, async (req, res) => {
     const trimmed = urls.map((url) => url?.trim()).filter(Boolean);
 
     if (trimmed.length === 0) {
-      return res.status(400).json({ error: "Vnesi vsaj eno Discogs release povezavo." });
+      return res.status(400).json({ error: "Vnesi vsaj eno Discogs povezavo." });
     }
 
     const price = parsePrice(body.priceValue);
-    if (price == null) {
-      return res.status(400).json({ error: "Vnesi veljavno ceno." });
-    }
-
     const { mediaCondition, sleeveCondition, note } = body;
 
-    if (!mediaCondition || !isValidGrade(mediaCondition)) {
-      return res.status(400).json({ error: "Izberi stanje medija." });
+    if (mediaCondition && !isValidGrade(mediaCondition)) {
+      return res.status(400).json({ error: "Neveljavno stanje medija." });
     }
 
     if (sleeveCondition && !isValidGrade(sleeveCondition)) {
@@ -280,35 +325,19 @@ router.post("/batch", requireUser, async (req, res) => {
     const errors = [];
 
     for (const releaseUrl of trimmed) {
-      const parsed = parseDiscogsRecordUrl(releaseUrl);
-      if (!parsed.valid || parsed.releaseId == null) {
-        errors.push({ releaseUrl, error: "Neveljavna Discogs release povezava." });
-        continue;
-      }
       try {
-        const release = await fetchReleaseMeta(releaseUrl);
-        const listing = createPlacListing({
-          userId,
-          listingType: "vinyl",
-          category: "vinyl",
-          releaseUrl: release.releaseUrl,
-          releaseId: release.releaseId,
-          artist: release.artist,
-          title: release.title,
-          thumbnailUrl: release.thumbnailUrl,
-          year: release.year,
-          genre: release.genre,
-          country: release.country,
-          format: release.format,
+        const listing = await createVinylPlacListing(userId, releaseUrl, {
           priceValue: price,
-          priceCurrency: "EUR",
           mediaCondition,
-          sleeveCondition: sleeveCondition || null,
-          note: note?.trim() || null,
+          sleeveCondition,
+          note,
         });
         listings.push(listing);
       } catch (err) {
-        errors.push({ releaseUrl, error: err.message ?? "Oglasa ni bilo mogoče ustvariti." });
+        errors.push({
+          releaseUrl,
+          error: err.message ?? "Oglasa ni bilo mogoče ustvariti.",
+        });
       }
     }
 
