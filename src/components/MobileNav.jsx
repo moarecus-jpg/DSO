@@ -1,5 +1,5 @@
 import { NavLink, useLocation, useSearchParams } from "react-router-dom";
-import { Ban, BarChart3, CircleOff, Folder, Lock, Package, Plus } from "lucide-react";
+import { Ban, BarChart3, CircleOff, Folder, Lock, Package, Plus, Store } from "lucide-react";
 import { useLocale } from "../hooks/useLocale.jsx";
 
 function NavIcon({ children }) {
@@ -74,6 +74,16 @@ export function MobileNav() {
             <Package size={20} strokeWidth={2} />
           </NavIcon>
           <span className="mobile-nav-label">{t("nav.mobileItems")}</span>
+        </NavLink>
+
+        <NavLink
+          to="/plac"
+          className={({ isActive }) => `mobile-nav-link${isActive ? " active" : ""}`}
+        >
+          <NavIcon>
+            <Store size={20} strokeWidth={2} />
+          </NavIcon>
+          <span className="mobile-nav-label">{t("nav.mobilePlac")}</span>
         </NavLink>
 
         <NavLink

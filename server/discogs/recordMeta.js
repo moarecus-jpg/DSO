@@ -162,6 +162,73 @@ export async function resolveRecordFromUrl(url, note, options = {}) {
   );
 }
 
+function releaseFormatLabel(formats) {
+  if (!formats?.length) return null;
+  return formats
+    .map((f) => [f.name, f.descriptions?.join(", ")].filter(Boolean).join(" "))
+    .filter(Boolean)
+    .join(" / ");
+}
+
+function fromReleasePayloadPlac(data) {
+  const artist = artistsLabel(data.artists) ?? null;
+  const title = data.title ?? null;
+  const thumbnailUrl = data.images?.[0]?.uri ?? data.thumb ?? null;
+
+  return {
+    artist,
+    title,
+    thumbnailUrl,
+    year: data.year ?? null,
+    genre: data.genres?.join(", ") ?? null,
+    country: data.country ?? null,
+    format: releaseFormatLabel(data.formats),
+  };
+}
+
+/** Plac marketplace: release URL only, enriched metadata for listing form. */
+export async function resolvePlacReleaseFromUrl(url) {
+  const parsed = parseDiscogsRecordUrl(url);
+  if (!parsed.valid) {
+    throw new Error("Neveljavna Discogs povezava.");
+  }
+  if (parsed.listingId != null) {
+    throw new Error("Za Plac uporabi povezavo do release (/release/), ne marketplace listinga.");
+  }
+  if (parsed.releaseId == null) {
+    throw new Error("Podprte so samo Discogs release povezave (/release/).");
+  }
+
+  const data = await discogsGet(`/releases/${parsed.releaseId}`);
+  return {
+    releaseId: parsed.releaseId,
+    releaseUrl: url.trim(),
+    ...fromReleasePayloadPlac(data),
+  };
+}
+
+export function mockResolvePlacReleaseFromUrl(url) {
+  const parsed = parseDiscogsRecordUrl(url);
+  if (!parsed.valid || parsed.releaseId == null) {
+    throw new Error("Podprte so samo Discogs release povezave (/release/).");
+  }
+  if (parsed.listingId != null) {
+    throw new Error("Za Plac uporabi povezavo do release (/release/), ne marketplace listinga.");
+  }
+
+  return {
+    releaseId: parsed.releaseId,
+    releaseUrl: url.trim(),
+    artist: "Demo Artist",
+    title: `Release #${parsed.releaseId}`,
+    thumbnailUrl: null,
+    year: 1984,
+    genre: "Electronic",
+    country: "Slovenia",
+    format: "Vinyl, LP",
+  };
+}
+
 export function mockResolveRecordFromUrl(url, note, options = {}) {
   const parsed = parseDiscogsRecordUrl(url);
   if (!parsed.valid) {

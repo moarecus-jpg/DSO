@@ -11,6 +11,7 @@ import {
   Plus,
   Settings,
   LayoutGrid,
+  Store,
 } from "lucide-react";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { BrandMark } from "./BrandMark.jsx";
@@ -65,17 +66,38 @@ const ORDER_LINKS = [
   },
 ];
 
+const PLAC_LINKS = [
+  {
+    to: "/plac",
+    end: true,
+    icon: Store,
+    iconClass: "plac",
+    labelKey: "plac",
+  },
+  {
+    to: "/plac/mine",
+    icon: Package,
+    iconClass: "plac-mine",
+    labelKey: "placMine",
+    countKey: "placMine",
+  },
+];
+
 export function Sidebar() {
   const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
   const { t } = useLocale();
   const newOrderOpen = searchParams.get("new") === "1";
   const [counts, setCounts] = useState(null);
+  const [placCounts, setPlacCounts] = useState(null);
 
   useEffect(() => {
     api("/api/sessions/counts")
       .then((d) => setCounts(d.counts))
       .catch(() => setCounts(null));
+    api("/api/plac/counts")
+      .then((d) => setPlacCounts(d))
+      .catch(() => setPlacCounts(null));
   }, []);
 
   return (
@@ -123,6 +145,53 @@ export function Sidebar() {
                       .filter(Boolean)
                       .join(" ");
                   }}
+                >
+                  <span
+                    className={`sidebar-link-icon sidebar-link-icon--${item.iconClass}`}
+                    aria-hidden
+                  >
+                    <Icon size={18} strokeWidth={2.1} />
+                  </span>
+                  <span className="sidebar-link-label">{t(`nav.${item.labelKey}`)}</span>
+                  {count > 0 ? (
+                    <span className="sidebar-link-count">{count}</span>
+                  ) : (
+                    <ChevronRight
+                      className="sidebar-link-chevron"
+                      size={16}
+                      strokeWidth={2.2}
+                      aria-hidden
+                    />
+                  )}
+                  <span className="sidebar-link-active-dot" aria-hidden />
+                </NavLink>
+              );
+            })}
+          </nav>
+        </div>
+
+        <div className="sidebar-section">
+          <p className="sidebar-section-label">
+            <Store size={13} strokeWidth={2.2} aria-hidden />
+            {t("nav.sectionPlac")}
+          </p>
+
+          <nav className="sidebar-nav sidebar-nav-v2" aria-label={t("plac.title")}>
+            {PLAC_LINKS.map((item) => {
+              const Icon = item.icon;
+              const count =
+                item.countKey === "placMine" ? placCounts?.mine : 0;
+
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) =>
+                    ["sidebar-link-v2", isActive ? "active" : ""]
+                      .filter(Boolean)
+                      .join(" ")
+                  }
                 >
                   <span
                     className={`sidebar-link-icon sidebar-link-icon--${item.iconClass}`}

@@ -205,6 +205,34 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_session_item_issue_photos_issue
     ON session_item_issue_photos (issue_id);
+
+  CREATE TABLE IF NOT EXISTS plac_listings (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    release_url TEXT NOT NULL,
+    release_id INTEGER,
+    artist TEXT,
+    title TEXT,
+    thumbnail_url TEXT,
+    year INTEGER,
+    genre TEXT,
+    country TEXT,
+    format TEXT,
+    price_value REAL NOT NULL,
+    price_currency TEXT DEFAULT 'EUR',
+    media_condition TEXT NOT NULL,
+    sleeve_condition TEXT,
+    note TEXT,
+    status TEXT DEFAULT 'active',
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_plac_listings_status
+    ON plac_listings (status);
+
+  CREATE INDEX IF NOT EXISTS idx_plac_listings_user
+    ON plac_listings (user_id);
 `);
 
 const needsBackfill = db
@@ -1483,6 +1511,201 @@ export function publicUser(user) {
     notifyOrderNote: Boolean(user.notify_order_note),
     notifyOrderClosed: Boolean(user.notify_order_closed),
   };
+}
+
+const PLAC_LISTING_SELECT = `
+  pl.id, pl.user_id, pl.release_url, pl.release_id, pl.artist, pl.title,
+  pl.thumbnail_url, pl.year, pl.genre, pl.country, pl.format,
+  pl.price_value, pl.price_currency, pl.media_condition, pl.sleeve_condition,
+  pl.note, pl.status, pl.created_at,
+  u.name as seller_name, u.username as seller_username, u.picture as seller_picture,
+  u.discogs_username as seller_discogs_username
+`;
+
+function mapPlacListingRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    userId: row.user_id,
+    releaseUrl: row.release_url,
+    releaseId: row.release_id,
+    artist: row.artist,
+    title: row.title,
+    thumbnailUrl: row.thumbnail_url,
+    year: row.year,
+    genre: row.genre,
+    country: row.country,
+    format: row.format,
+    priceValue: row.price_value,
+    priceCurrency: row.price_currency ?? "EUR",
+    mediaCondition: row.media_condition,
+    sleeveCondition: row.sleeve_condition,
+    note: row.note,
+    status: row.status,
+    createdAt: row.created_at,
+    seller: {
+      id: row.user_id,
+      name: row.seller_name,
+      username: row.seller_username,
+      picture: row.seller_picture,
+      discogsUsername: row.seller_discogs_username,
+    },
+  };
+}
+
+export function createPlacListing({
+  userId,
+  releaseUrl,
+  releaseId,
+  artist,
+  title,
+  thumbnailUrl,
+  year,
+  genre,
+  country,
+  format,
+  priceValue,
+  priceCurrency,
+  mediaCondition,
+  sleeveCondition,
+  note,
+}) {
+  const id = randomUUID();
+  db.prepare(
+    `INSERT INTO plac_listings (
+       id, user_id, release_url, release_id, artist, title, thumbnail_url,
+       year, genre, country, format, price_value, price_currency,
+       media_condition, sleeve_condition, note, status
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`
+  ).run(
+    id,
+    userId,
+    releaseUrl,
+    releaseId ?? null,
+    artist ?? null,
+    title ?? null,
+    thumbnailUrl ?? null,
+    year ?? null,
+    genre ?? null,
+    country ?? null,
+    format ?? null,
+    priceValue,
+    priceCurrency ?? "EUR",
+    mediaCondition,
+    sleeveCondition ?? null,
+    note ?? null
+  );
+  return getPlacListingById(id);
+}
+
+export function getPlacListingById(id) {
+  const row = db
+    .prepare(
+      `SELECT ${PLAC_LISTING_SELECT}
+       FROM plac_listings pl
+       JOIN users u ON u.id = pl.user_id
+       WHERE pl.id = ?`
+    )
+    .get(id);
+  return mapPlacListingRow(row);
+}
+
+export function listActivePlacListings({ query } = {}) {
+  const q = query?.trim().toLowerCase();
+  let sql = `
+    SELECT ${PLAC_LISTING_SELECT}
+    FROM plac_listings pl
+    JOIN users u ON u.id = pl.user_id
+    WHERE pl.status = 'active'`;
+  const params = [];
+
+  if (q) {
+    sql += ` AND (
+      lower(COALESCE(pl.artist, '')) LIKE ?
+      OR lower(COALESCE(pl.title, '')) LIKE ?
+      OR lower(COALESCE(pl.genre, '')) LIKE ?
+      OR lower(COALESCE(pl.country, '')) LIKE ?
+      OR lower(COALESCE(u.name, '')) LIKE ?
+      OR lower(COALESCE(u.username, '')) LIKE ?
+    )`;
+    const like = `%${q}%`;
+    params.push(like, like, like, like, like, like);
+  }
+
+  sql += " ORDER BY pl.created_at DESC";
+  return db.prepare(sql).all(...params).map(mapPlacListingRow);
+}
+
+export function listPlacListingsByUser(userId) {
+  return db
+    .prepare(
+      `SELECT ${PLAC_LISTING_SELECT}
+       FROM plac_listings pl
+       JOIN users u ON u.id = pl.user_id
+       WHERE pl.user_id = ?
+       ORDER BY pl.created_at DESC`
+    )
+    .all(userId)
+    .map(mapPlacListingRow);
+}
+
+export function countActivePlacListingsByUser(userId) {
+  return (
+    db
+      .prepare(
+        `SELECT COUNT(*) AS c FROM plac_listings
+         WHERE user_id = ? AND status = 'active'`
+      )
+      .get(userId)?.c ?? 0
+  );
+}
+
+export function updatePlacListing(id, userId, fields) {
+  const existing = db
+    .prepare("SELECT id FROM plac_listings WHERE id = ? AND user_id = ?")
+    .get(id, userId);
+  if (!existing) return null;
+
+  const updates = [];
+  const params = [];
+
+  if (fields.priceValue != null) {
+    updates.push("price_value = ?");
+    params.push(fields.priceValue);
+  }
+  if (fields.mediaCondition != null) {
+    updates.push("media_condition = ?");
+    params.push(fields.mediaCondition);
+  }
+  if (fields.sleeveCondition !== undefined) {
+    updates.push("sleeve_condition = ?");
+    params.push(fields.sleeveCondition);
+  }
+  if (fields.note !== undefined) {
+    updates.push("note = ?");
+    params.push(fields.note);
+  }
+  if (fields.status != null) {
+    updates.push("status = ?");
+    params.push(fields.status);
+  }
+
+  if (updates.length === 0) return getPlacListingById(id);
+
+  params.push(id, userId);
+  db.prepare(
+    `UPDATE plac_listings SET ${updates.join(", ")}
+     WHERE id = ? AND user_id = ?`
+  ).run(...params);
+
+  return getPlacListingById(id);
+}
+
+export function deletePlacListing(id, userId) {
+  const result = db
+    .prepare("DELETE FROM plac_listings WHERE id = ? AND user_id = ?")
+    .run(id, userId);
+  return result.changes > 0;
 }
 
 export function getDatabaseInfo() {
