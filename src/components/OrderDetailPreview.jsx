@@ -4,11 +4,9 @@ import {
   ArrowRight,
   Calendar,
   Disc3,
-  ExternalLink,
   Lock,
   MoreHorizontal,
   RotateCcw,
-  Store,
   Target,
   UserRound,
   X,
@@ -23,7 +21,6 @@ import {
   formatPrice,
   recordTitle,
 } from "../../shared/orderTotals.js";
-import { getStoreConfig, isShopStore } from "../../shared/stores.js";
 import { sessionTimestamp } from "../../shared/orderDashboard.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { CloseOrderDialog } from "./CloseOrderDialog.jsx";
@@ -51,13 +48,6 @@ function formatTargetDate(targetDate, localeTag) {
     month: "short",
     year: "numeric",
   });
-}
-
-function truncateText(value, max = 140) {
-  const text = String(value ?? "").trim();
-  if (!text) return "";
-  if (text.length <= max) return text;
-  return `${text.slice(0, max).trim()}…`;
 }
 
 function formatActivityTime(value, localeTag) {
@@ -200,25 +190,11 @@ export function OrderDetailPreview({
     (session.creator_username ? `@${session.creator_username}` : null);
   const members = membersForPreview(detail, session);
   const links = detail?.links ?? [];
-  const notes = [...(detail?.notes ?? [])].sort(
-    (a, b) => sessionTimestamp(b.created_at) - sessionTimestamp(a.created_at)
-  );
-  const noteCount = notes.length;
   const itemCount = links.length || session.link_count || 0;
   const memberCount = members.length || session.member_count || 1;
   const targetDate = detail?.target_date ?? session.target_date;
   const targetLabel = targetDate ? formatTargetDate(targetDate, localeTag) : null;
   const createdLabel = formatCreatedAt(session.created_at, localeTag);
-  const storeConfig = getStoreConfig(session.store);
-  const shop = isShopStore(session.store);
-  const sellerUrl = shop
-    ? storeConfig.shopUrl
-    : session.seller_username
-      ? `https://www.discogs.com/seller/${session.seller_username}/profile`
-      : null;
-  const sellerLabel = session.seller_username
-    ? `@${session.seller_username}`
-    : storeConfig.label;
   const totals = computeOrderGrandTotal(links, detail ?? session);
   const totalLabel = formatPrice(totals.total, totals.currency);
   const visibleItems = links.slice(0, 6);
@@ -326,7 +302,7 @@ export function OrderDetailPreview({
         )}
       </div>
 
-      <div className="order-preview-stats order-preview-stats--quad">
+      <div className="order-preview-stats">
         <div className="order-preview-stat">
           <span className="order-preview-stat-value">{memberCount}</span>
           <span className="order-preview-stat-label">{t("orders.previewMembers")}</span>
@@ -336,59 +312,10 @@ export function OrderDetailPreview({
           <span className="order-preview-stat-label">{t("orders.previewItems")}</span>
         </div>
         <div className="order-preview-stat">
-          <span className="order-preview-stat-value">{loading ? "…" : noteCount}</span>
-          <span className="order-preview-stat-label">{t("orders.previewMessages")}</span>
-        </div>
-        <div className="order-preview-stat">
           <span className="order-preview-stat-value order-preview-stat-value--sm">
             {loading && !detail ? "…" : totalLabel}
           </span>
           <span className="order-preview-stat-label">{t("orders.previewTotal")}</span>
-        </div>
-      </div>
-
-      <div className="order-preview-section">
-        <h3 className="order-preview-section-title">{t("orders.previewAbout")}</h3>
-        <div className="order-preview-meta-row">
-          <div>
-            <span className="order-preview-meta-label">
-              <Store size={13} aria-hidden />
-              {t("orders.previewSeller")}
-            </span>
-            {sellerUrl ? (
-              <a
-                className="order-preview-meta-link"
-                href={sellerUrl}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {sellerLabel}
-                <ExternalLink size={12} aria-hidden />
-              </a>
-            ) : (
-              <span className="order-preview-meta-value">{sellerLabel}</span>
-            )}
-          </div>
-          <div>
-            <span className="order-preview-meta-label">{t("orders.previewStore")}</span>
-            <span className="order-preview-meta-value">{storeConfig.label}</span>
-          </div>
-          {createdLabel && (
-            <div>
-              <span className="order-preview-meta-label">
-                <Calendar size={13} aria-hidden />
-                {t("orders.previewCreated")}
-              </span>
-              <span className="order-preview-meta-value">{createdLabel}</span>
-            </div>
-          )}
-          <div>
-            <span className="order-preview-meta-label">
-              <Target size={13} aria-hidden />
-              {t("orders.previewTarget")}
-            </span>
-            <span className="order-preview-meta-value">{targetLabel ?? "—"}</span>
-          </div>
         </div>
       </div>
 
@@ -468,34 +395,6 @@ export function OrderDetailPreview({
         )}
         {extraItemCount > 0 && (
           <p className="order-preview-more">{t("orders.previewMoreItems", { count: extraItemCount })}</p>
-        )}
-      </div>
-
-      <div className="order-preview-section">
-        <h3 className="order-preview-section-title">{t("orders.previewNotes")}</h3>
-        {loading && !detail ? (
-          <p className="muted fine">{t("common.loading")}</p>
-        ) : notes.length === 0 ? (
-          <p className="order-preview-member-muted">{t("orders.previewNoNotes")}</p>
-        ) : (
-          <ul className="order-preview-notes">
-            {notes.slice(0, 3).map((note) => (
-              <li key={note.id} className="order-preview-note">
-                <UserAvatar
-                  name={note.user_name}
-                  className="order-preview-activity-avatar"
-                  size={28}
-                />
-                <div className="order-preview-activity-text">
-                  <p>{note.user_name ?? t("common.unknown")}</p>
-                  <span className="order-preview-note-body">
-                    {truncateText(note.body)}
-                  </span>
-                  <small>{formatActivityTime(note.created_at, localeTag)}</small>
-                </div>
-              </li>
-            ))}
-          </ul>
         )}
       </div>
 

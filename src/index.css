@@ -18,6 +18,47 @@
   --radius-lg: 16px;
 }
 
+/* App-wide custom scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(167, 139, 250, 0.42) rgba(255, 255, 255, 0.04);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+  margin-block: 6px;
+  margin-inline: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(124, 58, 237, 0.55), rgba(99, 102, 241, 0.38));
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+  min-height: 2.5rem;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(124, 58, 237, 0.72), rgba(99, 102, 241, 0.55));
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-button,
+::-webkit-scrollbar-button:single-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -4054,27 +4095,6 @@ body.modal-open .order-sticky-backdrop {
   --surface-3: rgba(255, 255, 255, 0.09);
   --border: rgba(255, 255, 255, 0.1);
   --border-strong: rgba(255, 255, 255, 0.16);
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.28) rgba(255, 255, 255, 0.06);
-}
-
-.layout-dashboard ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-
-.layout-dashboard ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 999px;
-}
-
-.layout-dashboard ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.24);
-  border-radius: 999px;
-}
-
-.layout-dashboard ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.38);
 }
 
 /* —— Dashboard inner pages (session, settings, forms) —— */
@@ -6435,7 +6455,8 @@ img.header-account-avatar {
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  padding: 1rem 1.25rem 1.15rem;
+  padding: 1rem 1rem 1.15rem 1.25rem;
+  scrollbar-gutter: stable;
 }
 
 .orders-split--preview .orders-split-scroll .order-list-v2 {
@@ -6678,15 +6699,6 @@ img.header-account-avatar {
 .orders-split:not(.orders-split--preview) .orders-split-list {
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.orders-split:not(.orders-split--preview) .orders-split-main::-webkit-scrollbar,
-.orders-split:not(.orders-split--preview) .orders-split-list::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-  display: none;
 }
 
 .orders-split--preview .orders-split-main,
