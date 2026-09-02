@@ -1,6 +1,7 @@
 import { Plus, Search, ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { HeaderAccount } from "./HeaderAccount.jsx";
+import { PlacGalleryViewToggle } from "./PlacGalleryViewToggle.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
 
 export function PlacPageHeader({
@@ -11,6 +12,9 @@ export function PlacPageHeader({
   placeholder,
   cartCount,
   onSell,
+  showGalleryView = false,
+  galleryView,
+  onGalleryViewChange,
 }) {
   const { t } = useLocale();
 
@@ -53,6 +57,14 @@ export function PlacPageHeader({
           <HeaderAccount className="plac-page-header-account" />
         </div>
       </div>
+
+      {showGalleryView && (
+        <div className="plac-page-header-row plac-page-header-row--controls">
+          <div className="plac-page-header-controls">
+            <PlacGalleryViewToggle view={galleryView} onChange={onGalleryViewChange} />
+          </div>
+        </div>
+      )}
     </header>
   );
 }

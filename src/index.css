@@ -8446,6 +8446,20 @@ a.order-preview-item-title:hover {
   flex-shrink: 0;
 }
 
+.plac-page-header-row--controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(22rem, 42rem) minmax(0, 1fr);
+  gap: 0.65rem 1.25rem;
+}
+
+.plac-page-header-controls {
+  grid-column: 2;
+  justify-self: center;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
 .page-plac .orders-page-header {
   margin-bottom: 1rem;
 }
@@ -9261,6 +9275,17 @@ img.plac-user-avatar {
     flex: 1 1 100%;
     max-width: none;
     justify-self: stretch;
+  }
+
+  .plac-page-header-row--controls {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .plac-page-header-controls {
+    grid-column: auto;
+    width: auto;
   }
 
   .plac-page-header-end {

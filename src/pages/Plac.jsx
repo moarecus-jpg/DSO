@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Store } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import { PlacGalleryViewToggle } from "../components/PlacGalleryViewToggle.jsx";
 import { PlacListingCard } from "../components/PlacListingCard.jsx";
 import { PlacPageHeader } from "../components/PlacPageHeader.jsx";
 import { PlacSellerCard } from "../components/PlacSellerCard.jsx";
@@ -113,6 +112,9 @@ export function Plac() {
         placeholder={mine ? t("plac.searchPlaceholder") : t("plac.searchSellersPlaceholder")}
         cartCount={cartCount}
         onSell={() => setSellOpen(true)}
+        showGalleryView={mine && !loading && displayedListings.length > 0}
+        galleryView={view}
+        onGalleryViewChange={setView}
       />
 
       {loading ? (
@@ -128,11 +130,7 @@ export function Plac() {
             </button>
           </div>
         ) : (
-          <>
-            <div className="plac-gallery-toolbar">
-              <PlacGalleryViewToggle view={view} onChange={setView} />
-            </div>
-            <div className={`plac-grid plac-grid--${view}`}>
+          <div className={`plac-grid plac-grid--${view}`}>
               {displayedListings.map((listing) => (
               <PlacListingCard
                 key={listing.id}
@@ -171,7 +169,6 @@ export function Plac() {
               />
             ))}
             </div>
-          </>
         )
       ) : sellers.length === 0 ? (
         <div className="orders-empty plac-empty">
