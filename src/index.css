@@ -8690,21 +8690,25 @@ a.order-preview-item-title:hover {
 }
 
 .plac-grid--list .plac-card {
-  flex-direction: row;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.85rem 1.1rem;
-  min-height: 7.5rem;
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  gap: 0.65rem 1rem;
+  padding: 0.85rem 1rem;
+  min-height: unset;
 }
 
 .plac-grid--list .plac-card-cover {
-  width: 7rem;
-  height: 7rem;
-  min-width: 7rem;
-  max-width: 7rem;
+  grid-column: 1;
+  grid-row: 1;
+  width: 6.5rem;
+  height: 6.5rem;
+  min-width: 6.5rem;
+  max-width: 6.5rem;
   flex-shrink: 0;
   aspect-ratio: unset;
   border-radius: 0.65rem;
+  align-self: start;
 }
 
 .plac-grid--list .plac-card-cover img,
@@ -8713,14 +8717,7 @@ a.order-preview-item-title:hover {
 }
 
 .plac-grid--list .plac-card-body {
-  flex: 1;
-  min-width: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  column-gap: 1.75rem;
-  row-gap: 0.2rem;
+  display: contents;
 }
 
 .plac-grid--list .plac-card-title,
@@ -8728,70 +8725,64 @@ a.order-preview-item-title:hover {
 .plac-grid--list .plac-card-format,
 .plac-grid--list .plac-card-conditions,
 .plac-grid--list .plac-card-note {
-  grid-column: 1;
+  grid-column: 2;
 }
 
 .plac-grid--list .plac-card-bottom {
-  grid-column: 2;
-  grid-row: 1 / -1;
-  align-self: center;
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   margin-top: 0;
-  align-items: flex-end;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .plac-grid--list .plac-card-footer {
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.35rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .plac-grid--list .plac-card-price {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   white-space: nowrap;
 }
 
 .plac-grid--list .plac-card-actions {
   margin-top: 0;
+  margin-left: auto;
   justify-content: flex-end;
 }
 
 @media (max-width: 640px) {
   .plac-grid--list .plac-card {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 0.85rem;
-    min-height: unset;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    gap: 0.55rem 0.85rem;
+    padding: 0.75rem;
   }
 
   .plac-grid--list .plac-card-cover {
-    width: 100%;
-    height: auto;
-    min-width: 0;
-    max-width: none;
-    aspect-ratio: 1;
-  }
-
-  .plac-grid--list .plac-card-body {
-    display: flex;
-    flex-direction: column;
-    column-gap: 0;
+    width: 5.5rem;
+    height: 5.5rem;
+    min-width: 5.5rem;
+    max-width: 5.5rem;
   }
 
   .plac-grid--list .plac-card-bottom {
-    grid-column: auto;
-    grid-row: auto;
-    align-self: stretch;
+    flex-direction: column;
     align-items: stretch;
-    margin-top: auto;
+    gap: 0.5rem;
   }
 
   .plac-grid--list .plac-card-footer {
-    flex-direction: row;
-    align-items: center;
     justify-content: space-between;
   }
 
   .plac-grid--list .plac-card-actions {
+    margin-left: 0;
     justify-content: flex-start;
   }
 }
