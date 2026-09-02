@@ -72,16 +72,18 @@ export function PlacListingCard({
         )}
 
         {isVinyl ? (
-          <div className="plac-card-release-info">
-            <div className="plac-card-meta">
-              {displayYear != null && <span>{displayYear}</span>}
-              {listing.genre && <span>{listing.genre}</span>}
-              {listing.country && <span>{listing.country}</span>}
-            </div>
+          <>
+            <div className="plac-card-details-col">
+              <div className="plac-card-meta">
+                {displayYear != null && <span>{displayYear}</span>}
+                {listing.genre && <span>{listing.genre}</span>}
+                {listing.country && <span>{listing.country}</span>}
+              </div>
 
-            {displayFormat && (
-              <p className="plac-card-format muted fine">{displayFormat}</p>
-            )}
+              {displayFormat && (
+                <p className="plac-card-format muted fine">{displayFormat}</p>
+              )}
+            </div>
 
             <div className="plac-card-conditions">
               <span className="plac-card-condition">{listing.mediaCondition}</span>
@@ -89,13 +91,14 @@ export function PlacListingCard({
                 <span className="plac-card-condition muted">{listing.sleeveCondition}</span>
               )}
             </div>
-          </div>
+          </>
         ) : (
-          <div className="plac-card-release-info">
+          <>
+            <div className="plac-card-details-col" aria-hidden="true" />
             <div className="plac-card-conditions">
               <span className="plac-card-condition">{listing.mediaCondition}</span>
             </div>
-          </div>
+          </>
         )}
 
         {listing.note && <p className="plac-card-note muted fine">{listing.note}</p>}
