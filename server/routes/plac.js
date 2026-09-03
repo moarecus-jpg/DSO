@@ -44,26 +44,29 @@ function useMockAuth() {
 function queuePlacStyleBackfill(listings = []) {
   if (!discogsAppConfigured()) return;
 
+  const pending = [];
   for (const listing of listings) {
     if (!listing?.id || listing.releaseId == null) continue;
     if (styleBackfillInFlight.has(listing.id)) continue;
     styleBackfillInFlight.add(listing.id);
+    pending.push(listing);
+  }
 
-    Promise.resolve()
-      .then(() => fetchPlacReleaseDetails(listing.releaseId))
-      .then((release) => {
+  // Process one-by-one so detail-page Discogs calls are not buried behind a flood.
+  (async () => {
+    for (const listing of pending) {
+      try {
+        const release = await fetchPlacReleaseDetails(listing.releaseId, {
+          enrichListenLinks: false,
+        });
         if (release?.styles?.length) {
           updatePlacListingGenre(listing.id, release.styles.join(", "));
         }
-      })
-      .catch(() => {
+      } catch {
         /* ignore backfill errors */
-      })
-      .finally(() => {
-        // Allow a later retry only after process restart / long session.
-        // Keep id marked so we don't re-hit Discogs every page refresh.
-      });
-  }
+      }
+    }
+  })();
 }
 
 function ensureRequestUser(req) {

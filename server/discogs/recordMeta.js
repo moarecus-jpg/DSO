@@ -270,6 +270,7 @@ async function fetchSonglinkListenLinks(sourceUrl) {
     const endpoint = `https://api.song.link/v1-alpha.1/links?url=${encodeURIComponent(sourceUrl)}&userCountry=SI`;
     const res = await fetch(endpoint, {
       headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(2500),
     });
     if (!res.ok) return [];
     const data = await res.json();
@@ -367,13 +368,15 @@ function mapReleaseDetails(data) {
 }
 
 /** Full Discogs release payload for marketplace listing detail pages. */
-export async function fetchPlacReleaseDetails(releaseId) {
+export async function fetchPlacReleaseDetails(releaseId, { enrichListenLinks = true } = {}) {
   if (releaseId == null || releaseId === "") {
     throw new Error("Release ID manjka.");
   }
 
   const data = await discogsGet(`/releases/${releaseId}`);
   const details = mapReleaseDetails(data);
+  if (!enrichListenLinks) return details;
+
   const youtubeSource =
     details.videos.find((video) => video.embedUrl)?.uri ||
     details.videos[0]?.uri ||
