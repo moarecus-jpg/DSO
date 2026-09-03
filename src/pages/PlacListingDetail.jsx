@@ -242,14 +242,6 @@ export function PlacListingDetail() {
               {displayArtist && <p className="plac-release-artist">{displayArtist}</p>}
               <h1 className="plac-release-title">{displayTitle}</h1>
 
-              {(displayYear != null || displayCountry || displayStyles || displayGenres) && (
-                <p className="plac-release-eyebrow">
-                  {[displayYear, displayStyles || displayGenres, displayCountry]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </p>
-              )}
-
               {(release?.community?.have != null || release?.community?.want != null) && (
                 <div className="plac-release-community" aria-label={t("plac.communityStats")}>
                   {release.community.have != null && (
@@ -303,62 +295,6 @@ export function PlacListingDetail() {
             </div>
           </section>
 
-          <section className="plac-release-offer card">
-            <h2 className="plac-release-section-title">{t("plac.listingOffer")}</h2>
-
-            <div className="plac-release-offer-grid">
-              <div className="plac-detail-conditions">
-                <div>
-                  <span className="plac-detail-label">{t("plac.mediaCondition")}</span>
-                  <span className="plac-card-condition">{listing.mediaCondition}</span>
-                </div>
-                {listing.sleeveCondition && (
-                  <div>
-                    <span className="plac-detail-label">{t("plac.sleeveCondition")}</span>
-                    <span className="plac-card-condition">{listing.sleeveCondition}</span>
-                  </div>
-                )}
-              </div>
-
-              {listing.note && (
-                <div className="plac-detail-note">
-                  <span className="plac-detail-label">{t("plac.note")}</span>
-                  <p>{listing.note}</p>
-                </div>
-              )}
-
-              <div className="plac-detail-purchase">
-                <p className="plac-detail-price">{formatPrice(listing.priceValue)}</p>
-                <div className="plac-detail-actions">
-                  {!isOwner && listing.status === "active" && (
-                    <PlacAddToCartButton listing={listing} large />
-                  )}
-
-                  {isOwner && listing.status === "active" && (
-                    <>
-                      <button
-                        type="button"
-                        className="btn btn-ghost btn-sm"
-                        disabled={busy}
-                        onClick={handleMarkSold}
-                      >
-                        {t("plac.markSold")}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-ghost btn-sm btn-danger-text"
-                        disabled={busy}
-                        onClick={handleRemove}
-                      >
-                        {t("plac.remove")}
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </section>
-
           {isVinyl && (
             <section className="plac-release-tracklist card">
               <h2 className="plac-release-section-title">{t("plac.tracklist")}</h2>
@@ -404,99 +340,157 @@ export function PlacListingDetail() {
             </section>
           )}
 
-          {isVinyl && (release?.listenLinks?.length > 0 || release?.videos?.length > 0) && (
-            <section className="plac-release-media card">
-              {release.listenLinks?.length > 0 && (
-                <div className="plac-release-listen">
-                  <h2 className="plac-release-section-title">{t("plac.listenOn")}</h2>
-                  <div className="plac-release-listen-links">
-                    {release.listenLinks.map((link) => (
-                      <a
-                        key={link.id}
-                        href={link.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={`btn btn-ghost btn-sm plac-listen-link plac-listen-link--${link.id}`}
-                      >
-                        <ExternalLink size={14} aria-hidden />
-                        {link.label}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {videos.length > 0 && (
-                <div className="plac-release-videos">
-                  <h2 className="plac-release-section-title">{t("plac.videos")}</h2>
-                  <div className="plac-release-playlist">
-                    <div className="plac-release-playlist-player">
-                      {activeVideo?.embedUrl ? (
-                        <div className="plac-release-video-frame">
-                          <iframe
-                            key={activeVideo.embedUrl}
-                            src={activeVideo.embedUrl}
-                            title={activeVideo.title || t("plac.videos")}
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                            loading="lazy"
-                            referrerPolicy="strict-origin-when-cross-origin"
-                          />
-                        </div>
-                      ) : activeVideo?.uri ? (
+          <div className="plac-release-secondary">
+            {isVinyl && (release?.listenLinks?.length > 0 || videos.length > 0) && (
+              <section className="plac-release-media card">
+                {release.listenLinks?.length > 0 && (
+                  <div className="plac-release-listen">
+                    <h2 className="plac-release-section-title">{t("plac.listenOn")}</h2>
+                    <div className="plac-release-listen-links">
+                      {release.listenLinks.map((link) => (
                         <a
-                          href={activeVideo.uri}
+                          key={link.id}
+                          href={link.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="plac-release-video-fallback"
+                          className={`btn btn-ghost btn-sm plac-listen-link plac-listen-link--${link.id}`}
                         >
-                          <ExternalLink size={16} aria-hidden />
-                          {activeVideo.title || t("plac.openVideo")}
+                          <ExternalLink size={14} aria-hidden />
+                          {link.label}
                         </a>
-                      ) : null}
-                      {activeVideo?.title && (
-                        <p className="plac-release-video-title">{activeVideo.title}</p>
-                      )}
-                    </div>
-
-                    <div className="plac-release-playlist-list" role="list">
-                      {videos.map((video, index) => {
-                        const thumb = youtubeThumbnailUrl(video.uri || video.embedUrl);
-                        const duration = formatVideoDuration(video.duration);
-                        const isActive = index === activeVideoIndex;
-                        return (
-                          <button
-                            key={`${video.uri}-${index}`}
-                            type="button"
-                            role="listitem"
-                            className={`plac-release-playlist-item${isActive ? " is-active" : ""}`}
-                            onClick={() => setActiveVideoIndex(index)}
-                            aria-current={isActive ? "true" : undefined}
-                          >
-                            <span className="plac-release-playlist-thumb">
-                              {thumb ? (
-                                <img src={thumb} alt="" loading="lazy" />
-                              ) : (
-                                <span className="plac-release-playlist-thumb-fallback" aria-hidden />
-                              )}
-                              {duration && (
-                                <span className="plac-release-playlist-duration">{duration}</span>
-                              )}
-                            </span>
-                            <span className="plac-release-playlist-meta">
-                              <span className="plac-release-playlist-item-title">
-                                {video.title || t("plac.openVideo")}
-                              </span>
-                            </span>
-                          </button>
-                        );
-                      })}
+                      ))}
                     </div>
                   </div>
+                )}
+
+                {videos.length > 0 && (
+                  <div className="plac-release-videos">
+                    <h2 className="plac-release-section-title">{t("plac.videos")}</h2>
+                    <div className="plac-release-playlist">
+                      <div className="plac-release-playlist-player">
+                        {activeVideo?.embedUrl ? (
+                          <div className="plac-release-video-frame">
+                            <iframe
+                              key={activeVideo.embedUrl}
+                              src={activeVideo.embedUrl}
+                              title={activeVideo.title || t("plac.videos")}
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                              loading="lazy"
+                              referrerPolicy="strict-origin-when-cross-origin"
+                            />
+                          </div>
+                        ) : activeVideo?.uri ? (
+                          <a
+                            href={activeVideo.uri}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="plac-release-video-fallback"
+                          >
+                            <ExternalLink size={16} aria-hidden />
+                            {activeVideo.title || t("plac.openVideo")}
+                          </a>
+                        ) : null}
+                        {activeVideo?.title && (
+                          <p className="plac-release-video-title">{activeVideo.title}</p>
+                        )}
+                      </div>
+
+                      <div className="plac-release-playlist-list" role="list">
+                        {videos.map((video, index) => {
+                          const thumb = youtubeThumbnailUrl(video.uri || video.embedUrl);
+                          const duration = formatVideoDuration(video.duration);
+                          const isActive = index === activeVideoIndex;
+                          return (
+                            <button
+                              key={`${video.uri}-${index}`}
+                              type="button"
+                              role="listitem"
+                              className={`plac-release-playlist-item${isActive ? " is-active" : ""}`}
+                              onClick={() => setActiveVideoIndex(index)}
+                              aria-current={isActive ? "true" : undefined}
+                            >
+                              <span className="plac-release-playlist-thumb">
+                                {thumb ? (
+                                  <img src={thumb} alt="" loading="lazy" />
+                                ) : (
+                                  <span className="plac-release-playlist-thumb-fallback" aria-hidden />
+                                )}
+                                {duration && (
+                                  <span className="plac-release-playlist-duration">{duration}</span>
+                                )}
+                              </span>
+                              <span className="plac-release-playlist-meta">
+                                <span className="plac-release-playlist-item-title">
+                                  {video.title || t("plac.openVideo")}
+                                </span>
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </section>
+            )}
+
+            <section className="plac-release-offer card">
+              <h2 className="plac-release-section-title">{t("plac.listingOffer")}</h2>
+
+              <div className="plac-release-offer-grid">
+                <div className="plac-detail-conditions">
+                  <div>
+                    <span className="plac-detail-label">{t("plac.mediaCondition")}</span>
+                    <span className="plac-card-condition">{listing.mediaCondition}</span>
+                  </div>
+                  {listing.sleeveCondition && (
+                    <div>
+                      <span className="plac-detail-label">{t("plac.sleeveCondition")}</span>
+                      <span className="plac-card-condition">{listing.sleeveCondition}</span>
+                    </div>
+                  )}
                 </div>
-              )}
+
+                {listing.note && (
+                  <div className="plac-detail-note">
+                    <span className="plac-detail-label">{t("plac.note")}</span>
+                    <p>{listing.note}</p>
+                  </div>
+                )}
+
+                <div className="plac-detail-purchase">
+                  <p className="plac-detail-price">{formatPrice(listing.priceValue)}</p>
+                  <div className="plac-detail-actions">
+                    {!isOwner && listing.status === "active" && (
+                      <PlacAddToCartButton listing={listing} large />
+                    )}
+
+                    {isOwner && listing.status === "active" && (
+                      <>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm"
+                          disabled={busy}
+                          onClick={handleMarkSold}
+                        >
+                          {t("plac.markSold")}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm btn-danger-text"
+                          disabled={busy}
+                          onClick={handleRemove}
+                        >
+                          {t("plac.remove")}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
             </section>
-          )}
+          </div>
         </div>
       )}
 

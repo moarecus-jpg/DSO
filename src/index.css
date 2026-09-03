@@ -9936,6 +9936,29 @@ img.plac-user-avatar {
   gap: 1rem;
 }
 
+.plac-release-secondary {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(16rem, 0.85fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.plac-release-secondary:not(:has(.plac-release-media)) {
+  grid-template-columns: 1fr;
+}
+
+.plac-release-secondary > .card {
+  margin-bottom: 0;
+}
+
+.plac-release-secondary > .plac-release-offer {
+  min-width: 0;
+}
+
+.plac-release-secondary .plac-release-playlist {
+  grid-template-columns: minmax(0, 16rem) minmax(10rem, 1fr);
+}
+
 .plac-release-hero {
   display: grid;
   grid-template-columns: minmax(14rem, 20rem) minmax(0, 1fr);
@@ -10470,7 +10493,11 @@ img.plac-user-avatar {
     padding: 1rem 1.05rem 1.1rem;
   }
 
-  .plac-release-playlist {
+  .plac-release-secondary {
+    grid-template-columns: 1fr;
+  }
+
+  .plac-release-secondary .plac-release-playlist {
     grid-template-columns: 1fr;
   }
 
