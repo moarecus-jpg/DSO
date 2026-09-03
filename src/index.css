@@ -9940,7 +9940,7 @@ img.plac-user-avatar {
   display: grid;
   grid-template-columns: minmax(0, 1.7fr) minmax(13rem, 0.85fr);
   gap: 0.75rem;
-  align-items: start;
+  align-items: stretch;
   justify-content: start;
 }
 
@@ -9953,7 +9953,9 @@ img.plac-user-avatar {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
   gap: 0.75rem;
   min-width: 0;
-  align-items: start;
+  min-height: 0;
+  align-items: stretch;
+  height: 100%;
 }
 
 .plac-release-secondary-media:has(> :only-child) {
@@ -9965,6 +9967,12 @@ img.plac-user-avatar {
   flex-direction: column;
   gap: 0.75rem;
   min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.plac-release-secondary-aside .plac-release-offer {
+  margin-top: auto;
 }
 
 .plac-release-secondary > .card,
@@ -9976,13 +9984,23 @@ img.plac-user-avatar {
   padding: 0.85rem 0.95rem 0.95rem;
 }
 
+.plac-release-secondary-media > .card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .plac-release-secondary .plac-release-section-title {
   margin-bottom: 0.65rem;
   font-size: 0.92rem;
+  flex-shrink: 0;
 }
 
 .plac-release-secondary .plac-tracklist {
-  max-height: 18rem;
+  flex: 1 1 auto;
+  max-height: none;
+  min-height: 0;
   overflow: auto;
   padding-right: 0.15rem;
 }
@@ -10003,6 +10021,7 @@ img.plac-user-avatar {
 }
 
 .plac-release-secondary .plac-release-notes {
+  flex-shrink: 0;
   max-height: 4.5rem;
   overflow: auto;
   margin-top: 0.65rem;
@@ -10014,18 +10033,37 @@ img.plac-user-avatar {
   line-height: 1.4;
 }
 
+.plac-release-secondary .plac-release-listen,
+.plac-release-secondary .plac-release-videos {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.plac-release-secondary .plac-release-videos {
+  flex: 0 0 auto;
+}
+
 .plac-release-secondary .plac-release-playlist {
-  container-type: inline-size;
-  container-name: plac-playlist;
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-  gap: 0.55rem;
-  align-items: start;
+  position: relative;
+  flex: 0 0 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.plac-release-secondary .plac-release-playlist-player {
+  width: 54%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .plac-release-secondary .plac-release-playlist-list {
-  /* Match the 16:9 player height in the left column, then scroll. */
-  max-height: calc((100cqw - 0.55rem) * (1.2 / 2.2) * 9 / 16);
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: calc(54% + 0.55rem);
+  max-height: none;
   height: auto;
   min-height: 0;
   overflow-x: hidden;
@@ -10606,6 +10644,7 @@ img.plac-user-avatar {
 
   .plac-release-secondary {
     grid-template-columns: 1fr;
+    align-items: start;
   }
 
   .plac-release-secondary:not(:has(.plac-release-secondary-media > :nth-child(2))) {
@@ -10614,29 +10653,52 @@ img.plac-user-avatar {
 
   .plac-release-secondary-media {
     grid-template-columns: 1fr;
+    height: auto;
+    align-items: start;
   }
 
   .plac-release-secondary-media:has(> :only-child) {
     grid-template-columns: 1fr;
   }
 
+  .plac-release-secondary-aside {
+    height: auto;
+  }
+
+  .plac-release-secondary-aside .plac-release-offer {
+    margin-top: 0;
+  }
+
   .plac-release-secondary > .card,
   .plac-release-secondary-media > .card,
   .plac-release-secondary-aside > .card {
     max-width: none;
+    height: auto;
   }
 
   .plac-release-secondary .plac-tracklist,
   .plac-release-secondary .plac-release-notes {
     max-height: none;
+    flex: none;
   }
 
   .plac-release-secondary .plac-release-playlist {
-    container-type: normal;
+    position: static;
+    display: grid;
     grid-template-columns: 1fr;
+    gap: 0.55rem;
+  }
+
+  .plac-release-secondary .plac-release-playlist-player {
+    width: 100%;
   }
 
   .plac-release-secondary .plac-release-playlist-list {
+    position: static;
+    left: auto;
+    right: auto;
+    top: auto;
+    bottom: auto;
     max-height: min(14rem, 40vh);
     height: auto;
   }
