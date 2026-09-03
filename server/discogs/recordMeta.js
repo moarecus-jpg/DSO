@@ -179,6 +179,112 @@ function fromReleasePayloadPlac(data) {
   };
 }
 
+function mapReleaseTrack(track) {
+  if (!track) return null;
+  return {
+    position: track.position || null,
+    title: track.title || null,
+    duration: track.duration || null,
+    type: track.type_ || "track",
+    artists: artistsLabel(track.artists) ?? null,
+  };
+}
+
+function mapReleaseDetails(data) {
+  if (!data) return null;
+
+  const labels = (data.labels ?? [])
+    .map((label) => ({
+      name: label.name || null,
+      catno: label.catno || null,
+    }))
+    .filter((label) => label.name);
+
+  const images = (data.images ?? [])
+    .map((image) => ({
+      uri: image.uri || image.resource_url || null,
+      type: image.type || "secondary",
+    }))
+    .filter((image) => image.uri);
+
+  const have = Number(data.community?.have);
+  const want = Number(data.community?.want);
+  const ratingAverage = Number(data.community?.rating?.average);
+  const ratingCount = Number(data.community?.rating?.count);
+
+  return {
+    id: data.id ?? null,
+    title: data.title ?? null,
+    artist: artistsLabel(data.artists) ?? null,
+    year: normalizePlacYear(data.year),
+    country: data.country ?? null,
+    genres: data.genres ?? [],
+    styles: data.styles ?? [],
+    labels,
+    format: buildPlacReleaseFormat(data.formats),
+    formats: (data.formats ?? []).map((format) => ({
+      name: format.name || null,
+      qty: format.qty || null,
+      descriptions: format.descriptions ?? [],
+    })),
+    tracklist: (data.tracklist ?? []).map(mapReleaseTrack).filter(Boolean),
+    images,
+    notes: data.notes?.trim() || null,
+    community: {
+      have: Number.isFinite(have) ? have : null,
+      want: Number.isFinite(want) ? want : null,
+      ratingAverage: Number.isFinite(ratingAverage) ? ratingAverage : null,
+      ratingCount: Number.isFinite(ratingCount) ? ratingCount : null,
+    },
+    uri: data.uri
+      ? data.uri.startsWith("http")
+        ? data.uri
+        : `https://www.discogs.com${data.uri}`
+      : null,
+  };
+}
+
+/** Full Discogs release payload for marketplace listing detail pages. */
+export async function fetchPlacReleaseDetails(releaseId) {
+  if (releaseId == null || releaseId === "") {
+    throw new Error("Release ID manjka.");
+  }
+
+  const data = await discogsGet(`/releases/${releaseId}`);
+  return mapReleaseDetails(data);
+}
+
+export function mockFetchPlacReleaseDetails(releaseId) {
+  return {
+    id: Number(releaseId) || 75078,
+    title: "The Squeeze",
+    artist: "J-Walk",
+    year: 2006,
+    country: "UK",
+    genres: ["Electronic"],
+    styles: ["Broken Beat", "Nu Jazz"],
+    labels: [{ name: "Tru Thoughts", catno: "TRUCD118" }],
+    format: "Vinyl, LP",
+    formats: [{ name: "Vinyl", qty: "1", descriptions: ["LP"] }],
+    tracklist: [
+      { position: "A1", title: "Intro", duration: "1:12", type: "track", artists: null },
+      { position: "A2", title: "The Squeeze", duration: "4:20", type: "track", artists: null },
+      { position: "A3", title: "Night Drive", duration: "3:45", type: "track", artists: null },
+      { position: "B1", title: "Late Hours", duration: "5:01", type: "track", artists: null },
+      { position: "B2", title: "Outro", duration: "2:10", type: "track", artists: null },
+    ],
+    images: [],
+    notes: "Demo release details used when Discogs API is unavailable.",
+    community: {
+      have: 184,
+      want: 97,
+      ratingAverage: 4.2,
+      ratingCount: 31,
+    },
+    uri: "https://www.discogs.com/master/75078-J-Walk-The-Squeeze",
+  };
+}
+
 /** Plac marketplace: release or marketplace listing URL with enriched metadata. */
 export async function resolvePlacReleaseFromUrl(url) {
   const parsed = parseDiscogsRecordUrl(url);

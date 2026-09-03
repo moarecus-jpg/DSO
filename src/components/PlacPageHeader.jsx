@@ -22,6 +22,8 @@ export function PlacPageHeader({
 }) {
   const { t } = useLocale();
   const searchEnabled = showSearch && typeof onQueryChange === "function";
+  const sellInNav = Boolean(backTo);
+  const showEndSell = showSell && !sellInNav;
 
   return (
     <header className="plac-page-header">
@@ -38,11 +40,20 @@ export function PlacPageHeader({
               {subtitle && <p className="orders-page-subtitle">{subtitle}</p>}
             </div>
           </div>
-          {backTo && (
-            <Link to={backTo.to} className="plac-page-header-back btn btn-ghost btn-sm">
-              <ArrowLeft size={16} aria-hidden />
-              {backTo.label}
-            </Link>
+          {(backTo || sellInNav) && (
+            <div className="plac-page-header-nav">
+              {backTo ? (
+                <Link to={backTo.to} className="plac-page-header-back btn btn-ghost btn-sm">
+                  <ArrowLeft size={16} aria-hidden />
+                  {backTo.label}
+                </Link>
+              ) : (
+                <span />
+              )}
+              {sellInNav && (
+                <PlacToolbarActions onSell={onSell} showSell={showSell} />
+              )}
+            </div>
           )}
         </div>
 
@@ -62,7 +73,7 @@ export function PlacPageHeader({
         )}
 
         <div className="plac-page-header-end">
-          <PlacToolbarActions onSell={onSell} showSell={showSell} />
+          <PlacToolbarActions onSell={onSell} showSell={showEndSell} />
           <HeaderAccount className="plac-page-header-account" />
         </div>
       </div>

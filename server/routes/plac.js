@@ -18,7 +18,9 @@ import {
   upsertGoogleUser,
 } from "../db.js";
 import {
+  mockFetchPlacReleaseDetails,
   mockResolvePlacReleaseFromUrl,
+  fetchPlacReleaseDetails,
   resolvePlacReleaseFromUrl,
 } from "../discogs/recordMeta.js";
 import { discogsAppConfigured } from "../discogs/auth.js";
@@ -424,6 +426,42 @@ router.get("/:id", requireUser, (req, res) => {
     return res.status(404).json({ error: "Oglas ni bil najden." });
   }
   res.json({ listing });
+});
+
+router.get("/:id/release", requireUser, async (req, res) => {
+  try {
+    const userId = ensureRequestUser(req);
+    const listing = getPlacListingById(req.params.id);
+    if (!listing) {
+      return res.status(404).json({ error: "Oglas ni bil najden." });
+    }
+    const isOwner = listing.userId === userId;
+    if (!isOwner && listing.status !== "active") {
+      return res.status(404).json({ error: "Oglas ni bil najden." });
+    }
+    if (listing.releaseId == null) {
+      return res.json({ release: null });
+    }
+
+    const release = discogsAppConfigured()
+      ? await fetchPlacReleaseDetails(listing.releaseId)
+      : useMockAuth()
+        ? mockFetchPlacReleaseDetails(listing.releaseId)
+        : null;
+
+    if (!release && !discogsAppConfigured()) {
+      return res.status(503).json({
+        error:
+          "Discogs API ni konfiguriran. Na strežniku nastavi DISCOGS_CONSUMER_KEY in DISCOGS_CONSUMER_SECRET.",
+      });
+    }
+
+    res.json({ release });
+  } catch (err) {
+    res.status(502).json({
+      error: err.message ?? "Discogs release details could not be loaded.",
+    });
+  }
 });
 
 router.patch("/:id", requireUser, (req, res) => {

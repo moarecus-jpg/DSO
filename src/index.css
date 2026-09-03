@@ -6711,6 +6711,7 @@ img.header-account-avatar {
 .order-card-v2 .status-pill-v2 {
   padding: 0.28rem 0.65rem;
   font-size: 0.75rem;
+  flex-shrink: 0;
 }
 
 .order-card-v2-body {
@@ -7387,7 +7388,7 @@ a.order-preview-item-title:hover {
 .my-items-group-header {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem 1rem;
   padding: 1.15rem 1.35rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -7404,12 +7405,21 @@ a.order-preview-item-title:hover {
   min-width: 0;
 }
 
+.my-items-group-header .status-pill-v2 {
+  flex-shrink: 0;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
 .my-items-order-link {
   display: block;
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--text);
   text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .my-items-order-link:hover {
@@ -7421,6 +7431,9 @@ a.order-preview-item-title:hover {
   margin: 0.2rem 0 0;
   color: rgba(255, 255, 255, 0.5);
   font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .my-items-rows {
@@ -8275,7 +8288,17 @@ a.order-preview-item-title:hover {
   }
 
   .my-items-group-header {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+  }
+
+  .my-items-group-header .status-pill-v2 {
+    padding: 0.28rem 0.55rem;
+    font-size: 0.72rem;
+  }
+
+  .my-items-order-link {
+    font-size: 1rem;
   }
 
   .app-shell {
@@ -8504,11 +8527,27 @@ a.order-preview-item-title:hover {
   min-width: 0;
 }
 
+.plac-page-header-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  margin-top: 0.65rem;
+  width: 100%;
+  min-width: 0;
+}
+
 .plac-page-header-back {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  margin-top: 0.65rem;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.plac-page-header-nav .plac-toolbar-actions {
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .plac-page-header-title-main {
@@ -9548,6 +9587,19 @@ img.plac-user-avatar {
     width: auto;
   }
 
+  .plac-page-header-nav {
+    margin-top: 0.55rem;
+  }
+
+  .plac-page-header-back {
+    max-width: calc(100% - 8.5rem);
+  }
+
+  .plac-page-header-back .btn-label,
+  .plac-page-header-nav .plac-sell-btn {
+    white-space: nowrap;
+  }
+
   .plac-page-header-end {
     margin-left: auto;
     flex-wrap: wrap;
@@ -9604,6 +9656,33 @@ img.plac-user-avatar {
     height: auto;
     overflow: visible;
     padding: 1rem 1.1rem 1.15rem;
+  }
+
+  .plac-release-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .plac-release-cover {
+    max-height: none;
+  }
+
+  .plac-release-summary {
+    padding: 1rem 1.05rem 1.15rem;
+  }
+
+  .plac-release-fact {
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    gap: 0.55rem;
+  }
+
+  .plac-release-offer,
+  .plac-release-tracklist {
+    padding: 1rem 1.05rem 1.1rem;
+  }
+
+  .plac-track {
+    grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+    gap: 0.45rem;
   }
 
   .plac-detail-actions {
@@ -9873,6 +9952,213 @@ img.plac-user-avatar {
   margin-bottom: 1rem;
 }
 
+.plac-release {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.plac-release-hero {
+  display: grid;
+  grid-template-columns: minmax(14rem, 20rem) minmax(0, 1fr);
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.plac-release-cover {
+  position: relative;
+  aspect-ratio: 1;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.plac-release-cover img,
+.plac-release-cover .plac-card-cover-fallback {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.plac-release-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 1.25rem 1.35rem 1.35rem;
+  min-width: 0;
+}
+
+.plac-release-artist {
+  margin: 0;
+  color: rgba(196, 181, 253, 0.95);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.plac-release-title {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+  line-height: 1.2;
+  font-weight: 800;
+}
+
+.plac-release-eyebrow {
+  margin: 0;
+  color: rgba(167, 139, 250, 0.85);
+  font-size: 0.85rem;
+}
+
+.plac-release-community {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.plac-release-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.plac-release-stat strong {
+  color: #fff;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.plac-release-stat-count {
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 500;
+}
+
+.plac-release-facts {
+  display: grid;
+  gap: 0.45rem 1rem;
+  margin: 0.35rem 0 0;
+}
+
+.plac-release-fact {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+.plac-release-fact dt {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.plac-release-fact dd {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.plac-release-discogs-link {
+  align-self: flex-start;
+  margin-top: 0.25rem;
+}
+
+.plac-release-section-title {
+  margin: 0 0 0.85rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.plac-release-offer,
+.plac-release-tracklist {
+  padding: 1.15rem 1.25rem 1.25rem;
+}
+
+.plac-release-offer-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.plac-tracklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.plac-track {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  align-items: baseline;
+  padding: 0.45rem 0.35rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.plac-track:last-child {
+  border-bottom: none;
+}
+
+.plac-track--heading {
+  grid-template-columns: minmax(0, 1fr);
+  margin-top: 0.55rem;
+  padding-top: 0.75rem;
+  border-bottom: none;
+}
+
+.plac-track--heading .plac-track-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.plac-track-pos {
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.plac-track-title {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.plac-track-duration {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.plac-release-notes {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.plac-release-notes p {
+  margin: 0.35rem 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.88rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
 .plac-detail {
   padding: 0;
   overflow: hidden;
@@ -9952,10 +10238,6 @@ img.plac-user-avatar {
   font-size: 0.78rem;
   color: rgba(255, 255, 255, 0.78);
   line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .plac-detail-purchase {
