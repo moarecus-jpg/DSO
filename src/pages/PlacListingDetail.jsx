@@ -29,6 +29,37 @@ function formatLabels(labels) {
     .join(", ");
 }
 
+function youtubeVideoId(uri) {
+  if (!uri) return null;
+  try {
+    const url = new URL(uri);
+    const host = url.hostname.replace(/^www\./, "");
+    if (host === "youtu.be") return url.pathname.replace(/^\//, "") || null;
+    if (host === "youtube.com" || host === "m.youtube.com" || host === "music.youtube.com" || host === "youtube-nocookie.com") {
+      const id = url.searchParams.get("v");
+      if (id) return id;
+      const match = url.pathname.match(/^\/(?:embed|shorts)\/([^/]+)/);
+      return match?.[1] || null;
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+function youtubeThumbnailUrl(uri) {
+  const id = youtubeVideoId(uri);
+  return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null;
+}
+
+function formatVideoDuration(seconds) {
+  const total = Number(seconds);
+  if (!Number.isFinite(total) || total <= 0) return null;
+  const mins = Math.floor(total / 60);
+  const secs = Math.floor(total % 60);
+  return `${mins}:${String(secs).padStart(2, "0")}`;
+}
+
 export function PlacListingDetail() {
   const { listingId } = useParams();
   const navigate = useNavigate();
@@ -42,6 +73,7 @@ export function PlacListingDetail() {
   const [releaseError, setReleaseError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [sellOpen, setSellOpen] = useState(false);
+  const [activeVideoIndex, setActiveVideoIndex] = useState(0);
 
   useEffect(() => {
     setLoading(true);
@@ -85,6 +117,13 @@ export function PlacListingDetail() {
       cancelled = true;
     };
   }, [listing?.id, listing?.releaseId]);
+
+  useEffect(() => {
+    setActiveVideoIndex(0);
+  }, [release?.id, listingId]);
+
+  const videos = release?.videos ?? [];
+  const activeVideo = videos[activeVideoIndex] ?? videos[0] ?? null;
 
   const isOwner = user?.id === listing?.userId;
   const isVinyl = listing?.listingType !== "other";
@@ -387,42 +426,72 @@ export function PlacListingDetail() {
                 </div>
               )}
 
-              {release.videos?.length > 0 && (
+              {videos.length > 0 && (
                 <div className="plac-release-videos">
                   <h2 className="plac-release-section-title">{t("plac.videos")}</h2>
-                  <div className="plac-release-video-grid">
-                    {release.videos.map((video, index) => (
-                      <article
-                        key={`${video.uri}-${index}`}
-                        className="plac-release-video"
-                      >
-                        {video.embedUrl ? (
-                          <div className="plac-release-video-frame">
-                            <iframe
-                              src={video.embedUrl}
-                              title={video.title || t("plac.videos")}
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                              allowFullScreen
-                              loading="lazy"
-                              referrerPolicy="strict-origin-when-cross-origin"
-                            />
-                          </div>
-                        ) : (
-                          <a
-                            href={video.uri}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="plac-release-video-fallback"
+                  <div className="plac-release-playlist">
+                    <div className="plac-release-playlist-player">
+                      {activeVideo?.embedUrl ? (
+                        <div className="plac-release-video-frame">
+                          <iframe
+                            key={activeVideo.embedUrl}
+                            src={activeVideo.embedUrl}
+                            title={activeVideo.title || t("plac.videos")}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            loading="lazy"
+                            referrerPolicy="strict-origin-when-cross-origin"
+                          />
+                        </div>
+                      ) : activeVideo?.uri ? (
+                        <a
+                          href={activeVideo.uri}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="plac-release-video-fallback"
+                        >
+                          <ExternalLink size={16} aria-hidden />
+                          {activeVideo.title || t("plac.openVideo")}
+                        </a>
+                      ) : null}
+                      {activeVideo?.title && (
+                        <p className="plac-release-video-title">{activeVideo.title}</p>
+                      )}
+                    </div>
+
+                    <div className="plac-release-playlist-list" role="list">
+                      {videos.map((video, index) => {
+                        const thumb = youtubeThumbnailUrl(video.uri || video.embedUrl);
+                        const duration = formatVideoDuration(video.duration);
+                        const isActive = index === activeVideoIndex;
+                        return (
+                          <button
+                            key={`${video.uri}-${index}`}
+                            type="button"
+                            role="listitem"
+                            className={`plac-release-playlist-item${isActive ? " is-active" : ""}`}
+                            onClick={() => setActiveVideoIndex(index)}
+                            aria-current={isActive ? "true" : undefined}
                           >
-                            <ExternalLink size={16} aria-hidden />
-                            {video.title || t("plac.openVideo")}
-                          </a>
-                        )}
-                        {video.title && (
-                          <p className="plac-release-video-title">{video.title}</p>
-                        )}
-                      </article>
-                    ))}
+                            <span className="plac-release-playlist-thumb">
+                              {thumb ? (
+                                <img src={thumb} alt="" loading="lazy" />
+                              ) : (
+                                <span className="plac-release-playlist-thumb-fallback" aria-hidden />
+                              )}
+                              {duration && (
+                                <span className="plac-release-playlist-duration">{duration}</span>
+                              )}
+                            </span>
+                            <span className="plac-release-playlist-meta">
+                              <span className="plac-release-playlist-item-title">
+                                {video.title || t("plac.openVideo")}
+                              </span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               )}
