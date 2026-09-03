@@ -273,44 +273,46 @@ export function PlacListingDetail() {
                 <section className="plac-release-tracklist card">
                   <h2 className="plac-release-section-title">{t("plac.tracklist")}</h2>
 
-                  {releaseLoading ? (
-                    <p className="muted fine">{t("common.loading")}</p>
-                  ) : releaseError ? (
-                    <p className="muted fine">{releaseError}</p>
-                  ) : tracklist.length === 0 ? (
-                    <p className="muted fine">{t("plac.tracklistEmpty")}</p>
-                  ) : (
-                    <ol className="plac-tracklist">
-                      {tracklist.map((track, index) => {
-                        const isHeading = track.type === "heading";
-                        return (
-                          <li
-                            key={`${track.position ?? "t"}-${track.title ?? index}-${index}`}
-                            className={`plac-track${isHeading ? " plac-track--heading" : ""}`}
-                          >
-                            {!isHeading && (
-                              <span className="plac-track-pos">{track.position || "—"}</span>
-                            )}
-                            <div className="plac-track-main">
-                              <span className="plac-track-title">
-                                {track.artists ? `${track.artists} — ${track.title}` : track.title}
-                              </span>
-                            </div>
-                            {!isHeading && track.duration && (
-                              <span className="plac-track-duration">{track.duration}</span>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ol>
-                  )}
+                  <div className="plac-release-tracklist-body">
+                    {releaseLoading ? (
+                      <p className="muted fine">{t("common.loading")}</p>
+                    ) : releaseError ? (
+                      <p className="muted fine">{releaseError}</p>
+                    ) : tracklist.length === 0 ? (
+                      <p className="muted fine">{t("plac.tracklistEmpty")}</p>
+                    ) : (
+                      <ol className="plac-tracklist">
+                        {tracklist.map((track, index) => {
+                          const isHeading = track.type === "heading";
+                          return (
+                            <li
+                              key={`${track.position ?? "t"}-${track.title ?? index}-${index}`}
+                              className={`plac-track${isHeading ? " plac-track--heading" : ""}`}
+                            >
+                              {!isHeading && (
+                                <span className="plac-track-pos">{track.position || "—"}</span>
+                              )}
+                              <div className="plac-track-main">
+                                <span className="plac-track-title">
+                                  {track.artists ? `${track.artists} — ${track.title}` : track.title}
+                                </span>
+                              </div>
+                              {!isHeading && track.duration && (
+                                <span className="plac-track-duration">{track.duration}</span>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    )}
 
-                  {release?.notes && (
-                    <div className="plac-release-notes">
-                      <h3 className="plac-detail-label">{t("plac.releaseNotes")}</h3>
-                      <p>{release.notes}</p>
-                    </div>
-                  )}
+                    {release?.notes && (
+                      <div className="plac-release-notes">
+                        <h3 className="plac-detail-label">{t("plac.releaseNotes")}</h3>
+                        <p>{release.notes}</p>
+                      </div>
+                    )}
+                  </div>
                 </section>
               )}
 

@@ -9948,14 +9948,17 @@ img.plac-user-avatar {
   grid-template-columns: minmax(0, 1.2fr) minmax(13rem, 0.85fr);
 }
 
+/* Nested media grid must consume the stretched row height (1fr),
+   otherwise Tracklist/Videos cards stay content-tall and bottoms diverge. */
 .plac-release-secondary-media {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  grid-template-rows: minmax(0, 1fr);
   gap: 0.75rem;
   min-width: 0;
   min-height: 0;
   align-items: stretch;
-  height: 100%;
+  align-content: stretch;
 }
 
 .plac-release-secondary-media:has(> :only-child) {
@@ -9968,11 +9971,20 @@ img.plac-user-avatar {
   gap: 0.75rem;
   min-width: 0;
   min-height: 0;
-  height: 100%;
+  align-self: stretch;
 }
 
+.plac-release-secondary-aside .plac-release-stats {
+  flex: 0 0 auto;
+}
+
+/* Keep offer card content-sized; pin it to the column bottom. */
 .plac-release-secondary-aside .plac-release-offer {
+  flex: 0 0 auto;
   margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .plac-release-secondary > .card,
@@ -9985,10 +9997,11 @@ img.plac-user-avatar {
 }
 
 .plac-release-secondary-media > .card {
-  height: 100%;
   display: flex;
   flex-direction: column;
   min-height: 0;
+  align-self: stretch;
+  overflow: hidden;
 }
 
 .plac-release-secondary .plac-release-section-title {
@@ -9997,11 +10010,18 @@ img.plac-user-avatar {
   flex-shrink: 0;
 }
 
-.plac-release-secondary .plac-tracklist {
+.plac-release-secondary .plac-release-tracklist-body {
   flex: 1 1 auto;
-  max-height: none;
   min-height: 0;
   overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.plac-release-secondary .plac-tracklist {
+  flex: 0 0 auto;
+  max-height: none;
+  min-height: 0;
   padding-right: 0.15rem;
 }
 
@@ -10022,8 +10042,8 @@ img.plac-user-avatar {
 
 .plac-release-secondary .plac-release-notes {
   flex-shrink: 0;
-  max-height: 4.5rem;
-  overflow: auto;
+  max-height: none;
+  overflow: visible;
   margin-top: 0.65rem;
   padding-top: 0.55rem;
 }
@@ -10033,29 +10053,29 @@ img.plac-user-avatar {
   line-height: 1.4;
 }
 
-.plac-release-secondary .plac-release-listen,
-.plac-release-secondary .plac-release-videos {
+.plac-release-secondary .plac-release-listen {
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
   min-height: 0;
 }
 
 .plac-release-secondary .plac-release-videos {
+  display: flex;
+  flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
 }
 
 .plac-release-secondary .plac-release-playlist {
-  position: static;
   flex: 1 1 auto;
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   gap: 0.55rem;
   align-items: stretch;
   min-height: 0;
   width: 100%;
-  container-type: inline-size;
-  container-name: plac-playlist;
 }
 
 .plac-release-secondary .plac-release-playlist-player {
@@ -10064,24 +10084,29 @@ img.plac-user-avatar {
   min-width: 0;
   min-height: 0;
   height: 100%;
+  align-self: stretch;
   display: flex;
   flex-direction: column;
 }
 
+/* Drop locked 16:9 so the frame can fill the stretched player column. */
 .plac-release-secondary .plac-release-video-frame {
+  position: relative;
   flex: 1 1 auto;
   width: 100%;
+  min-height: 0;
   height: 100%;
-  min-height: calc(100cqw * 1.15 / 2.15 * 9 / 16);
   aspect-ratio: auto;
+  align-self: stretch;
 }
 
 .plac-release-secondary .plac-release-playlist-list {
   position: static;
   inset: auto;
   max-height: none;
-  height: 100%;
   min-height: 0;
+  height: 100%;
+  align-self: stretch;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -10669,6 +10694,7 @@ img.plac-user-avatar {
 
   .plac-release-secondary-media {
     grid-template-columns: 1fr;
+    grid-template-rows: none;
     height: auto;
     align-items: start;
   }
@@ -10682,6 +10708,7 @@ img.plac-user-avatar {
   }
 
   .plac-release-secondary-aside .plac-release-offer {
+    flex: none;
     margin-top: 0;
   }
 
@@ -10692,10 +10719,12 @@ img.plac-user-avatar {
     height: auto;
   }
 
+  .plac-release-secondary .plac-release-tracklist-body,
   .plac-release-secondary .plac-tracklist,
   .plac-release-secondary .plac-release-notes {
     max-height: none;
     flex: none;
+    overflow: visible;
   }
 
   .plac-release-secondary .plac-release-videos {
@@ -10703,12 +10732,11 @@ img.plac-user-avatar {
   }
 
   .plac-release-secondary .plac-release-playlist {
-    position: static;
     display: grid;
     grid-template-columns: 1fr;
+    grid-template-rows: none;
     gap: 0.55rem;
     flex: none;
-    container-type: normal;
   }
 
   .plac-release-secondary .plac-release-playlist-player {
