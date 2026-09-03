@@ -14,6 +14,7 @@ import {
   listPlacOrdersForUser,
   listPlacSellers,
   updatePlacListing,
+  updatePlacListingGenre,
   updatePlacOrderStatus,
   upsertGoogleUser,
 } from "../db.js";
@@ -34,9 +35,35 @@ import { normalizePlacYear } from "../../shared/placFormat.js";
 import { MOCK_USER } from "../mock.js";
 
 const router = Router();
+const styleBackfillInFlight = new Set();
 
 function useMockAuth() {
   return process.env.USE_MOCK_AUTH === "true";
+}
+
+function queuePlacStyleBackfill(listings = []) {
+  if (!discogsAppConfigured()) return;
+
+  for (const listing of listings) {
+    if (!listing?.id || listing.releaseId == null) continue;
+    if (styleBackfillInFlight.has(listing.id)) continue;
+    styleBackfillInFlight.add(listing.id);
+
+    Promise.resolve()
+      .then(() => fetchPlacReleaseDetails(listing.releaseId))
+      .then((release) => {
+        if (release?.styles?.length) {
+          updatePlacListingGenre(listing.id, release.styles.join(", "));
+        }
+      })
+      .catch(() => {
+        /* ignore backfill errors */
+      })
+      .finally(() => {
+        // Allow a later retry only after process restart / long session.
+        // Keep id marked so we don't re-hit Discogs every page refresh.
+      });
+  }
 }
 
 function ensureRequestUser(req) {
@@ -157,6 +184,7 @@ router.get("/user/:userId", requireUser, (req, res) => {
   }
   const listings = listActivePlacListingsByUser(req.params.userId);
   res.json({ seller, listings });
+  queuePlacStyleBackfill(listings);
 });
 
 router.get("/", requireUser, (req, res) => {
@@ -168,6 +196,7 @@ router.get("/mine", requireUser, (req, res) => {
   const userId = ensureRequestUser(req);
   const listings = listPlacListingsByUser(userId);
   res.json({ listings });
+  queuePlacStyleBackfill(listings);
 });
 
 router.get("/counts", requireUser, (req, res) => {
@@ -454,6 +483,10 @@ router.get("/:id/release", requireUser, async (req, res) => {
         error:
           "Discogs API ni konfiguriran. Na strežniku nastavi DISCOGS_CONSUMER_KEY in DISCOGS_CONSUMER_SECRET.",
       });
+    }
+
+    if (release?.styles?.length) {
+      updatePlacListingGenre(listing.id, release.styles.join(", "));
     }
 
     res.json({ release });

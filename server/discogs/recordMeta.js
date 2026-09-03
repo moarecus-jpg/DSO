@@ -167,13 +167,16 @@ function fromReleasePayloadPlac(data) {
   const artist = artistsLabel(data.artists) ?? null;
   const title = data.title ?? null;
   const thumbnailUrl = data.images?.[0]?.uri ?? data.thumb ?? null;
+  const styles = (data.styles ?? []).filter(Boolean);
+  const genres = (data.genres ?? []).filter(Boolean);
 
   return {
     artist,
     title,
     thumbnailUrl,
     year: normalizePlacYear(data.year),
-    genre: data.genres?.join(", ") ?? null,
+    // Cards show style (House, Deep House) rather than broad genre (Electronic).
+    genre: styles.length ? styles.join(", ") : genres.length ? genres.join(", ") : null,
     country: data.country ?? null,
     format: buildPlacReleaseFormat(data.formats),
   };
@@ -188,6 +191,121 @@ function mapReleaseTrack(track) {
     type: track.type_ || "track",
     artists: artistsLabel(track.artists) ?? null,
   };
+}
+
+function youtubeEmbedUrl(uri) {
+  if (!uri) return null;
+  try {
+    const url = new URL(uri);
+    const host = url.hostname.replace(/^www\./, "");
+    if (host === "youtu.be") {
+      const id = url.pathname.replace(/^\//, "");
+      return id ? `https://www.youtube-nocookie.com/embed/${id}` : null;
+    }
+    if (host === "youtube.com" || host === "m.youtube.com" || host === "music.youtube.com") {
+      const id = url.searchParams.get("v");
+      if (id) return `https://www.youtube-nocookie.com/embed/${id}`;
+      const shorts = url.pathname.match(/^\/(?:embed|shorts)\/([^/]+)/);
+      if (shorts?.[1]) return `https://www.youtube-nocookie.com/embed/${shorts[1]}`;
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+function mapReleaseVideos(videos) {
+  return (videos ?? [])
+    .map((video) => {
+      const uri = video.uri || null;
+      if (!uri) return null;
+      return {
+        title: video.title || null,
+        description: video.description || null,
+        duration: Number.isFinite(Number(video.duration)) ? Number(video.duration) : null,
+        uri,
+        embedUrl: video.embed === false ? null : youtubeEmbedUrl(uri),
+      };
+    })
+    .filter(Boolean);
+}
+
+const STREAMING_LINK_HOSTS = [
+  { id: "appleMusic", label: "Apple Music", match: /music\.apple\.com|itunes\.apple\.com/i },
+  { id: "spotify", label: "Spotify", match: /open\.spotify\.com|spotify\.link/i },
+  { id: "youtubeMusic", label: "YouTube Music", match: /music\.youtube\.com/i },
+  { id: "bandcamp", label: "Bandcamp", match: /bandcamp\.com/i },
+  { id: "soundcloud", label: "SoundCloud", match: /soundcloud\.com/i },
+  { id: "tidal", label: "Tidal", match: /tidal\.com/i },
+  { id: "deezer", label: "Deezer", match: /deezer\.com/i },
+];
+
+function classifyStreamingUrl(uri) {
+  if (!uri) return null;
+  try {
+    const host = new URL(uri).hostname;
+    const hit = STREAMING_LINK_HOSTS.find((item) => item.match.test(host));
+    if (!hit) return null;
+    return { id: hit.id, label: hit.label, url: uri };
+  } catch {
+    return null;
+  }
+}
+
+function extractStreamingLinksFromText(text) {
+  if (!text) return [];
+  const matches = text.match(/https?:\/\/[^\s)\]>"']+/gi) ?? [];
+  const links = [];
+  for (const raw of matches) {
+    const cleaned = raw.replace(/[.,;:!?]+$/, "");
+    const link = classifyStreamingUrl(cleaned);
+    if (link && !links.some((item) => item.id === link.id)) links.push(link);
+  }
+  return links;
+}
+
+async function fetchSonglinkListenLinks(sourceUrl) {
+  if (!sourceUrl) return [];
+  try {
+    const endpoint = `https://api.song.link/v1-alpha.1/links?url=${encodeURIComponent(sourceUrl)}&userCountry=SI`;
+    const res = await fetch(endpoint, {
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const byPlatform = data?.linksByPlatform ?? {};
+    const wanted = [
+      ["appleMusic", "Apple Music"],
+      ["spotify", "Spotify"],
+      ["youtubeMusic", "YouTube Music"],
+      ["tidal", "Tidal"],
+      ["deezer", "Deezer"],
+      ["amazonMusic", "Amazon Music"],
+      ["bandcamp", "Bandcamp"],
+      ["soundcloud", "SoundCloud"],
+    ];
+    const links = [];
+    for (const [id, label] of wanted) {
+      const url = byPlatform[id]?.url;
+      if (url && !links.some((item) => item.id === id)) {
+        links.push({ id, label, url });
+      }
+    }
+    return links;
+  } catch {
+    return [];
+  }
+}
+
+function mergeListenLinks(...groups) {
+  const links = [];
+  for (const group of groups) {
+    for (const link of group ?? []) {
+      if (!link?.url || !link?.id) continue;
+      if (!links.some((item) => item.id === link.id)) links.push(link);
+    }
+  }
+  return links;
 }
 
 function mapReleaseDetails(data) {
@@ -211,6 +329,8 @@ function mapReleaseDetails(data) {
   const want = Number(data.community?.want);
   const ratingAverage = Number(data.community?.rating?.average);
   const ratingCount = Number(data.community?.rating?.count);
+  const videos = mapReleaseVideos(data.videos);
+  const listenLinks = extractStreamingLinksFromText(data.notes);
 
   return {
     id: data.id ?? null,
@@ -228,6 +348,8 @@ function mapReleaseDetails(data) {
       descriptions: format.descriptions ?? [],
     })),
     tracklist: (data.tracklist ?? []).map(mapReleaseTrack).filter(Boolean),
+    videos,
+    listenLinks,
     images,
     notes: data.notes?.trim() || null,
     community: {
@@ -251,7 +373,17 @@ export async function fetchPlacReleaseDetails(releaseId) {
   }
 
   const data = await discogsGet(`/releases/${releaseId}`);
-  return mapReleaseDetails(data);
+  const details = mapReleaseDetails(data);
+  const youtubeSource =
+    details.videos.find((video) => video.embedUrl)?.uri ||
+    details.videos[0]?.uri ||
+    null;
+  const songlinkSource = youtubeSource || details.uri || null;
+  const songlinkLinks = await fetchSonglinkListenLinks(songlinkSource);
+  return {
+    ...details,
+    listenLinks: mergeListenLinks(details.listenLinks, songlinkLinks),
+  };
 }
 
 export function mockFetchPlacReleaseDetails(releaseId) {
@@ -272,6 +404,19 @@ export function mockFetchPlacReleaseDetails(releaseId) {
       { position: "A3", title: "Night Drive", duration: "3:45", type: "track", artists: null },
       { position: "B1", title: "Late Hours", duration: "5:01", type: "track", artists: null },
       { position: "B2", title: "Outro", duration: "2:10", type: "track", artists: null },
+    ],
+    videos: [
+      {
+        title: "J-Walk - The Squeeze",
+        description: "Official video",
+        duration: 260,
+        uri: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        embedUrl: "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
+      },
+    ],
+    listenLinks: [
+      { id: "appleMusic", label: "Apple Music", url: "https://music.apple.com/search?term=J-Walk%20The%20Squeeze" },
+      { id: "spotify", label: "Spotify", url: "https://open.spotify.com/search/J-Walk%20The%20Squeeze" },
     ],
     images: [],
     notes: "Demo release details used when Discogs API is unavailable.",
@@ -366,7 +511,7 @@ export function mockResolvePlacReleaseFromUrl(url) {
         title,
         thumbnailUrl: null,
         year: 1984,
-        genre: "Electronic",
+        genre: "Italo-Disco, Synth-pop",
         country: "Slovenia",
         format: release.format ?? "Vinyl, LP",
         priceValue: price.value,
@@ -385,7 +530,7 @@ export function mockResolvePlacReleaseFromUrl(url) {
       title: `Listing #${parsed.listingId}`,
       thumbnailUrl: null,
       year: 1984,
-      genre: "Electronic",
+      genre: "House, Deep House",
       country: "Slovenia",
       format: "Vinyl, LP",
       priceValue: 24.99,
@@ -405,7 +550,7 @@ export function mockResolvePlacReleaseFromUrl(url) {
       title: `Release #${parsed.releaseId}`,
       thumbnailUrl: null,
       year: 1984,
-      genre: "Electronic",
+      genre: "Broken Beat, Nu Jazz",
       country: "Slovenia",
       format: "Vinyl, LP",
       priceValue: null,

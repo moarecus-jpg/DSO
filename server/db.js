@@ -1822,6 +1822,16 @@ export function updatePlacListing(id, userId, fields) {
   return getPlacListingById(id);
 }
 
+/** System update used to backfill Discogs style into stored listing genre. */
+export function updatePlacListingGenre(id, genre) {
+  const existing = db.prepare("SELECT id, genre FROM plac_listings WHERE id = ?").get(id);
+  if (!existing) return null;
+  const next = genre?.trim() || null;
+  if ((existing.genre || null) === next) return getPlacListingById(id);
+  db.prepare("UPDATE plac_listings SET genre = ? WHERE id = ?").run(next, id);
+  return getPlacListingById(id);
+}
+
 export function deletePlacListing(id, userId) {
   const result = db
     .prepare("DELETE FROM plac_listings WHERE id = ? AND user_id = ?")

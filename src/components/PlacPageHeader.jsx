@@ -22,8 +22,9 @@ export function PlacPageHeader({
 }) {
   const { t } = useLocale();
   const searchEnabled = showSearch && typeof onQueryChange === "function";
-  const sellInNav = Boolean(backTo);
-  const showEndSell = showSell && !sellInNav;
+  const sellWithBack = Boolean(backTo);
+  const showEndSell = showSell && !sellWithBack;
+  const showControlsRow = Boolean(backTo) || showGalleryView || sellWithBack;
 
   return (
     <header className="plac-page-header">
@@ -40,21 +41,6 @@ export function PlacPageHeader({
               {subtitle && <p className="orders-page-subtitle">{subtitle}</p>}
             </div>
           </div>
-          {(backTo || sellInNav) && (
-            <div className="plac-page-header-nav">
-              {backTo ? (
-                <Link to={backTo.to} className="plac-page-header-back btn btn-ghost btn-sm">
-                  <ArrowLeft size={16} aria-hidden />
-                  {backTo.label}
-                </Link>
-              ) : (
-                <span />
-              )}
-              {sellInNav && (
-                <PlacToolbarActions onSell={onSell} showSell={showSell} />
-              )}
-            </div>
-          )}
         </div>
 
         {searchEnabled && (
@@ -78,11 +64,29 @@ export function PlacPageHeader({
         </div>
       </div>
 
-      {showGalleryView && (
-        <div className="plac-page-header-row plac-page-header-row--controls">
-          <div className="plac-page-header-controls">
-            <PlacGalleryViewToggle view={galleryView} onChange={onGalleryViewChange} />
-          </div>
+      {showControlsRow && (
+        <div
+          className={`plac-page-header-row plac-page-header-row--controls${
+            backTo ? "" : " plac-page-header-row--controls-only"
+          }`}
+        >
+          {backTo && (
+            <div className="plac-page-header-nav">
+              <Link to={backTo.to} className="plac-page-header-back btn btn-ghost btn-sm">
+                <ArrowLeft size={16} aria-hidden />
+                {backTo.label}
+              </Link>
+              {sellWithBack && (
+                <PlacToolbarActions onSell={onSell} showSell={showSell} />
+              )}
+            </div>
+          )}
+
+          {showGalleryView && (
+            <div className="plac-page-header-controls">
+              <PlacGalleryViewToggle view={galleryView} onChange={onGalleryViewChange} />
+            </div>
+          )}
         </div>
       )}
     </header>

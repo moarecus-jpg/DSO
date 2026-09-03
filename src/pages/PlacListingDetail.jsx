@@ -105,8 +105,9 @@ export function PlacListingDetail() {
     formatPlacListingFormat(listing?.format) ||
     null;
   const displayCountry = release?.country || listing?.country || null;
-  const displayGenres = joinList(release?.genres) || listing?.genre || null;
-  const displayStyles = joinList(release?.styles);
+  const displayGenres = joinList(release?.genres) || null;
+  const displayStyles =
+    joinList(release?.styles) || listing?.genre || null;
   const displayLabels = formatLabels(release?.labels);
   const discogsUrl = release?.uri || listing?.releaseUrl || null;
 
@@ -202,9 +203,11 @@ export function PlacListingDetail() {
               {displayArtist && <p className="plac-release-artist">{displayArtist}</p>}
               <h1 className="plac-release-title">{displayTitle}</h1>
 
-              {(displayYear != null || displayCountry || displayGenres) && (
+              {(displayYear != null || displayCountry || displayStyles || displayGenres) && (
                 <p className="plac-release-eyebrow">
-                  {[displayYear, displayGenres, displayCountry].filter(Boolean).join(" · ")}
+                  {[displayYear, displayStyles || displayGenres, displayCountry]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </p>
               )}
 
@@ -357,6 +360,70 @@ export function PlacListingDetail() {
                 <div className="plac-release-notes">
                   <h3 className="plac-detail-label">{t("plac.releaseNotes")}</h3>
                   <p>{release.notes}</p>
+                </div>
+              )}
+            </section>
+          )}
+
+          {isVinyl && (release?.listenLinks?.length > 0 || release?.videos?.length > 0) && (
+            <section className="plac-release-media card">
+              {release.listenLinks?.length > 0 && (
+                <div className="plac-release-listen">
+                  <h2 className="plac-release-section-title">{t("plac.listenOn")}</h2>
+                  <div className="plac-release-listen-links">
+                    {release.listenLinks.map((link) => (
+                      <a
+                        key={link.id}
+                        href={link.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={`btn btn-ghost btn-sm plac-listen-link plac-listen-link--${link.id}`}
+                      >
+                        <ExternalLink size={14} aria-hidden />
+                        {link.label}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {release.videos?.length > 0 && (
+                <div className="plac-release-videos">
+                  <h2 className="plac-release-section-title">{t("plac.videos")}</h2>
+                  <div className="plac-release-video-grid">
+                    {release.videos.map((video, index) => (
+                      <article
+                        key={`${video.uri}-${index}`}
+                        className="plac-release-video"
+                      >
+                        {video.embedUrl ? (
+                          <div className="plac-release-video-frame">
+                            <iframe
+                              src={video.embedUrl}
+                              title={video.title || t("plac.videos")}
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                              loading="lazy"
+                              referrerPolicy="strict-origin-when-cross-origin"
+                            />
+                          </div>
+                        ) : (
+                          <a
+                            href={video.uri}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="plac-release-video-fallback"
+                          >
+                            <ExternalLink size={16} aria-hidden />
+                            {video.title || t("plac.openVideo")}
+                          </a>
+                        )}
+                        {video.title && (
+                          <p className="plac-release-video-title">{video.title}</p>
+                        )}
+                      </article>
+                    ))}
+                  </div>
                 </div>
               )}
             </section>

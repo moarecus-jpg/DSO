@@ -20,7 +20,7 @@ const SAMPLE_LISTINGS = [
     title: "The Dark Side Of The Moon",
     thumbnailUrl: null,
     year: 1973,
-    genre: "Rock",
+    genre: "Prog Rock",
     country: "UK",
     format: "LP, Album, Reissue",
     mediaCondition: "Very Good Plus (VG+)",
@@ -37,7 +37,7 @@ const SAMPLE_LISTINGS = [
     title: "Random Access Memories",
     thumbnailUrl: null,
     year: 2013,
-    genre: "Electronic",
+    genre: "House, Disco",
     country: "France",
     format: "2xLP, Album",
     mediaCondition: "Near Mint (NM)",
@@ -54,7 +54,7 @@ const SAMPLE_LISTINGS = [
     title: "Rumours",
     thumbnailUrl: null,
     year: 1977,
-    genre: "Rock",
+    genre: "Soft Rock, Pop Rock",
     country: "US",
     format: null,
     mediaCondition: "Very Good (VG)",
@@ -71,7 +71,7 @@ const SAMPLE_LISTINGS = [
     title: "Mezzanine",
     thumbnailUrl: null,
     year: 1998,
-    genre: "Electronic",
+    genre: "Trip Hop, Downtempo",
     country: "UK",
     format: "LP, Album",
     mediaCondition: "Mint (M)",
@@ -104,7 +104,7 @@ export function MarketplaceBuyerPreview() {
           subtitle="Marko Čuš · 98 listings"
           query={query}
           onQueryChange={setQuery}
-          placeholder="Search artist, title, genre…"
+          placeholder="Search artist, title, style…"
           onSell={() => {}}
         />
 
