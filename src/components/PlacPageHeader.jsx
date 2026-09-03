@@ -72,7 +72,7 @@ export function PlacPageHeader({
         >
           {backTo && (
             <div className="plac-page-header-nav">
-              <Link to={backTo.to} className="plac-page-header-back btn btn-ghost btn-sm">
+              <Link to={backTo.to} className="plac-page-header-back btn btn-ghost">
                 <ArrowLeft size={16} aria-hidden />
                 {backTo.label}
               </Link>
