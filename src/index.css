@@ -9938,32 +9938,31 @@ img.plac-user-avatar {
 
 .plac-release-secondary {
   display: grid;
-  grid-template-columns: max-content minmax(13rem, 16rem);
+  grid-template-columns: minmax(0, 1.7fr) minmax(14rem, 0.9fr);
   gap: 0.75rem;
+  width: 100%;
   /* Equal column bottoms: Tracklist / Videos / aside align. */
   align-items: stretch;
-  justify-content: start;
+  justify-content: stretch;
 }
 
 .plac-release-secondary:not(:has(.plac-release-secondary-media > :nth-child(2))) {
-  grid-template-columns: max-content minmax(13rem, 16rem);
+  grid-template-columns: minmax(0, 1.25fr) minmax(14rem, 0.9fr);
 }
 
 .plac-release-secondary-media {
   display: grid;
-  grid-template-columns: minmax(14rem, 20rem) max-content;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
   gap: 0.75rem;
   min-width: 0;
   min-height: 0;
-  width: max-content;
-  max-width: 100%;
+  width: 100%;
   height: 100%;
   align-items: stretch;
-  justify-content: start;
 }
 
 .plac-release-secondary-media:has(> :only-child) {
-  grid-template-columns: max-content;
+  grid-template-columns: 1fr;
 }
 
 .plac-release-secondary-aside {
@@ -9973,7 +9972,7 @@ img.plac-user-avatar {
   min-width: 0;
   min-height: 0;
   width: 100%;
-  max-width: 16rem;
+  max-width: none;
   height: 100%;
   align-self: stretch;
 }
@@ -9995,27 +9994,26 @@ img.plac-user-avatar {
 .plac-release-secondary-aside > .card {
   margin-bottom: 0;
   min-width: 0;
-  width: auto;
-  max-width: 100%;
+  width: 100%;
+  max-width: none;
+  height: 100%;
   padding: 0.85rem 0.95rem 0.95rem;
 }
 
 .plac-release-secondary-media > .plac-release-tracklist {
-  width: 100%;
-  max-width: 20rem;
-  height: 100%;
   align-self: stretch;
 }
 
 .plac-release-secondary-media > .plac-release-media {
-  width: max-content;
-  max-width: min(100%, 36rem);
-  height: auto;
   align-self: stretch;
 }
 
 .plac-release-secondary-aside > .card {
   width: 100%;
+}
+
+.plac-release-secondary-aside .plac-release-stats {
+  height: auto;
 }
 
 .plac-release-secondary .plac-release-section-title {
@@ -10059,7 +10057,7 @@ img.plac-user-avatar {
   line-height: 1.4;
 }
 
-/* Player stays 16:9; playlist scrolls beside it. Do not grow the video frame. */
+/* Player stays 16:9; playlist fills remaining width beside it. Do not grow the frame. */
 .plac-release-secondary .plac-release-listen,
 .plac-release-secondary .plac-release-videos,
 .plac-release-secondary .plac-release-playlist {
@@ -10067,12 +10065,10 @@ img.plac-user-avatar {
 }
 
 .plac-release-secondary .plac-release-playlist {
-  --plac-player-w: 20rem;
-  --plac-playlist-w: 13.5rem;
+  --plac-player-w: min(22rem, 56%);
   position: relative;
   display: block;
-  width: calc(var(--plac-player-w) + 0.55rem + var(--plac-playlist-w));
-  max-width: 100%;
+  width: 100%;
 }
 
 .plac-release-secondary .plac-release-playlist-player {
@@ -10095,7 +10091,7 @@ img.plac-user-avatar {
   right: 0;
   bottom: 0;
   left: calc(var(--plac-player-w) + 0.55rem);
-  width: var(--plac-playlist-w);
+  width: auto;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -10702,6 +10698,7 @@ img.plac-user-avatar {
   .plac-release-secondary-aside .plac-release-stats,
   .plac-release-secondary-aside .plac-release-offer {
     flex: none;
+    height: auto;
     margin-top: 0;
   }
 
