@@ -9938,33 +9938,35 @@ img.plac-user-avatar {
 
 .plac-release-secondary {
   display: grid;
-  grid-template-columns: minmax(16rem, 0.85fr) minmax(0, 1.35fr);
+  grid-template-columns: minmax(13rem, 0.9fr) minmax(11rem, 0.65fr) minmax(0, 1.45fr);
   gap: 1rem;
   align-items: start;
 }
 
-.plac-release-secondary:not(:has(.plac-release-media)) {
+.plac-release-secondary:has(> :only-child) {
   grid-template-columns: 1fr;
 }
 
-.plac-release-secondary-main {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  min-width: 0;
+.plac-release-secondary:has(.plac-release-media):not(:has(.plac-release-stats)) {
+  grid-template-columns: minmax(14rem, 0.85fr) minmax(0, 1.35fr);
 }
 
-.plac-release-secondary > .card,
-.plac-release-secondary-main > .card {
+.plac-release-secondary:not(:has(.plac-release-media)):has(.plac-release-stats) {
+  grid-template-columns: minmax(14rem, 1fr) minmax(12rem, 0.8fr);
+}
+
+.plac-release-secondary > .card {
   margin-bottom: 0;
-}
-
-.plac-release-secondary > .plac-release-offer {
   min-width: 0;
 }
 
 .plac-release-secondary .plac-release-playlist {
-  grid-template-columns: minmax(0, 16rem) minmax(10rem, 1fr);
+  grid-template-columns: minmax(0, 14rem) minmax(9rem, 1fr);
+}
+
+.plac-release-secondary .plac-release-stats-row {
+  grid-template-columns: 5.25rem minmax(0, 1fr);
+  gap: 0.5rem;
 }
 
 .plac-release-hero {
@@ -10512,6 +10514,11 @@ img.plac-user-avatar {
   }
 
   .plac-release-secondary {
+    grid-template-columns: 1fr;
+  }
+
+  .plac-release-secondary:has(.plac-release-media):not(:has(.plac-release-stats)),
+  .plac-release-secondary:not(:has(.plac-release-media)):has(.plac-release-stats) {
     grid-template-columns: 1fr;
   }
 
