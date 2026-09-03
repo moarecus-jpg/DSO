@@ -10015,16 +10015,22 @@ img.plac-user-avatar {
 }
 
 .plac-release-secondary .plac-release-playlist {
+  container-type: inline-size;
+  container-name: plac-playlist;
+  display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
   gap: 0.55rem;
-  align-items: stretch;
+  align-items: start;
 }
 
 .plac-release-secondary .plac-release-playlist-list {
-  max-height: none;
-  height: 100%;
+  /* Match the 16:9 player height in the left column, then scroll. */
+  max-height: calc((100cqw - 0.55rem) * (1.2 / 2.2) * 9 / 16);
+  height: auto;
   min-height: 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .plac-release-secondary .plac-release-playlist-item {
@@ -10626,11 +10632,12 @@ img.plac-user-avatar {
   }
 
   .plac-release-secondary .plac-release-playlist {
+    container-type: normal;
     grid-template-columns: 1fr;
   }
 
   .plac-release-secondary .plac-release-playlist-list {
-    max-height: none;
+    max-height: min(14rem, 40vh);
     height: auto;
   }
 
