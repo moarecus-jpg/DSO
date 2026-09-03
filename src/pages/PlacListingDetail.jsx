@@ -242,34 +242,6 @@ export function PlacListingDetail() {
               {displayArtist && <p className="plac-release-artist">{displayArtist}</p>}
               <h1 className="plac-release-title">{displayTitle}</h1>
 
-              {(release?.community?.have != null || release?.community?.want != null) && (
-                <div className="plac-release-community" aria-label={t("plac.communityStats")}>
-                  {release.community.have != null && (
-                    <span className="plac-release-stat">
-                      <strong>{release.community.have.toLocaleString()}</strong>
-                      {t("plac.have")}
-                    </span>
-                  )}
-                  {release.community.want != null && (
-                    <span className="plac-release-stat">
-                      <strong>{release.community.want.toLocaleString()}</strong>
-                      {t("plac.want")}
-                    </span>
-                  )}
-                  {release.community.ratingAverage != null && (
-                    <span className="plac-release-stat plac-release-stat--rating">
-                      <strong>{release.community.ratingAverage.toFixed(2)}</strong>
-                      {t("plac.rating")}
-                      {release.community.ratingCount != null && (
-                        <span className="plac-release-stat-count">
-                          ({release.community.ratingCount.toLocaleString()})
-                        </span>
-                      )}
-                    </span>
-                  )}
-                </div>
-              )}
-
               {infoRows.length > 0 && (
                 <dl className="plac-release-facts">
                   {infoRows.map((row) => (
@@ -341,6 +313,102 @@ export function PlacListingDetail() {
           )}
 
           <div className="plac-release-secondary">
+            <div className="plac-release-secondary-main">
+              <section className="plac-release-offer card">
+                <h2 className="plac-release-section-title">{t("plac.listingOffer")}</h2>
+
+                <div className="plac-release-offer-grid">
+                  <div className="plac-detail-conditions">
+                    <div>
+                      <span className="plac-detail-label">{t("plac.mediaCondition")}</span>
+                      <span className="plac-card-condition">{listing.mediaCondition}</span>
+                    </div>
+                    {listing.sleeveCondition && (
+                      <div>
+                        <span className="plac-detail-label">{t("plac.sleeveCondition")}</span>
+                        <span className="plac-card-condition">{listing.sleeveCondition}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {listing.note && (
+                    <div className="plac-detail-note">
+                      <span className="plac-detail-label">{t("plac.note")}</span>
+                      <p>{listing.note}</p>
+                    </div>
+                  )}
+
+                  <div className="plac-detail-purchase">
+                    <p className="plac-detail-price">{formatPrice(listing.priceValue)}</p>
+                    <div className="plac-detail-actions">
+                      {!isOwner && listing.status === "active" && (
+                        <PlacAddToCartButton listing={listing} large />
+                      )}
+
+                      {isOwner && listing.status === "active" && (
+                        <>
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            disabled={busy}
+                            onClick={handleMarkSold}
+                          >
+                            {t("plac.markSold")}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm btn-danger-text"
+                            disabled={busy}
+                            onClick={handleRemove}
+                          >
+                            {t("plac.remove")}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {isVinyl &&
+                (release?.community?.have != null ||
+                  release?.community?.want != null ||
+                  release?.community?.ratingAverage != null) && (
+                  <section className="plac-release-stats card" aria-label={t("plac.communityStats")}>
+                    <h2 className="plac-release-section-title">{t("plac.communityStats")}</h2>
+                    <dl className="plac-release-stats-list">
+                      {release.community.have != null && (
+                        <div className="plac-release-stats-row">
+                          <dt>{t("plac.have")}</dt>
+                          <dd>{release.community.have.toLocaleString()}</dd>
+                        </div>
+                      )}
+                      {release.community.want != null && (
+                        <div className="plac-release-stats-row">
+                          <dt>{t("plac.want")}</dt>
+                          <dd>{release.community.want.toLocaleString()}</dd>
+                        </div>
+                      )}
+                      {release.community.ratingAverage != null && (
+                        <div className="plac-release-stats-row">
+                          <dt>{t("plac.avgRating")}</dt>
+                          <dd>
+                            {release.community.ratingAverage.toFixed(2)}
+                            <span className="plac-release-stats-scale"> / 5</span>
+                          </dd>
+                        </div>
+                      )}
+                      {release.community.ratingCount != null && (
+                        <div className="plac-release-stats-row">
+                          <dt>{t("plac.ratings")}</dt>
+                          <dd>{release.community.ratingCount.toLocaleString()}</dd>
+                        </div>
+                      )}
+                    </dl>
+                  </section>
+                )}
+            </div>
+
             {isVinyl && (release?.listenLinks?.length > 0 || videos.length > 0) && (
               <section className="plac-release-media card">
                 {release.listenLinks?.length > 0 && (
@@ -434,62 +502,6 @@ export function PlacListingDetail() {
                 )}
               </section>
             )}
-
-            <section className="plac-release-offer card">
-              <h2 className="plac-release-section-title">{t("plac.listingOffer")}</h2>
-
-              <div className="plac-release-offer-grid">
-                <div className="plac-detail-conditions">
-                  <div>
-                    <span className="plac-detail-label">{t("plac.mediaCondition")}</span>
-                    <span className="plac-card-condition">{listing.mediaCondition}</span>
-                  </div>
-                  {listing.sleeveCondition && (
-                    <div>
-                      <span className="plac-detail-label">{t("plac.sleeveCondition")}</span>
-                      <span className="plac-card-condition">{listing.sleeveCondition}</span>
-                    </div>
-                  )}
-                </div>
-
-                {listing.note && (
-                  <div className="plac-detail-note">
-                    <span className="plac-detail-label">{t("plac.note")}</span>
-                    <p>{listing.note}</p>
-                  </div>
-                )}
-
-                <div className="plac-detail-purchase">
-                  <p className="plac-detail-price">{formatPrice(listing.priceValue)}</p>
-                  <div className="plac-detail-actions">
-                    {!isOwner && listing.status === "active" && (
-                      <PlacAddToCartButton listing={listing} large />
-                    )}
-
-                    {isOwner && listing.status === "active" && (
-                      <>
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-sm"
-                          disabled={busy}
-                          onClick={handleMarkSold}
-                        >
-                          {t("plac.markSold")}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-sm btn-danger-text"
-                          disabled={busy}
-                          onClick={handleRemove}
-                        >
-                          {t("plac.remove")}
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </section>
           </div>
         </div>
       )}
