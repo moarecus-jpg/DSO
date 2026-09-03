@@ -10057,44 +10057,95 @@ img.plac-user-avatar {
   line-height: 1.4;
 }
 
-/* Player stays 16:9; playlist fills remaining width beside it. Do not grow the frame. */
-.plac-release-secondary .plac-release-listen,
-.plac-release-secondary .plac-release-videos,
-.plac-release-secondary .plac-release-playlist {
+/* Fill video + playlist to the existing card bottom — do not grow the card. */
+.plac-release-secondary-media > .plac-release-media {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.plac-release-secondary .plac-release-listen {
+  flex: 0 0 auto;
+}
+
+.plac-release-secondary .plac-release-videos {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.plac-release-secondary .plac-release-videos > .plac-release-section-title {
   flex: 0 0 auto;
 }
 
 .plac-release-secondary .plac-release-playlist {
-  --plac-player-w: min(22rem, 56%);
-  position: relative;
-  display: block;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(11rem, 0.9fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: stretch;
   width: 100%;
 }
 
 .plac-release-secondary .plac-release-playlist-player {
-  width: var(--plac-player-w);
-  max-width: 100%;
+  width: auto;
+  max-width: none;
   min-width: 0;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .plac-release-secondary .plac-release-video-frame {
-  aspect-ratio: 16 / 9;
+  flex: 1 1 auto;
   width: 100%;
-  height: auto;
+  height: 100%;
   min-height: 0;
-  flex: none;
+  aspect-ratio: auto;
 }
 
 .plac-release-secondary .plac-release-playlist-list {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: calc(var(--plac-player-w) + 0.55rem);
+  position: static;
+  inset: auto;
+  height: 100%;
+  min-height: 0;
   width: auto;
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: scroll;
   overscroll-behavior: contain;
+  padding-right: 0.2rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  padding-left: 0.45rem;
+  /* Show scrollbar so the video list reads as a list */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(167, 139, 250, 0.55) rgba(255, 255, 255, 0.06);
+  -ms-overflow-style: auto;
+}
+
+.plac-release-secondary .plac-release-playlist-list::-webkit-scrollbar {
+  display: block;
+  width: 8px;
+  height: 8px;
+  background: transparent;
+}
+
+.plac-release-secondary .plac-release-playlist-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+}
+
+.plac-release-secondary .plac-release-playlist-list::-webkit-scrollbar-thumb {
+  background: rgba(167, 139, 250, 0.55);
+  border-radius: 999px;
+}
+
+.plac-release-secondary .plac-release-playlist-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(167, 139, 250, 0.75);
 }
 
 .plac-release-secondary .plac-release-playlist-item {
