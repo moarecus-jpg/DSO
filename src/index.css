@@ -9939,15 +9939,24 @@ img.plac-user-avatar {
 .plac-release-hero {
   display: grid;
   grid-template-columns: minmax(14rem, 20rem) minmax(0, 1fr);
-  gap: 0;
-  padding: 0;
+  align-items: stretch;
+  gap: 0 1.5rem;
+  padding: 1.25rem 1.35rem;
   overflow: hidden;
+}
+
+.layout-dashboard .plac-release-hero.card {
+  padding: 1.25rem 1.35rem;
 }
 
 .plac-release-cover {
   position: relative;
+  width: 100%;
   aspect-ratio: 1;
+  align-self: start;
   background: rgba(255, 255, 255, 0.03);
+  border-radius: 0.9rem;
+  overflow: hidden;
 }
 
 .plac-release-cover img,
@@ -9962,8 +9971,9 @@ img.plac-user-avatar {
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
-  padding: 1.25rem 1.35rem 1.35rem;
+  padding: 0;
   min-width: 0;
+  min-height: 0;
 }
 
 .plac-release-artist {
@@ -10048,7 +10058,7 @@ img.plac-user-avatar {
 
 .plac-release-discogs-link {
   align-self: flex-start;
-  margin-top: 0.25rem;
+  margin-top: auto;
 }
 
 .plac-release-section-title {
@@ -10337,16 +10347,27 @@ img.plac-user-avatar {
 
   .plac-release-hero {
     grid-template-columns: 1fr;
+    gap: 0;
+    padding: 0;
+  }
+
+  .layout-dashboard .plac-release-hero.card {
+    padding: 0;
   }
 
   .plac-release-cover {
     width: 100%;
     max-width: 100%;
     max-height: none;
+    border-radius: 0;
   }
 
   .plac-release-summary {
     padding: 1rem 1.05rem 1.15rem;
+  }
+
+  .plac-release-discogs-link {
+    margin-top: 0.35rem;
   }
 
   .plac-release-fact {
