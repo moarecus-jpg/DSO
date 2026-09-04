@@ -94,38 +94,50 @@ export function PlacUser() {
       ? t("plac.emptySearch")
       : t("plac.sellerEmpty");
 
-  return (
-    <div className="page page-orders page-plac page-plac-user">
-      <PlacPageHeader
-        backTo={{ to: "/plac", label: t("plac.backToMarketplace") }}
-        titleLeading={
-          seller ? (
-            <UserAvatar
-              name={seller.name}
-              avatarUrl={resolveUserAvatarUrl(seller)}
-              className="plac-user-avatar"
-              size={56}
-            />
-          ) : null
-        }
-        title={seller ? sellerLabel(seller) : t("plac.sellerNotFound")}
-        subtitle={headerSubtitle}
-        query={query}
-        onQueryChange={setQuery}
-        placeholder={t("plac.searchPlaceholder")}
-        onSell={() => setSellOpen(true)}
-        showGalleryView={showDig && filteredListings.length > 0}
-        galleryView={view}
-        onGalleryViewChange={setView}
-      />
+  const pageHeader = (
+    <PlacPageHeader
+      backTo={{ to: "/plac", label: t("plac.backToMarketplace") }}
+      titleLeading={
+        seller ? (
+          <UserAvatar
+            name={seller.name}
+            avatarUrl={resolveUserAvatarUrl(seller)}
+            className="plac-user-avatar"
+            size={56}
+          />
+        ) : null
+      }
+      title={seller ? sellerLabel(seller) : t("plac.sellerNotFound")}
+      subtitle={headerSubtitle}
+      query={query}
+      onQueryChange={setQuery}
+      placeholder={t("plac.searchPlaceholder")}
+      onSell={() => setSellOpen(true)}
+      showGalleryView={showDig && filteredListings.length > 0}
+      galleryView={view}
+      onGalleryViewChange={setView}
+    />
+  );
 
+  return (
+    <div
+      className={`page page-orders page-plac page-plac-user${
+        showDig ? " page-plac-user--dig" : ""
+      }`}
+    >
       {loading ? (
-        <p className="orders-loading">{t("common.loadingItems")}</p>
+        <>
+          {pageHeader}
+          <p className="orders-loading">{t("common.loadingItems")}</p>
+        </>
       ) : !showDig ? (
-        <div className="orders-empty plac-empty">
-          <Store size={40} strokeWidth={1.2} />
-          <p>{emptyMessage}</p>
-        </div>
+        <>
+          {pageHeader}
+          <div className="orders-empty plac-empty">
+            <Store size={40} strokeWidth={1.2} />
+            <p>{emptyMessage}</p>
+          </div>
+        </>
       ) : (
         <div className={`plac-dig${filtersOpen ? " plac-dig--filters-open" : ""}`}>
           <PlacDigFilters
@@ -137,6 +149,8 @@ export function PlacUser() {
           />
 
           <div className="plac-dig-main">
+            {pageHeader}
+
             <div className="plac-dig-toolbar">
               <p className="plac-dig-toolbar-count muted fine">
                 {t("plac.facets.showing", {
