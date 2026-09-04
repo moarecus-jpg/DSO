@@ -30,6 +30,12 @@ export function PlacSellerCard({ seller }) {
         <p className="plac-seller-count muted fine">
           {t("plac.sellerListingCount", { count: seller.listingCount })}
         </p>
+        {seller.shopDiscountPercent > 0 && (
+          <p className="plac-seller-sale">
+            {seller.shopDiscountLabel?.trim() ||
+              t("plac.shopSaleBadge", { percent: seller.shopDiscountPercent })}
+          </p>
+        )}
       </div>
     </Link>
   );

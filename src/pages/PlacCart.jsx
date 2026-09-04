@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { formatPrice } from "../../shared/orderTotals.js";
 import { placListingTitle } from "../../shared/plac.js";
 import { PlacPageHeader } from "../components/PlacPageHeader.jsx";
+import { PlacPrice } from "../components/PlacPrice.jsx";
 import { PlacSellDialog } from "../components/PlacSellDialog.jsx";
 import { api } from "../api.js";
 import { UserAvatar } from "../components/UserAvatar.jsx";
@@ -112,7 +113,7 @@ export function PlacCart() {
                           <p className="plac-cart-item-title">{placListingTitle(item)}</p>
                           <p className="muted fine">{item.mediaCondition}</p>
                         </div>
-                        <span className="plac-cart-item-price">{formatPrice(item.priceValue)}</span>
+                        <PlacPrice listing={item} className="plac-cart-item-price" />
                         <button
                           type="button"
                           className="plac-cart-item-remove"

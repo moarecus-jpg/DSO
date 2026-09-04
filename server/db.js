@@ -159,6 +159,8 @@ for (const sql of [
   "ALTER TABLE group_sessions ADD COLUMN seller_report_sent_at TEXT",
   "ALTER TABLE plac_listings ADD COLUMN listing_type TEXT DEFAULT 'vinyl'",
   "ALTER TABLE plac_listings ADD COLUMN category TEXT DEFAULT 'vinyl'",
+  "ALTER TABLE users ADD COLUMN shop_discount_percent REAL NOT NULL DEFAULT 0",
+  "ALTER TABLE users ADD COLUMN shop_discount_label TEXT",
 ]) {
   try {
     db.exec(sql);
@@ -166,6 +168,37 @@ for (const sql of [
     /* column already exists */
   }
 }
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS plac_threads (
+    id TEXT PRIMARY KEY,
+    listing_id TEXT NOT NULL,
+    buyer_id TEXT NOT NULL,
+    seller_id TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (listing_id) REFERENCES plac_listings(id) ON DELETE CASCADE,
+    FOREIGN KEY (buyer_id) REFERENCES users(id),
+    FOREIGN KEY (seller_id) REFERENCES users(id),
+    UNIQUE (listing_id, buyer_id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_plac_threads_buyer ON plac_threads (buyer_id);
+  CREATE INDEX IF NOT EXISTS idx_plac_threads_seller ON plac_threads (seller_id);
+
+  CREATE TABLE IF NOT EXISTS plac_messages (
+    id TEXT PRIMARY KEY,
+    thread_id TEXT NOT NULL,
+    sender_id TEXT NOT NULL,
+    body TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    read_at TEXT,
+    FOREIGN KEY (thread_id) REFERENCES plac_threads(id) ON DELETE CASCADE,
+    FOREIGN KEY (sender_id) REFERENCES users(id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_plac_messages_thread ON plac_messages (thread_id);
+`);
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS password_reset_tokens (
@@ -1543,6 +1576,8 @@ export function publicUser(user) {
     notifyNewOrder: Boolean(user.notify_new_order),
     notifyOrderNote: Boolean(user.notify_order_note),
     notifyOrderClosed: Boolean(user.notify_order_closed),
+    shopDiscountPercent: Number(user.shop_discount_percent) || 0,
+    shopDiscountLabel: user.shop_discount_label ?? null,
   };
 }
 
@@ -1552,11 +1587,30 @@ const PLAC_LISTING_SELECT = `
   pl.price_value, pl.price_currency, pl.media_condition, pl.sleeve_condition,
   pl.note, pl.status, pl.created_at,
   u.name as seller_name, u.username as seller_username, u.picture as seller_picture,
-  u.discogs_username as seller_discogs_username, u.discogs_avatar_url as seller_discogs_avatar_url
+  u.discogs_username as seller_discogs_username, u.discogs_avatar_url as seller_discogs_avatar_url,
+  COALESCE(u.shop_discount_percent, 0) as shop_discount_percent,
+  u.shop_discount_label as shop_discount_label
 `;
+
+function applyShopDiscount(priceValue, discountPercent) {
+  const price = Number(priceValue);
+  const discount = Number(discountPercent) || 0;
+  if (!Number.isFinite(price) || price <= 0) return { priceValue: price, originalPriceValue: price, discountPercent: 0 };
+  if (!Number.isFinite(discount) || discount <= 0) {
+    return { priceValue: price, originalPriceValue: price, discountPercent: 0 };
+  }
+  const clamped = Math.min(90, Math.max(0, discount));
+  const discounted = Math.round(price * (1 - clamped / 100) * 100) / 100;
+  return {
+    priceValue: discounted,
+    originalPriceValue: price,
+    discountPercent: clamped,
+  };
+}
 
 function mapPlacListingRow(row) {
   if (!row) return null;
+  const pricing = applyShopDiscount(row.price_value, row.shop_discount_percent);
   return {
     id: row.id,
     userId: row.user_id,
@@ -1571,7 +1625,10 @@ function mapPlacListingRow(row) {
     genre: row.genre,
     country: row.country,
     format: formatPlacListingFormat(row.format) ?? row.format,
-    priceValue: row.price_value,
+    priceValue: pricing.priceValue,
+    originalPriceValue: pricing.originalPriceValue,
+    discountPercent: pricing.discountPercent,
+    discountLabel: row.shop_discount_label ?? null,
     priceCurrency: row.price_currency ?? "EUR",
     mediaCondition: row.media_condition,
     sleeveCondition: row.sleeve_condition,
@@ -1591,6 +1648,7 @@ function mapPlacListingRow(row) {
 
 function mapPlacSellerRow(row) {
   if (!row) return null;
+  const discount = Number(row.shop_discount_percent) || 0;
   return {
     id: row.id,
     name: row.name,
@@ -1600,6 +1658,8 @@ function mapPlacSellerRow(row) {
     discogsAvatarUrl: row.discogs_avatar_url ?? null,
     listingCount: row.listing_count,
     latestAt: row.latest_at,
+    shopDiscountPercent: discount > 0 ? discount : 0,
+    shopDiscountLabel: row.shop_discount_label ?? null,
   };
 }
 
@@ -1708,6 +1768,8 @@ export function listPlacSellers({ query } = {}) {
   const q = query?.trim().toLowerCase();
   let sql = `
     SELECT u.id, u.name, u.username, u.picture, u.discogs_username, u.discogs_avatar_url,
+           COALESCE(u.shop_discount_percent, 0) AS shop_discount_percent,
+           u.shop_discount_label,
            COUNT(pl.id) AS listing_count,
            MAX(pl.created_at) AS latest_at
     FROM plac_listings pl
@@ -1736,6 +1798,8 @@ export function getPlacSeller(userId) {
   const row = db
     .prepare(
       `SELECT u.id, u.name, u.username, u.picture, u.discogs_username, u.discogs_avatar_url,
+              COALESCE(u.shop_discount_percent, 0) AS shop_discount_percent,
+              u.shop_discount_label,
               COUNT(pl.id) AS listing_count,
               MAX(pl.created_at) AS latest_at
        FROM users u
@@ -1805,6 +1869,18 @@ export function updatePlacListing(id, userId, fields) {
   if (fields.note !== undefined) {
     updates.push("note = ?");
     params.push(fields.note);
+  }
+  if (fields.title !== undefined) {
+    updates.push("title = ?");
+    params.push(fields.title);
+  }
+  if (fields.artist !== undefined) {
+    updates.push("artist = ?");
+    params.push(fields.artist);
+  }
+  if (fields.category !== undefined) {
+    updates.push("category = ?");
+    params.push(fields.category);
   }
   if (fields.status != null) {
     updates.push("status = ?");
@@ -2017,6 +2093,235 @@ export function updatePlacOrderStatus(id, userId, status) {
   }
 
   return getPlacOrderById(id);
+}
+
+export function getPlacShopSettings(userId) {
+  const row = db
+    .prepare(
+      `SELECT shop_discount_percent, shop_discount_label FROM users WHERE id = ?`
+    )
+    .get(userId);
+  if (!row) return null;
+  return {
+    discountPercent: Number(row.shop_discount_percent) || 0,
+    discountLabel: row.shop_discount_label ?? null,
+  };
+}
+
+export function updatePlacShopSettings(userId, { discountPercent, discountLabel }) {
+  const percent = Number(discountPercent);
+  const clamped = Number.isFinite(percent)
+    ? Math.min(90, Math.max(0, Math.round(percent * 10) / 10))
+    : 0;
+  const label =
+    clamped > 0 && discountLabel?.trim() ? discountLabel.trim().slice(0, 80) : null;
+  db.prepare(
+    `UPDATE users SET shop_discount_percent = ?, shop_discount_label = ? WHERE id = ?`
+  ).run(clamped, label, userId);
+  return getPlacShopSettings(userId);
+}
+
+function mapPlacThreadRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    listingId: row.listing_id,
+    buyerId: row.buyer_id,
+    sellerId: row.seller_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    listingTitle: row.listing_title ?? null,
+    listingArtist: row.listing_artist ?? null,
+    listingThumbnailUrl: row.listing_thumbnail_url ?? null,
+    listingStatus: row.listing_status ?? null,
+    otherUser: {
+      id: row.other_id,
+      name: row.other_name,
+      username: row.other_username,
+      picture: row.other_picture,
+      discogsUsername: row.other_discogs_username,
+      discogsAvatarUrl: row.other_discogs_avatar_url ?? null,
+    },
+    lastMessage: row.last_body
+      ? {
+          body: row.last_body,
+          createdAt: row.last_created_at,
+          senderId: row.last_sender_id,
+        }
+      : null,
+    unreadCount: Number(row.unread_count) || 0,
+  };
+}
+
+export function listPlacInboxThreads(userId) {
+  return db
+    .prepare(
+      `SELECT t.id, t.listing_id, t.buyer_id, t.seller_id, t.created_at, t.updated_at,
+              pl.title AS listing_title, pl.artist AS listing_artist,
+              pl.thumbnail_url AS listing_thumbnail_url, pl.status AS listing_status,
+              CASE WHEN t.buyer_id = ? THEN t.seller_id ELSE t.buyer_id END AS other_id,
+              ou.name AS other_name, ou.username AS other_username, ou.picture AS other_picture,
+              ou.discogs_username AS other_discogs_username,
+              ou.discogs_avatar_url AS other_discogs_avatar_url,
+              lm.body AS last_body, lm.created_at AS last_created_at, lm.sender_id AS last_sender_id,
+              (
+                SELECT COUNT(*) FROM plac_messages m
+                WHERE m.thread_id = t.id AND m.sender_id != ? AND m.read_at IS NULL
+              ) AS unread_count
+       FROM plac_threads t
+       JOIN plac_listings pl ON pl.id = t.listing_id
+       JOIN users ou ON ou.id = CASE WHEN t.buyer_id = ? THEN t.seller_id ELSE t.buyer_id END
+       LEFT JOIN plac_messages lm ON lm.id = (
+         SELECT m2.id FROM plac_messages m2
+         WHERE m2.thread_id = t.id
+         ORDER BY m2.created_at DESC LIMIT 1
+       )
+       WHERE t.buyer_id = ? OR t.seller_id = ?
+       ORDER BY t.updated_at DESC`
+    )
+    .all(userId, userId, userId, userId, userId)
+    .map(mapPlacThreadRow);
+}
+
+export function countPlacInboxUnread(userId) {
+  return (
+    db
+      .prepare(
+        `SELECT COUNT(*) AS c
+         FROM plac_messages m
+         JOIN plac_threads t ON t.id = m.thread_id
+         WHERE (t.buyer_id = ? OR t.seller_id = ?)
+           AND m.sender_id != ?
+           AND m.read_at IS NULL`
+      )
+      .get(userId, userId, userId)?.c ?? 0
+  );
+}
+
+export function getPlacThreadForUser(threadId, userId) {
+  const row = db
+    .prepare(
+      `SELECT t.id, t.listing_id, t.buyer_id, t.seller_id, t.created_at, t.updated_at,
+              pl.title AS listing_title, pl.artist AS listing_artist,
+              pl.thumbnail_url AS listing_thumbnail_url, pl.status AS listing_status,
+              CASE WHEN t.buyer_id = ? THEN t.seller_id ELSE t.buyer_id END AS other_id,
+              ou.name AS other_name, ou.username AS other_username, ou.picture AS other_picture,
+              ou.discogs_username AS other_discogs_username,
+              ou.discogs_avatar_url AS other_discogs_avatar_url,
+              NULL AS last_body, NULL AS last_created_at, NULL AS last_sender_id,
+              0 AS unread_count
+       FROM plac_threads t
+       JOIN plac_listings pl ON pl.id = t.listing_id
+       JOIN users ou ON ou.id = CASE WHEN t.buyer_id = ? THEN t.seller_id ELSE t.buyer_id END
+       WHERE t.id = ? AND (t.buyer_id = ? OR t.seller_id = ?)`
+    )
+    .get(userId, userId, threadId, userId, userId);
+  return mapPlacThreadRow(row);
+}
+
+export function listPlacThreadMessages(threadId, userId) {
+  const thread = db
+    .prepare(
+      `SELECT id FROM plac_threads WHERE id = ? AND (buyer_id = ? OR seller_id = ?)`
+    )
+    .get(threadId, userId, userId);
+  if (!thread) return null;
+
+  db.prepare(
+    `UPDATE plac_messages SET read_at = datetime('now')
+     WHERE thread_id = ? AND sender_id != ? AND read_at IS NULL`
+  ).run(threadId, userId);
+
+  return db
+    .prepare(
+      `SELECT m.id, m.thread_id, m.sender_id, m.body, m.created_at, m.read_at,
+              u.name AS sender_name, u.username AS sender_username, u.picture AS sender_picture
+       FROM plac_messages m
+       JOIN users u ON u.id = m.sender_id
+       WHERE m.thread_id = ?
+       ORDER BY m.created_at ASC`
+    )
+    .all(threadId)
+    .map((row) => ({
+      id: row.id,
+      threadId: row.thread_id,
+      senderId: row.sender_id,
+      body: row.body,
+      createdAt: row.created_at,
+      readAt: row.read_at,
+      sender: {
+        id: row.sender_id,
+        name: row.sender_name,
+        username: row.sender_username,
+        picture: row.sender_picture,
+      },
+    }));
+}
+
+export function startPlacListingMessage({ listingId, buyerId, body }) {
+  const listing = db
+    .prepare(
+      `SELECT id, user_id, status FROM plac_listings WHERE id = ?`
+    )
+    .get(listingId);
+  if (!listing || listing.status !== "active") return { error: "not_found" };
+  if (listing.user_id === buyerId) return { error: "own_listing" };
+
+  const text = body?.trim();
+  if (!text || text.length > 2000) return { error: "invalid_body" };
+
+  let thread = db
+    .prepare(
+      `SELECT id FROM plac_threads WHERE listing_id = ? AND buyer_id = ?`
+    )
+    .get(listingId, buyerId);
+
+  if (!thread) {
+    const threadId = randomUUID();
+    db.prepare(
+      `INSERT INTO plac_threads (id, listing_id, buyer_id, seller_id)
+       VALUES (?, ?, ?, ?)`
+    ).run(threadId, listingId, buyerId, listing.user_id);
+    thread = { id: threadId };
+  }
+
+  const messageId = randomUUID();
+  db.prepare(
+    `INSERT INTO plac_messages (id, thread_id, sender_id, body) VALUES (?, ?, ?, ?)`
+  ).run(messageId, thread.id, buyerId, text);
+  db.prepare(
+    `UPDATE plac_threads SET updated_at = datetime('now') WHERE id = ?`
+  ).run(thread.id);
+
+  return {
+    thread: getPlacThreadForUser(thread.id, buyerId),
+    messages: listPlacThreadMessages(thread.id, buyerId),
+  };
+}
+
+export function replyPlacThreadMessage({ threadId, senderId, body }) {
+  const thread = db
+    .prepare(
+      `SELECT id FROM plac_threads WHERE id = ? AND (buyer_id = ? OR seller_id = ?)`
+    )
+    .get(threadId, senderId, senderId);
+  if (!thread) return { error: "not_found" };
+
+  const text = body?.trim();
+  if (!text || text.length > 2000) return { error: "invalid_body" };
+
+  const messageId = randomUUID();
+  db.prepare(
+    `INSERT INTO plac_messages (id, thread_id, sender_id, body) VALUES (?, ?, ?, ?)`
+  ).run(messageId, threadId, senderId, text);
+  db.prepare(
+    `UPDATE plac_threads SET updated_at = datetime('now') WHERE id = ?`
+  ).run(threadId);
+
+  return {
+    thread: getPlacThreadForUser(threadId, senderId),
+    messages: listPlacThreadMessages(threadId, senderId),
+  };
 }
 
 export function getDatabaseInfo() {

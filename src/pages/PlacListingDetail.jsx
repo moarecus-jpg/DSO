@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { ExternalLink, Store } from "lucide-react";
+import { ExternalLink, Loader2, MessageCircle, Pencil, Store } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { formatPrice } from "../../shared/orderTotals.js";
 import { placListingTitle } from "../../shared/plac.js";
 import { formatPlacListingFormat, normalizePlacYear } from "../../shared/placFormat.js";
 import { PlacAddToCartButton } from "../components/PlacAddToCartButton.jsx";
+import { PlacEditDialog } from "../components/PlacEditDialog.jsx";
 import { PlacPageHeader } from "../components/PlacPageHeader.jsx";
+import { PlacPrice } from "../components/PlacPrice.jsx";
 import { PlacSellDialog } from "../components/PlacSellDialog.jsx";
 import { api } from "../api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
@@ -73,6 +74,11 @@ export function PlacListingDetail() {
   const [releaseError, setReleaseError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [sellOpen, setSellOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [messageOpen, setMessageOpen] = useState(false);
+  const [messageBody, setMessageBody] = useState("");
+  const [messageSending, setMessageSending] = useState(false);
+  const [messageError, setMessageError] = useState(null);
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
 
   useEffect(() => {
@@ -198,6 +204,28 @@ export function PlacListingDetail() {
       alert(err.message);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleSendMessage(event) {
+    event.preventDefault();
+    if (!messageBody.trim()) return;
+    setMessageSending(true);
+    setMessageError(null);
+    try {
+      const data = await api(`/api/plac/${listing.id}/messages`, {
+        method: "POST",
+        body: JSON.stringify({ body: messageBody }),
+      });
+      setMessageOpen(false);
+      setMessageBody("");
+      if (data.thread?.id) {
+        navigate(`/plac/inbox/${data.thread.id}`);
+      }
+    } catch (err) {
+      setMessageError(err.message);
+    } finally {
+      setMessageSending(false);
     }
   }
 
@@ -475,14 +503,39 @@ export function PlacListingDetail() {
                   )}
 
                   <div className="plac-detail-purchase">
-                    <p className="plac-detail-price">{formatPrice(listing.priceValue)}</p>
+                    <PlacPrice listing={listing} className="plac-detail-price" />
+                    {listing.discountLabel && listing.discountPercent > 0 && (
+                      <p className="plac-detail-sale-label muted fine">{listing.discountLabel}</p>
+                    )}
                     <div className="plac-detail-actions">
                       {!isOwner && listing.status === "active" && (
-                        <PlacAddToCartButton listing={listing} large />
+                        <>
+                          <PlacAddToCartButton listing={listing} large />
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => {
+                              setMessageOpen((open) => !open);
+                              setMessageError(null);
+                            }}
+                          >
+                            <MessageCircle size={16} aria-hidden />
+                            {t("plac.messageSeller")}
+                          </button>
+                        </>
                       )}
 
                       {isOwner && listing.status === "active" && (
                         <>
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            disabled={busy}
+                            onClick={() => setEditOpen(true)}
+                          >
+                            <Pencil size={16} aria-hidden />
+                            {t("plac.edit")}
+                          </button>
                           <button
                             type="button"
                             className="btn btn-ghost btn-sm"
@@ -502,6 +555,40 @@ export function PlacListingDetail() {
                         </>
                       )}
                     </div>
+
+                    {messageOpen && !isOwner && listing.status === "active" && (
+                      <form className="plac-message-form" onSubmit={handleSendMessage}>
+                        <textarea
+                          className="plac-sell-textarea"
+                          rows={3}
+                          value={messageBody}
+                          onChange={(e) => setMessageBody(e.target.value)}
+                          placeholder={t("plac.messagePlaceholder")}
+                          maxLength={2000}
+                          disabled={messageSending}
+                          required
+                        />
+                        {messageError && <p className="form-error fine">{messageError}</p>}
+                        <div className="plac-message-form-actions">
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => setMessageOpen(false)}
+                            disabled={messageSending}
+                          >
+                            {t("common.cancel")}
+                          </button>
+                          <button
+                            type="submit"
+                            className="btn btn-primary btn-sm"
+                            disabled={messageSending || !messageBody.trim()}
+                          >
+                            {messageSending && <Loader2 size={14} className="spin" aria-hidden />}
+                            {t("plac.sendMessage")}
+                          </button>
+                        </div>
+                      </form>
+                    )}
                   </div>
                 </div>
               </section>
@@ -511,6 +598,12 @@ export function PlacListingDetail() {
       )}
 
       <PlacSellDialog open={sellOpen} onClose={() => setSellOpen(false)} />
+      <PlacEditDialog
+        open={editOpen}
+        listing={listing}
+        onClose={() => setEditOpen(false)}
+        onSaved={setListing}
+      />
     </div>
   );
 }

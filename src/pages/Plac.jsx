@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Store, BadgeCheck, Trash2 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Plus, Store, BadgeCheck, Pencil, Trash2 } from "lucide-react";
+import { useLocation } from "react-router-dom";
+import { PlacEditDialog } from "../components/PlacEditDialog.jsx";
 import { PlacListingCard } from "../components/PlacListingCard.jsx";
 import { PlacPageHeader } from "../components/PlacPageHeader.jsx";
 import { PlacSellerCard } from "../components/PlacSellerCard.jsx";
@@ -19,6 +20,7 @@ export function Plac() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [sellOpen, setSellOpen] = useState(false);
+  const [editListing, setEditListing] = useState(null);
   const [busyId, setBusyId] = useState(null);
 
   useEffect(() => {
@@ -148,6 +150,17 @@ export function Plac() {
                           type="button"
                           className={`btn btn-ghost btn-sm${view === "large" ? " plac-card-icon-btn" : ""}`}
                           disabled={busyId === listing.id}
+                          onClick={() => setEditListing(listing)}
+                          title={t("plac.edit")}
+                          aria-label={t("plac.edit")}
+                        >
+                          <Pencil size={16} aria-hidden />
+                          {view !== "large" && t("plac.edit")}
+                        </button>
+                        <button
+                          type="button"
+                          className={`btn btn-ghost btn-sm${view === "large" ? " plac-card-icon-btn" : ""}`}
+                          disabled={busyId === listing.id}
                           onClick={() => handleMarkSold(listing.id)}
                           title={t("plac.markSold")}
                           aria-label={t("plac.markSold")}
@@ -195,6 +208,14 @@ export function Plac() {
         open={sellOpen}
         onClose={() => setSellOpen(false)}
         onCreated={handleCreated}
+      />
+      <PlacEditDialog
+        open={Boolean(editListing)}
+        listing={editListing}
+        onClose={() => setEditListing(null)}
+        onSaved={(updated) => {
+          setListings((prev) => prev.map((row) => (row.id === updated.id ? updated : row)));
+        }}
       />
     </div>
   );

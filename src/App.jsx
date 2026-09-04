@@ -13,8 +13,10 @@ import { MyItems } from "./pages/MyItems.jsx";
 import { MyStatistics } from "./pages/MyStatistics.jsx";
 import { Plac } from "./pages/Plac.jsx";
 import { PlacCart } from "./pages/PlacCart.jsx";
+import { PlacInbox } from "./pages/PlacInbox.jsx";
 import { PlacListingDetail } from "./pages/PlacListingDetail.jsx";
 import { PlacOrders } from "./pages/PlacOrders.jsx";
+import { PlacShopSettings } from "./pages/PlacShopSettings.jsx";
 import { PlacUser } from "./pages/PlacUser.jsx";
 import { Session } from "./pages/Session.jsx";
 import { Settings } from "./pages/Settings.jsx";
@@ -49,6 +51,9 @@ function AppRoutes() {
         <Route path="/my-statistics" element={<MyStatistics />} />
         <Route path="/plac" element={<Plac />} />
         <Route path="/plac/mine" element={<Plac />} />
+        <Route path="/plac/shop" element={<PlacShopSettings />} />
+        <Route path="/plac/inbox" element={<PlacInbox />} />
+        <Route path="/plac/inbox/:threadId" element={<PlacInbox />} />
         <Route path="/plac/cart" element={<PlacCart />} />
         <Route path="/plac/orders" element={<PlacOrders />} />
         <Route path="/plac/item/:listingId" element={<PlacListingDetail />} />

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   countActivePlacListingsByUser,
+  countPlacInboxUnread,
   userIsPlacSeller,
   createPlacListing,
   createPlacOrder,
@@ -8,14 +9,21 @@ import {
   findUserById,
   getPlacSeller,
   getPlacListingById,
+  getPlacShopSettings,
+  getPlacThreadForUser,
   listActivePlacListings,
   listActivePlacListingsByUser,
+  listPlacInboxThreads,
   listPlacListingsByUser,
   listPlacOrdersForUser,
   listPlacSellers,
+  listPlacThreadMessages,
+  replyPlacThreadMessage,
+  startPlacListingMessage,
   updatePlacListing,
   updatePlacListingGenre,
   updatePlacOrderStatus,
+  updatePlacShopSettings,
   upsertGoogleUser,
 } from "../db.js";
 import {
@@ -207,7 +215,75 @@ router.get("/counts", requireUser, (req, res) => {
   res.json({
     mine: countActivePlacListingsByUser(userId),
     isSeller: userIsPlacSeller(userId),
+    inboxUnread: countPlacInboxUnread(userId),
   });
+});
+
+router.get("/shop", requireUser, (req, res) => {
+  const userId = ensureRequestUser(req);
+  const settings = getPlacShopSettings(userId);
+  res.json({ settings });
+});
+
+router.patch("/shop", requireUser, (req, res) => {
+  const userId = ensureRequestUser(req);
+  const { discountPercent, discountLabel } = req.body ?? {};
+  const settings = updatePlacShopSettings(userId, {
+    discountPercent,
+    discountLabel,
+  });
+  res.json({ settings });
+});
+
+router.get("/inbox", requireUser, (req, res) => {
+  const userId = ensureRequestUser(req);
+  const threads = listPlacInboxThreads(userId);
+  res.json({ threads, unread: countPlacInboxUnread(userId) });
+});
+
+router.get("/inbox/:threadId", requireUser, (req, res) => {
+  const userId = ensureRequestUser(req);
+  const thread = getPlacThreadForUser(req.params.threadId, userId);
+  if (!thread) {
+    return res.status(404).json({ error: "Pogovor ni bil najden." });
+  }
+  const messages = listPlacThreadMessages(req.params.threadId, userId);
+  res.json({ thread, messages });
+});
+
+router.post("/inbox/:threadId/messages", requireUser, (req, res) => {
+  const userId = ensureRequestUser(req);
+  const result = replyPlacThreadMessage({
+    threadId: req.params.threadId,
+    senderId: userId,
+    body: req.body?.body,
+  });
+  if (result?.error === "not_found") {
+    return res.status(404).json({ error: "Pogovor ni bil najden." });
+  }
+  if (result?.error === "invalid_body") {
+    return res.status(400).json({ error: "Vnesi sporočilo (do 2000 znakov)." });
+  }
+  res.status(201).json(result);
+});
+
+router.post("/:id/messages", requireUser, (req, res) => {
+  const buyerId = ensureRequestUser(req);
+  const result = startPlacListingMessage({
+    listingId: req.params.id,
+    buyerId,
+    body: req.body?.body,
+  });
+  if (result?.error === "not_found") {
+    return res.status(404).json({ error: "Oglas ni bil najden." });
+  }
+  if (result?.error === "own_listing") {
+    return res.status(400).json({ error: "Ne moreš sporočiti lastnega oglasa." });
+  }
+  if (result?.error === "invalid_body") {
+    return res.status(400).json({ error: "Vnesi sporočilo (do 2000 znakov)." });
+  }
+  res.status(201).json(result);
 });
 
 router.get("/orders", requireUser, (req, res) => {
@@ -502,7 +578,21 @@ router.get("/:id/release", requireUser, async (req, res) => {
 
 router.patch("/:id", requireUser, (req, res) => {
   const userId = ensureRequestUser(req);
-  const { priceValue, mediaCondition, sleeveCondition, note, status } = req.body ?? {};
+  const existing = getPlacListingById(req.params.id);
+  if (!existing || existing.userId !== userId) {
+    return res.status(404).json({ error: "Oglas ni bil najden." });
+  }
+
+  const {
+    priceValue,
+    mediaCondition,
+    sleeveCondition,
+    note,
+    status,
+    title,
+    artist,
+    category,
+  } = req.body ?? {};
 
   const fields = {};
   if (priceValue != null) {
@@ -526,6 +616,22 @@ router.patch("/:id", requireUser, (req, res) => {
   }
   if (note !== undefined) {
     fields.note = note?.trim() || null;
+  }
+  if (title !== undefined) {
+    const nextTitle = title?.trim();
+    if (!nextTitle) {
+      return res.status(400).json({ error: "Vnesi naslov oglasa." });
+    }
+    fields.title = nextTitle;
+  }
+  if (artist !== undefined) {
+    fields.artist = artist?.trim() || null;
+  }
+  if (category !== undefined) {
+    if (!isValidPlacCategory(category)) {
+      return res.status(400).json({ error: "Izberi veljavno kategorijo." });
+    }
+    fields.category = category;
   }
   if (status != null) {
     if (!["active", "sold", "removed"].includes(status)) {

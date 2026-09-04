@@ -88,6 +88,12 @@ export function PlacUser() {
     const parts = [];
     if (seller.name && seller.discogsUsername) parts.push(seller.name);
     parts.push(t("plac.sellerListingCount", { count: listings.length }));
+    if (seller.shopDiscountPercent > 0) {
+      parts.push(
+        seller.shopDiscountLabel?.trim() ||
+          t("plac.shopSaleBadge", { percent: seller.shopDiscountPercent })
+      );
+    }
     return parts.join(" · ");
   }, [loading, error, seller, listings.length, t]);
 

@@ -1,9 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { ExternalLink } from "lucide-react";
-import { formatPrice } from "../../shared/orderTotals.js";
 import { placListingTitle } from "../../shared/plac.js";
 import { formatPlacListingFormat, normalizePlacYear } from "../../shared/placFormat.js";
 import { PlacAddToCartButton } from "./PlacAddToCartButton.jsx";
+import { PlacPrice } from "./PlacPrice.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { resolveUserAvatarUrl } from "../utils/userAvatarUrl.js";
 import { UserAvatar } from "./UserAvatar.jsx";
@@ -55,6 +55,9 @@ export function PlacListingCard({
         {listing.category && listing.category !== "vinyl" && (
           <span className="plac-card-category">{t(`plac.category.${listing.category}`)}</span>
         )}
+        {listing.discountPercent > 0 && (
+          <span className="plac-card-sale">−{listing.discountPercent}%</span>
+        )}
       </div>
 
       <div className="plac-card-body">
@@ -103,7 +106,7 @@ export function PlacListingCard({
 
         <div className="plac-card-bottom">
           <div className="plac-card-footer">
-            <span className="plac-card-price">{formatPrice(listing.priceValue)}</span>
+            <PlacPrice listing={listing} className="plac-card-price" />
 
             {showSeller && listing.seller && (
               <div className="plac-card-seller">

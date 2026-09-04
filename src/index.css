@@ -5123,6 +5123,14 @@ body.modal-open .order-sticky-backdrop {
   background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
 }
 
+.sidebar-link-v2.active .sidebar-link-icon--plac-inbox {
+  background: linear-gradient(135deg, #38bdf8 0%, #6366f1 100%);
+}
+
+.sidebar-link-v2.active .sidebar-link-icon--plac-shop {
+  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+}
+
 .sidebar-link-label {
   min-width: 0;
   flex: 1;
@@ -11198,5 +11206,320 @@ img.plac-user-avatar {
 
   .plac-detail-actions .btn {
     justify-content: center;
+  }
+}
+
+/* PLAC price / sale / inbox / shop */
+.plac-price {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.45rem;
+}
+
+.plac-price-original {
+  text-decoration: line-through;
+  opacity: 0.55;
+  font-weight: 600;
+  font-size: 0.85em;
+}
+
+.plac-price-current--sale {
+  color: #fbbf24;
+}
+
+.plac-price-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.12rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(251, 191, 36, 0.18);
+  color: #fbbf24;
+}
+
+.plac-card-sale {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(251, 191, 36, 0.92);
+  color: #1a1025;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.plac-seller-sale {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+.plac-detail-sale-label {
+  margin: 0;
+}
+
+.plac-message-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+
+.plac-message-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.plac-shop-settings {
+  max-width: 34rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.plac-shop-settings-head {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.plac-shop-settings-head h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+}
+
+.plac-shop-settings-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(239, 68, 68, 0.2));
+  color: #fbbf24;
+  flex-shrink: 0;
+}
+
+.plac-shop-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.plac-shop-saved {
+  margin: 0;
+  color: #86efac;
+}
+
+.plac-inbox {
+  display: grid;
+  grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: stretch;
+  min-height: min(70vh, 40rem);
+}
+
+.plac-inbox-list,
+.plac-inbox-pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.plac-inbox-list {
+  padding: 0.35rem;
+  gap: 0.2rem;
+  overflow-y: auto;
+}
+
+.plac-inbox-thread {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  border-radius: 0.75rem;
+  padding: 0.55rem 0.6rem;
+  cursor: pointer;
+}
+
+.plac-inbox-thread:hover,
+.plac-inbox-thread.is-active {
+  background: rgba(124, 58, 237, 0.16);
+}
+
+.plac-inbox-thread.has-unread .plac-inbox-thread-preview {
+  color: #fff;
+  font-weight: 600;
+}
+
+.plac-inbox-thumb {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.55rem;
+  object-fit: cover;
+}
+
+.plac-inbox-thumb--empty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.plac-inbox-thread-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.plac-inbox-thread-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.plac-inbox-thread-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.plac-inbox-thread-listing,
+.plac-inbox-thread-preview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+}
+
+.plac-inbox-unread {
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: #7c3aed;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.plac-inbox-pane {
+  padding: 0;
+}
+
+.plac-inbox-pane-head {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.plac-inbox-pane-user {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.plac-inbox-pane-name {
+  margin: 0;
+  font-weight: 700;
+}
+
+.plac-inbox-pane-listing {
+  text-decoration: none;
+}
+
+.plac-inbox-pane-listing:hover {
+  text-decoration: underline;
+}
+
+.plac-inbox-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.plac-inbox-bubble {
+  max-width: min(85%, 28rem);
+  align-self: flex-start;
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.9rem 0.9rem 0.9rem 0.25rem;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.plac-inbox-bubble p {
+  margin: 0 0 0.25rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.plac-inbox-bubble--mine {
+  align-self: flex-end;
+  border-radius: 0.9rem 0.9rem 0.25rem 0.9rem;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.45), rgba(124, 58, 237, 0.4));
+}
+
+.plac-inbox-compose {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.55rem;
+  padding: 0.85rem 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  align-items: end;
+}
+
+.plac-inbox-empty-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  color: rgba(255, 255, 255, 0.55);
+  padding: 2rem;
+  text-align: center;
+}
+
+.plac-edit-listing-label {
+  margin: 0 0 0.75rem;
+}
+
+@media (max-width: 860px) {
+  .plac-inbox {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .plac-inbox--thread-open .plac-inbox-list {
+    display: none;
+  }
+
+  .plac-inbox:not(.plac-inbox--thread-open) .plac-inbox-pane {
+    display: none;
+  }
+
+  .plac-inbox-list {
+    max-height: none;
+  }
+
+  .plac-inbox-pane {
+    min-height: min(70vh, 36rem);
   }
 }
