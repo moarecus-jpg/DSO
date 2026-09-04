@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-export const PLAC_GALLERY_VIEWS = ["compact", "large", "list"];
+export const PLAC_GALLERY_VIEWS = ["compact", "large", "list", "discogs"];
 
 const STORAGE_KEY = "dso_plac_gallery_view";
 const DEFAULT_VIEW = "large";

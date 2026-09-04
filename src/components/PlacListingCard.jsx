@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ExternalLink } from "lucide-react";
+import { formatCoverGradeLabel, formatMediaGradeLabel } from "../../shared/orderReview.js";
 import { placListingTitle } from "../../shared/plac.js";
 import { formatPlacListingFormat, normalizePlacYear } from "../../shared/placFormat.js";
 import { PlacAddToCartButton } from "./PlacAddToCartButton.jsx";
@@ -15,6 +16,7 @@ export function PlacListingCard({
   showCart = false,
   detailLink = false,
   iconActions = false,
+  view = null,
 }) {
   const { t } = useLocale();
   const navigate = useNavigate();
@@ -23,6 +25,11 @@ export function PlacListingCard({
   const titleText = placListingTitle(listing);
   const displayYear = normalizePlacYear(listing.year);
   const displayFormat = formatPlacListingFormat(listing.format);
+  const mediaGrade = isVinyl
+    ? formatMediaGradeLabel(listing.mediaCondition)
+    : listing.mediaCondition;
+  const coverGrade = isVinyl ? formatCoverGradeLabel(listing.sleeveCondition) : null;
+  const isDiscogs = view === "discogs";
 
   function handleCardClick(event) {
     if (!detailLink) return;
@@ -38,6 +45,116 @@ export function PlacListingCard({
     navigate(`/plac/item/${listing.id}`);
   }
 
+  const cover = (
+    <div className="plac-card-cover">
+      {listing.thumbnailUrl ? (
+        <img src={listing.thumbnailUrl} alt="" loading="lazy" />
+      ) : (
+        <div className="plac-card-cover-fallback" aria-hidden />
+      )}
+      {listing.category && listing.category !== "vinyl" && (
+        <span className="plac-card-category">{t(`plac.category.${listing.category}`)}</span>
+      )}
+      {listing.discountPercent > 0 && (
+        <span className="plac-card-sale">−{listing.discountPercent}%</span>
+      )}
+    </div>
+  );
+
+  if (isDiscogs) {
+    const titleWithFormat =
+      isVinyl && displayFormat ? `${titleText} (${displayFormat})` : titleText;
+
+    return (
+      <article
+        className={`plac-card plac-card--discogs${detailLink ? " plac-card--clickable" : ""}`}
+        onClick={detailLink ? handleCardClick : undefined}
+        onKeyDown={detailLink ? handleCardKeyDown : undefined}
+        role={detailLink ? "link" : undefined}
+        tabIndex={detailLink ? 0 : undefined}
+      >
+        {cover}
+
+        <div className="plac-discogs-main">
+          {hasLink && !detailLink ? (
+            <a
+              href={listing.releaseUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="plac-card-title plac-discogs-title"
+            >
+              {titleWithFormat}
+              <ExternalLink size={14} aria-hidden />
+            </a>
+          ) : (
+            <p className="plac-card-title plac-card-title--plain plac-discogs-title">
+              {titleWithFormat}
+            </p>
+          )}
+
+          {isVinyl && (
+            <div className="plac-card-meta plac-discogs-meta">
+              {displayYear != null && <span>{displayYear}</span>}
+              {listing.genre && <span>{listing.genre}</span>}
+              {listing.country && <span>{listing.country}</span>}
+            </div>
+          )}
+
+          <div className="plac-discogs-grades">
+            {listing.mediaCondition && (
+              <p className="plac-discogs-grade">
+                <span className="plac-discogs-grade-label">
+                  {isVinyl ? t("plac.mediaCondition") : t("plac.itemCondition")}:
+                </span>{" "}
+                <span className="plac-discogs-grade-value">{listing.mediaCondition}</span>
+              </p>
+            )}
+            {isVinyl && listing.sleeveCondition && (
+              <p className="plac-discogs-grade">
+                <span className="plac-discogs-grade-label">{t("plac.sleeveCondition")}:</span>{" "}
+                <span className="plac-discogs-grade-value">{listing.sleeveCondition}</span>
+              </p>
+            )}
+          </div>
+
+          {listing.note && <p className="plac-card-note plac-discogs-note muted fine">{listing.note}</p>}
+
+          {detailLink && (
+            <span className="plac-discogs-details-link">{t("plac.viewDetails")}</span>
+          )}
+        </div>
+
+        <div className="plac-discogs-aside">
+          <PlacPrice listing={listing} className="plac-card-price plac-discogs-price" />
+
+          {showSeller && listing.seller && (
+            <div className="plac-card-seller">
+              <UserAvatar
+                name={listing.seller.name}
+                avatarUrl={resolveUserAvatarUrl(listing.seller)}
+                size={24}
+              />
+              <span className="plac-card-seller-name">
+                {listing.seller.discogsUsername
+                  ? `@${listing.seller.discogsUsername}`
+                  : listing.seller.name}
+              </span>
+            </div>
+          )}
+
+          {(actions || showCart) && (
+            <div className="plac-card-actions plac-discogs-actions" onClick={(e) => e.stopPropagation()}>
+              {showCart && listing.status !== "sold" && listing.status !== "removed" && (
+                <PlacAddToCartButton listing={listing} />
+              )}
+              {actions}
+            </div>
+          )}
+        </div>
+      </article>
+    );
+  }
+
   return (
     <article
       className={`plac-card${detailLink ? " plac-card--clickable" : ""}${iconActions ? " plac-card--icon-actions" : ""}`}
@@ -46,19 +163,7 @@ export function PlacListingCard({
       role={detailLink ? "link" : undefined}
       tabIndex={detailLink ? 0 : undefined}
     >
-      <div className="plac-card-cover">
-        {listing.thumbnailUrl ? (
-          <img src={listing.thumbnailUrl} alt="" loading="lazy" />
-        ) : (
-          <div className="plac-card-cover-fallback" aria-hidden />
-        )}
-        {listing.category && listing.category !== "vinyl" && (
-          <span className="plac-card-category">{t(`plac.category.${listing.category}`)}</span>
-        )}
-        {listing.discountPercent > 0 && (
-          <span className="plac-card-sale">−{listing.discountPercent}%</span>
-        )}
-      </div>
+      {cover}
 
       <div className="plac-card-body">
         {hasLink && !detailLink ? (
@@ -88,16 +193,16 @@ export function PlacListingCard({
             )}
 
             <div className="plac-card-conditions">
-              <span className="plac-card-condition">{listing.mediaCondition}</span>
-              {listing.sleeveCondition && (
-                <span className="plac-card-condition muted">{listing.sleeveCondition}</span>
+              {mediaGrade && <span className="plac-card-condition">{mediaGrade}</span>}
+              {coverGrade && (
+                <span className="plac-card-condition muted">{coverGrade}</span>
               )}
             </div>
           </div>
         ) : (
           <div className="plac-card-release-info">
             <div className="plac-card-conditions">
-              <span className="plac-card-condition">{listing.mediaCondition}</span>
+              {mediaGrade && <span className="plac-card-condition">{mediaGrade}</span>}
             </div>
           </div>
         )}

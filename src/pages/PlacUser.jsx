@@ -205,6 +205,7 @@ export function PlacUser() {
                     showSeller={false}
                     showCart
                     detailLink
+                    view={view}
                     iconActions={view === "large" || view === "compact"}
                   />
                 ))}

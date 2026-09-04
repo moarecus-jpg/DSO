@@ -810,6 +810,8 @@ export default {
     viewDefault: "Default",
     viewLarge: "Large",
     viewList: "List",
+    viewDiscogs: "Discogs",
+    viewDetails: "Details",
     backToSeller: "Back to seller",
     listingNotFound: "Listing not found.",
     seller: "Seller",

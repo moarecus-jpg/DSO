@@ -9092,6 +9092,193 @@ a.order-preview-item-title:hover {
   }
 }
 
+.plac-grid--discogs {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.plac-grid--discogs .plac-card--discogs {
+  display: grid;
+  grid-template-columns: 4.75rem minmax(0, 1fr) minmax(8.5rem, 11rem);
+  gap: 0.85rem 1rem;
+  align-items: start;
+  padding: 0.85rem 0.35rem;
+  border-radius: 0;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  background-image: none;
+  box-shadow: none;
+  overflow: visible;
+  height: auto;
+}
+
+.plac-grid--discogs .plac-card--discogs:hover {
+  transform: none;
+  box-shadow: none;
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.plac-grid--discogs .plac-card--discogs:focus-visible {
+  outline-offset: -2px;
+}
+
+.plac-grid--discogs .plac-card-cover {
+  width: 4.75rem;
+  height: 4.75rem;
+  min-width: 4.75rem;
+  aspect-ratio: unset;
+  border-radius: 0.35rem;
+  overflow: hidden;
+}
+
+.plac-discogs-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  padding-top: 0.1rem;
+}
+
+.plac-discogs-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #c4b5fd;
+}
+
+.plac-card--clickable:hover .plac-discogs-title {
+  color: #ddd6fe;
+  text-decoration: underline;
+}
+
+.plac-discogs-meta {
+  font-size: 0.75rem;
+}
+
+.plac-discogs-grades {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  margin-top: 0.15rem;
+}
+
+.plac-discogs-grade {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.plac-discogs-grade-label {
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 600;
+}
+
+.plac-discogs-grade-value {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.plac-discogs-note {
+  margin: 0.15rem 0 0;
+  max-width: 42rem;
+}
+
+.plac-discogs-details-link {
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #a78bfa;
+}
+
+.plac-discogs-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.45rem;
+  text-align: right;
+  padding-top: 0.1rem;
+}
+
+.plac-discogs-price {
+  font-size: 1.15rem;
+  font-weight: 800;
+  justify-content: flex-end;
+}
+
+.plac-discogs-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  width: 100%;
+  max-width: 10.5rem;
+}
+
+.plac-discogs-actions .plac-add-to-cart {
+  justify-content: center;
+  background: linear-gradient(135deg, #6366f1, #7c3aed);
+  color: #fff;
+  border: none;
+  font-weight: 700;
+}
+
+.plac-discogs-actions .plac-add-to-cart.plac-add-to-cart--active {
+  background: rgba(124, 58, 237, 0.22);
+  color: #ddd6fe;
+  border: 1px solid rgba(167, 139, 250, 0.35);
+}
+
+.plac-discogs-actions .btn {
+  justify-content: center;
+  width: 100%;
+}
+
+@media (max-width: 720px) {
+  .plac-grid--discogs .plac-card--discogs {
+    grid-template-columns: 3.75rem minmax(0, 1fr);
+    grid-template-areas:
+      "cover main"
+      "aside aside";
+    gap: 0.65rem 0.75rem;
+    padding: 0.75rem 0.15rem;
+  }
+
+  .plac-grid--discogs .plac-card-cover {
+    grid-area: cover;
+    width: 3.75rem;
+    height: 3.75rem;
+    min-width: 3.75rem;
+  }
+
+  .plac-discogs-main {
+    grid-area: main;
+  }
+
+  .plac-discogs-aside {
+    grid-area: aside;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+    padding-left: 0.15rem;
+  }
+
+  .plac-discogs-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    max-width: none;
+    width: auto;
+  }
+
+  .plac-discogs-actions .btn {
+    width: auto;
+  }
+}
+
 .plac-gallery-toolbar {
   display: flex;
   justify-content: flex-end;

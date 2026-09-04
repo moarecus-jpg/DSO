@@ -3,6 +3,7 @@ import { ExternalLink, Loader2, MessageCircle, Pencil, Store } from "lucide-reac
 import { useNavigate, useParams } from "react-router-dom";
 import { placListingTitle } from "../../shared/plac.js";
 import { formatPlacListingFormat, normalizePlacYear } from "../../shared/placFormat.js";
+import { formatCoverGradeLabel, formatMediaGradeLabel } from "../../shared/orderReview.js";
 import { PlacAddToCartButton } from "../components/PlacAddToCartButton.jsx";
 import { PlacEditDialog } from "../components/PlacEditDialog.jsx";
 import { PlacPageHeader } from "../components/PlacPageHeader.jsx";
@@ -485,12 +486,21 @@ export function PlacListingDetail() {
                   <div className="plac-detail-conditions">
                     <div>
                       <span className="plac-detail-label">{t("plac.mediaCondition")}</span>
-                      <span className="plac-card-condition">{listing.mediaCondition}</span>
+                      <span className="plac-card-condition">
+                        {isVinyl
+                          ? formatMediaGradeLabel(listing.mediaCondition) || listing.mediaCondition
+                          : listing.mediaCondition}
+                      </span>
                     </div>
                     {listing.sleeveCondition && (
                       <div>
                         <span className="plac-detail-label">{t("plac.sleeveCondition")}</span>
-                        <span className="plac-card-condition">{listing.sleeveCondition}</span>
+                        <span className="plac-card-condition">
+                          {isVinyl
+                            ? formatCoverGradeLabel(listing.sleeveCondition) ||
+                              listing.sleeveCondition
+                            : listing.sleeveCondition}
+                        </span>
                       </div>
                     )}
                   </div>

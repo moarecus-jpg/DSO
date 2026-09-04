@@ -23,6 +23,43 @@ export const GRADES = [
   "Poor (P)",
 ];
 
+const GRADE_SHORT = {
+  "Mint (M)": "M",
+  "Near Mint (NM or M-)": "NM",
+  "Very Good Plus (VG+)": "VG+",
+  "Very Good (VG)": "VG",
+  "Good Plus (G+)": "G+",
+  "Good (G)": "G",
+  "Fair (F)": "F",
+  "Poor (P)": "P",
+};
+
+/** Short Discogs grade label (NM, VG+, …). Returns null for empty input. */
+export function shortGrade(value) {
+  if (value == null || value === "") return null;
+  const text = String(value).trim();
+  if (!text) return null;
+  if (GRADE_SHORT[text]) return GRADE_SHORT[text];
+
+  const paren = text.match(/\(([^)]+)\)\s*$/);
+  if (paren) {
+    return paren[1].split(/\s+or\s+/i)[0].trim() || text;
+  }
+  return text;
+}
+
+/** Media grade for listing cards, e.g. "M: NM". */
+export function formatMediaGradeLabel(value) {
+  const short = shortGrade(value);
+  return short ? `M: ${short}` : null;
+}
+
+/** Cover/sleeve grade for listing cards, e.g. "C: VG+". */
+export function formatCoverGradeLabel(value) {
+  const short = shortGrade(value);
+  return short ? `C: ${short}` : null;
+}
+
 export const MAX_ISSUE_PHOTOS = 4;
 export const MAX_ISSUE_PHOTO_BYTES = 4 * 1024 * 1024;
 export const ISSUE_PHOTO_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];

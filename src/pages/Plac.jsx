@@ -136,6 +136,7 @@ export function Plac() {
                 listing={listing}
                 showSeller={false}
                 detailLink
+                view={view}
                 iconActions={view === "large" || view === "compact"}
                 actions={
                   <>
@@ -148,36 +149,42 @@ export function Plac() {
                       <>
                         <button
                           type="button"
-                          className={`btn btn-ghost btn-sm${view !== "list" ? " plac-card-icon-btn" : ""}`}
+                          className={`btn btn-ghost btn-sm${
+                            view === "list" || view === "discogs" ? "" : " plac-card-icon-btn"
+                          }`}
                           disabled={busyId === listing.id}
                           onClick={() => setEditListing(listing)}
                           title={t("plac.edit")}
                           aria-label={t("plac.edit")}
                         >
                           <Pencil size={16} aria-hidden />
-                          {view === "list" && t("plac.edit")}
+                          {(view === "list" || view === "discogs") && t("plac.edit")}
                         </button>
                         <button
                           type="button"
-                          className={`btn btn-ghost btn-sm${view !== "list" ? " plac-card-icon-btn" : ""}`}
+                          className={`btn btn-ghost btn-sm${
+                            view === "list" || view === "discogs" ? "" : " plac-card-icon-btn"
+                          }`}
                           disabled={busyId === listing.id}
                           onClick={() => handleMarkSold(listing.id)}
                           title={t("plac.markSold")}
                           aria-label={t("plac.markSold")}
                         >
                           <BadgeCheck size={16} aria-hidden />
-                          {view === "list" && t("plac.markSold")}
+                          {(view === "list" || view === "discogs") && t("plac.markSold")}
                         </button>
                         <button
                           type="button"
-                          className={`btn btn-ghost btn-sm btn-danger-text${view !== "list" ? " plac-card-icon-btn" : ""}`}
+                          className={`btn btn-ghost btn-sm btn-danger-text${
+                            view === "list" || view === "discogs" ? "" : " plac-card-icon-btn"
+                          }`}
                           disabled={busyId === listing.id}
                           onClick={() => handleRemove(listing.id)}
                           title={t("plac.remove")}
                           aria-label={t("plac.remove")}
                         >
                           <Trash2 size={16} aria-hidden />
-                          {view === "list" && t("plac.remove")}
+                          {(view === "list" || view === "discogs") && t("plac.remove")}
                         </button>
                       </>
                     )}
