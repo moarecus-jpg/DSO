@@ -6,7 +6,6 @@ import {
   PLAC_FACET_KEYS,
 } from "../../shared/placFacets.js";
 import { useLocale } from "../hooks/useLocale.jsx";
-import { useMediaQuery } from "../hooks/useMediaQuery.js";
 
 const MIN_VISIBLE = 6;
 const HEAD_H = 40;
@@ -15,7 +14,6 @@ const CHIP_ROW_H = 34;
 const MORE_H = 24;
 const SECTION_GAP = 4;
 const PANEL_PAD = 20;
-const NARROW_DIG_MQ = "(max-width: 1500px)";
 
 function estimateSectionBodyHeight(facetKey, visibleCount, { includeMore = true } = {}) {
   if (visibleCount <= 0) return 0;
@@ -200,9 +198,15 @@ export function PlacDigFiltersToggle({ open, onOpenChange, activeCount = 0 }) {
   );
 }
 
-export function PlacDigFilters({ options, selected, onChange, open, onClose }) {
+export function PlacDigFilters({
+  options,
+  selected,
+  onChange,
+  open,
+  onClose,
+  drawer = false,
+}) {
   const { t } = useLocale();
-  const isNarrowDig = useMediaQuery(NARROW_DIG_MQ);
   const panelRef = useRef(null);
   const [panelHeight, setPanelHeight] = useState(0);
   const [openMap, setOpenMap] = useState(() =>
@@ -269,7 +273,7 @@ export function PlacDigFilters({ options, selected, onChange, open, onClose }) {
     ro.observe(node);
     if (node.parentElement) ro.observe(node.parentElement);
     return () => ro.disconnect();
-  }, [open, isNarrowDig]);
+  }, [open, drawer]);
 
   useEffect(() => {
     setOpenMap((prev) => {
@@ -295,7 +299,7 @@ export function PlacDigFilters({ options, selected, onChange, open, onClose }) {
   }, [open, onClose]);
 
   useEffect(() => {
-    if (!open || !isNarrowDig) return undefined;
+    if (!open || !drawer) return undefined;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     document.body.classList.add("modal-open");
@@ -303,7 +307,7 @@ export function PlacDigFilters({ options, selected, onChange, open, onClose }) {
       document.body.style.overflow = prev;
       document.body.classList.remove("modal-open");
     };
-  }, [open, isNarrowDig]);
+  }, [open, drawer]);
 
   const sectionSpecs = useMemo(
     () =>
@@ -367,7 +371,7 @@ export function PlacDigFilters({ options, selected, onChange, open, onClose }) {
     </aside>
   );
 
-  if (!isNarrowDig || typeof document === "undefined") {
+  if (!drawer || typeof document === "undefined") {
     return panel;
   }
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Store, BadgeCheck, Pencil, Trash2 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import {
@@ -18,11 +18,12 @@ import { PlacPageHeader } from "../components/PlacPageHeader.jsx";
 import { PlacSellerCard } from "../components/PlacSellerCard.jsx";
 import { PlacSellDialog } from "../components/PlacSellDialog.jsx";
 import { api } from "../api.js";
+import { useElementWidth } from "../hooks/useElementWidth.js";
 import { useLocale } from "../hooks/useLocale.jsx";
-import { useMediaQuery } from "../hooks/useMediaQuery.js";
 import { usePlacGalleryView } from "../hooks/usePlacGalleryView.js";
 
-const NARROW_DIG_MQ = "(max-width: 1500px)";
+/** Dig column width below which filters become a drawer (accounts for sidebar). */
+const DIG_DRAWER_MAX = 1480;
 
 export function Plac() {
   const { t } = useLocale();
@@ -37,16 +38,8 @@ export function Plac() {
   const [editListing, setEditListing] = useState(null);
   const [busyId, setBusyId] = useState(null);
   const [facets, setFacets] = useState(createEmptyPlacFacetSelection);
-  const isNarrowDig = useMediaQuery(NARROW_DIG_MQ);
-  const [filtersOpen, setFiltersOpen] = useState(() =>
-    typeof window === "undefined"
-      ? true
-      : !window.matchMedia(NARROW_DIG_MQ).matches
-  );
-
-  useEffect(() => {
-    setFiltersOpen(!isNarrowDig);
-  }, [isNarrowDig]);
+  const digRef = useRef(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     if (!mine) return undefined;
@@ -98,6 +91,12 @@ export function Plac() {
   );
 
   const showDig = mine && !loading && listings.length > 0;
+  const digWidth = useElementWidth(digRef, { enabled: showDig });
+  const isNarrowDig = digWidth > 0 ? digWidth < DIG_DRAWER_MAX : true;
+
+  useEffect(() => {
+    setFiltersOpen(!isNarrowDig);
+  }, [isNarrowDig]);
 
   const activeFacetCount = useMemo(
     () =>
@@ -282,12 +281,18 @@ export function Plac() {
             </div>
           </>
         ) : (
-          <div className={`plac-dig${filtersOpen ? " plac-dig--filters-open" : ""}`}>
+          <div
+            ref={digRef}
+            className={`plac-dig${filtersOpen ? " plac-dig--filters-open" : ""}${
+              isNarrowDig ? " plac-dig--drawer" : ""
+            }`}
+          >
             <PlacDigFilters
               options={facetOptions}
               selected={facets}
               onChange={setFacets}
               open={filtersOpen}
+              drawer={isNarrowDig}
               onClose={() => setFiltersOpen(false)}
             />
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Store } from "lucide-react";
 import { useParams } from "react-router-dom";
 import {
@@ -17,12 +17,13 @@ import { PlacPageHeader } from "../components/PlacPageHeader.jsx";
 import { PlacSellDialog } from "../components/PlacSellDialog.jsx";
 import { UserAvatar } from "../components/UserAvatar.jsx";
 import { api } from "../api.js";
+import { useElementWidth } from "../hooks/useElementWidth.js";
 import { useLocale } from "../hooks/useLocale.jsx";
-import { useMediaQuery } from "../hooks/useMediaQuery.js";
 import { usePlacGalleryView } from "../hooks/usePlacGalleryView.js";
 import { resolveUserAvatarUrl } from "../utils/userAvatarUrl.js";
 
-const NARROW_DIG_MQ = "(max-width: 1500px)";
+/** Dig column width below which filters become a drawer (accounts for sidebar). */
+const DIG_DRAWER_MAX = 1480;
 
 function sellerLabel(seller) {
   if (seller?.discogsUsername) return `@${seller.discogsUsername}`;
@@ -41,16 +42,8 @@ export function PlacUser() {
   const [query, setQuery] = useState("");
   const [sellOpen, setSellOpen] = useState(false);
   const [facets, setFacets] = useState(createEmptyPlacFacetSelection);
-  const isNarrowDig = useMediaQuery(NARROW_DIG_MQ);
-  const [filtersOpen, setFiltersOpen] = useState(() =>
-    typeof window === "undefined"
-      ? true
-      : !window.matchMedia(NARROW_DIG_MQ).matches
-  );
-
-  useEffect(() => {
-    setFiltersOpen(!isNarrowDig);
-  }, [isNarrowDig]);
+  const digRef = useRef(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -110,6 +103,13 @@ export function PlacUser() {
   }, [loading, error, seller, listings.length, t]);
 
   const showDig = !loading && listings.length > 0;
+  const digWidth = useElementWidth(digRef, { enabled: showDig });
+  const isNarrowDig = digWidth > 0 ? digWidth < DIG_DRAWER_MAX : true;
+
+  useEffect(() => {
+    setFiltersOpen(!isNarrowDig);
+  }, [isNarrowDig]);
+
   const emptyMessage = error
     ? error
     : query.trim() || hasActivePlacFacets(facets)
@@ -135,7 +135,7 @@ export function PlacUser() {
             name={seller.name}
             avatarUrl={resolveUserAvatarUrl(seller)}
             className="plac-user-avatar"
-            size={56}
+            size={44}
           />
         ) : null
       }
@@ -180,12 +180,18 @@ export function PlacUser() {
           </div>
         </>
       ) : (
-        <div className={`plac-dig${filtersOpen ? " plac-dig--filters-open" : ""}`}>
+        <div
+          ref={digRef}
+          className={`plac-dig${filtersOpen ? " plac-dig--filters-open" : ""}${
+            isNarrowDig ? " plac-dig--drawer" : ""
+          }`}
+        >
           <PlacDigFilters
             options={facetOptions}
             selected={facets}
             onChange={setFacets}
             open={filtersOpen}
+            drawer={isNarrowDig}
             onClose={() => setFiltersOpen(false)}
           />
 
