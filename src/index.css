@@ -4543,12 +4543,11 @@ body.modal-open .order-sticky-backdrop {
   padding-bottom: 1.25rem;
 }
 
-/* Seller dig: filter panel top aligns with mid-avatar / vinyl rim (not above it). */
+/* Seller dig: filters share the same top as the seller avatar (= vinyl disc top). */
 @media (min-width: 769px) {
   .page-plac-user--dig .plac-dig-filters.is-open {
-    --plac-dig-filter-offset: 1.75rem; /* half of 56px seller avatar */
-    margin-top: var(--plac-dig-filter-offset);
-    height: calc(100% - var(--plac-dig-filter-offset));
+    margin-top: 0;
+    height: 100%;
     align-self: stretch;
   }
 }
