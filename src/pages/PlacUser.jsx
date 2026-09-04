@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Store } from "lucide-react";
 import { useParams } from "react-router-dom";
+import {
+  buildPlacFacetOptionsForSelection,
+  createEmptyPlacFacetSelection,
+  filterListingsByPlacFacets,
+  hasActivePlacFacets,
+} from "../../shared/placFacets.js";
+import { PlacDigFilters } from "../components/PlacDigFilters.jsx";
 import { PlacListingCard } from "../components/PlacListingCard.jsx";
 import { PlacPageHeader } from "../components/PlacPageHeader.jsx";
 import { PlacSellDialog } from "../components/PlacSellDialog.jsx";
@@ -26,10 +33,13 @@ export function PlacUser() {
   const [error, setError] = useState(null);
   const [query, setQuery] = useState("");
   const [sellOpen, setSellOpen] = useState(false);
+  const [facets, setFacets] = useState(createEmptyPlacFacetSelection);
+  const [filtersOpen, setFiltersOpen] = useState(true);
 
   useEffect(() => {
     setLoading(true);
     setError(null);
+    setFacets(createEmptyPlacFacetSelection());
     api(`/api/plac/user/${userId}`)
       .then((data) => {
         setSeller(data.seller ?? null);
@@ -43,7 +53,7 @@ export function PlacUser() {
       .finally(() => setLoading(false));
   }, [userId]);
 
-  const filteredListings = useMemo(() => {
+  const textFiltered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return listings;
     return listings.filter(
@@ -52,9 +62,20 @@ export function PlacUser() {
         listing.title?.toLowerCase().includes(q) ||
         listing.genre?.toLowerCase().includes(q) ||
         listing.country?.toLowerCase().includes(q) ||
-        listing.category?.toLowerCase().includes(q)
+        listing.category?.toLowerCase().includes(q) ||
+        listing.format?.toLowerCase().includes(q)
     );
   }, [listings, query]);
+
+  const facetOptions = useMemo(
+    () => buildPlacFacetOptionsForSelection(textFiltered, facets),
+    [textFiltered, facets]
+  );
+
+  const filteredListings = useMemo(
+    () => filterListingsByPlacFacets(textFiltered, facets),
+    [textFiltered, facets]
+  );
 
   const headerSubtitle = useMemo(() => {
     if (loading) return t("common.loading");
@@ -65,6 +86,13 @@ export function PlacUser() {
     parts.push(t("plac.sellerListingCount", { count: listings.length }));
     return parts.join(" · ");
   }, [loading, error, seller, listings.length, t]);
+
+  const showDig = !loading && listings.length > 0;
+  const emptyMessage = error
+    ? error
+    : query.trim() || hasActivePlacFacets(facets)
+      ? t("plac.emptySearch")
+      : t("plac.sellerEmpty");
 
   return (
     <div className="page page-orders page-plac page-plac-user">
@@ -86,30 +114,59 @@ export function PlacUser() {
         onQueryChange={setQuery}
         placeholder={t("plac.searchPlaceholder")}
         onSell={() => setSellOpen(true)}
-        showGalleryView={!loading && filteredListings.length > 0}
+        showGalleryView={showDig && filteredListings.length > 0}
         galleryView={view}
         onGalleryViewChange={setView}
       />
 
       {loading ? (
         <p className="orders-loading">{t("common.loadingItems")}</p>
-      ) : filteredListings.length === 0 ? (
+      ) : !showDig ? (
         <div className="orders-empty plac-empty">
           <Store size={40} strokeWidth={1.2} />
-          <p>{error ? error : query.trim() ? t("plac.emptySearch") : t("plac.sellerEmpty")}</p>
+          <p>{emptyMessage}</p>
         </div>
       ) : (
-        <div className={`plac-grid plac-user-gallery plac-grid--${view}`}>
-          {filteredListings.map((listing) => (
-            <PlacListingCard
-              key={listing.id}
-              listing={listing}
-              showSeller={false}
-              showCart
-              detailLink
-              iconActions={view === "large"}
-            />
-          ))}
+        <div className={`plac-dig${filtersOpen ? " plac-dig--filters-open" : ""}`}>
+          <PlacDigFilters
+            options={facetOptions}
+            selected={facets}
+            onChange={setFacets}
+            open={filtersOpen}
+            onOpenChange={setFiltersOpen}
+            resultCount={filteredListings.length}
+          />
+
+          <div className="plac-dig-main">
+            <div className="plac-dig-toolbar">
+              <p className="plac-dig-toolbar-count muted fine">
+                {t("plac.facets.showing", {
+                  shown: filteredListings.length,
+                  total: listings.length,
+                })}
+              </p>
+            </div>
+
+            {filteredListings.length === 0 ? (
+              <div className="orders-empty plac-empty plac-dig-empty">
+                <Store size={40} strokeWidth={1.2} />
+                <p>{t("plac.emptySearch")}</p>
+              </div>
+            ) : (
+              <div className={`plac-grid plac-user-gallery plac-grid--${view}`}>
+                {filteredListings.map((listing) => (
+                  <PlacListingCard
+                    key={listing.id}
+                    listing={listing}
+                    showSeller={false}
+                    showCart
+                    detailLink
+                    iconActions={view === "large"}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
