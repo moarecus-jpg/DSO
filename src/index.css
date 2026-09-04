@@ -10108,7 +10108,9 @@ img.plac-user-avatar {
 .plac-release-secondary .plac-release-playlist-list {
   position: static;
   inset: auto;
+  align-self: stretch;
   height: 100%;
+  max-height: none;
   min-height: 0;
   width: auto;
   overflow-x: hidden;
