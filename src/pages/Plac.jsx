@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Store, BadgeCheck, Pencil, Trash2 } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import {
+  buildPlacFacetOptionsForSelection,
+  createEmptyPlacFacetSelection,
+  filterListingsByPlacFacets,
+  hasActivePlacFacets,
+  PLAC_FACET_KEYS,
+} from "../../shared/placFacets.js";
+import {
+  PlacDigFilters,
+  PlacDigFiltersToggle,
+} from "../components/PlacDigFilters.jsx";
 import { PlacEditDialog } from "../components/PlacEditDialog.jsx";
 import { PlacListingCard } from "../components/PlacListingCard.jsx";
 import { PlacPageHeader } from "../components/PlacPageHeader.jsx";
@@ -22,17 +33,23 @@ export function Plac() {
   const [sellOpen, setSellOpen] = useState(false);
   const [editListing, setEditListing] = useState(null);
   const [busyId, setBusyId] = useState(null);
+  const [facets, setFacets] = useState(createEmptyPlacFacetSelection);
+  const [filtersOpen, setFiltersOpen] = useState(true);
 
   useEffect(() => {
+    if (!mine) return undefined;
     setLoading(true);
-    if (mine) {
-      api("/api/plac/mine")
-        .then((d) => setListings(d.listings ?? []))
-        .catch(console.error)
-        .finally(() => setLoading(false));
-      return;
-    }
+    setFacets(createEmptyPlacFacetSelection());
+    api("/api/plac/mine")
+      .then((d) => setListings(d.listings ?? []))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+    return undefined;
+  }, [mine]);
 
+  useEffect(() => {
+    if (mine) return undefined;
+    setLoading(true);
     const url = query.trim()
       ? `/api/plac/sellers?q=${encodeURIComponent(query.trim())}`
       : "/api/plac/sellers";
@@ -40,9 +57,10 @@ export function Plac() {
       .then((d) => setSellers(d.sellers ?? []))
       .catch(console.error)
       .finally(() => setLoading(false));
+    return undefined;
   }, [mine, query]);
 
-  const displayedListings = useMemo(() => {
+  const textFiltered = useMemo(() => {
     if (!mine) return listings;
     const q = query.trim().toLowerCase();
     if (!q) return listings;
@@ -52,9 +70,35 @@ export function Plac() {
         listing.title?.toLowerCase().includes(q) ||
         listing.genre?.toLowerCase().includes(q) ||
         listing.country?.toLowerCase().includes(q) ||
-        listing.category?.toLowerCase().includes(q)
+        listing.category?.toLowerCase().includes(q) ||
+        listing.format?.toLowerCase().includes(q)
     );
   }, [listings, query, mine]);
+
+  const facetOptions = useMemo(
+    () => (mine ? buildPlacFacetOptionsForSelection(textFiltered, facets) : {}),
+    [mine, textFiltered, facets]
+  );
+
+  const filteredListings = useMemo(
+    () => (mine ? filterListingsByPlacFacets(textFiltered, facets) : textFiltered),
+    [mine, textFiltered, facets]
+  );
+
+  const showDig = mine && !loading && listings.length > 0;
+
+  const activeFacetCount = useMemo(
+    () =>
+      PLAC_FACET_KEYS.reduce((sum, key) => sum + (facets[key]?.length ?? 0), 0),
+    [facets]
+  );
+
+  function handleFiltersOpenChange(nextOpen) {
+    setFiltersOpen(nextOpen);
+    if (!nextOpen) {
+      setFacets(createEmptyPlacFacetSelection());
+    }
+  }
 
   const subtitle = useMemo(() => {
     if (loading) return t("common.loading");
@@ -102,113 +146,194 @@ export function Plac() {
     setListings((prev) => [...rows, ...prev]);
   }
 
-  return (
-    <div className="page page-orders page-plac">
-      <PlacPageHeader
-        title={t("plac.title")}
-        subtitle={subtitle}
-        query={query}
-        onQueryChange={setQuery}
-        placeholder={mine ? t("plac.searchPlaceholder") : t("plac.searchSellersPlaceholder")}
-        onSell={() => setSellOpen(true)}
-        showGalleryView={mine && !loading && displayedListings.length > 0}
-        galleryView={view}
-        onGalleryViewChange={setView}
-      />
+  const listingCards = filteredListings.map((listing) => (
+    <PlacListingCard
+      key={listing.id}
+      listing={listing}
+      showSeller={false}
+      detailLink
+      iconActions={view === "large" || view === "compact"}
+      actions={
+        <>
+          {listing.status !== "active" && (
+            <span className={`plac-status plac-status--${listing.status}`}>
+              {t(`plac.${listing.status}`)}
+            </span>
+          )}
+          {listing.status === "active" && (
+            <>
+              <button
+                type="button"
+                className={`btn btn-ghost btn-sm${
+                  view === "list" ? "" : " plac-card-icon-btn"
+                }`}
+                disabled={busyId === listing.id}
+                onClick={() => setEditListing(listing)}
+                title={t("plac.edit")}
+                aria-label={t("plac.edit")}
+              >
+                <Pencil size={16} aria-hidden />
+                {view === "list" && t("plac.edit")}
+              </button>
+              <button
+                type="button"
+                className={`btn btn-ghost btn-sm${
+                  view === "list" ? "" : " plac-card-icon-btn"
+                }`}
+                disabled={busyId === listing.id}
+                onClick={() => handleMarkSold(listing.id)}
+                title={t("plac.markSold")}
+                aria-label={t("plac.markSold")}
+              >
+                <BadgeCheck size={16} aria-hidden />
+                {view === "list" && t("plac.markSold")}
+              </button>
+              <button
+                type="button"
+                className={`btn btn-ghost btn-sm btn-danger-text${
+                  view === "list" ? "" : " plac-card-icon-btn"
+                }`}
+                disabled={busyId === listing.id}
+                onClick={() => handleRemove(listing.id)}
+                title={t("plac.remove")}
+                aria-label={t("plac.remove")}
+              >
+                <Trash2 size={16} aria-hidden />
+                {view === "list" && t("plac.remove")}
+              </button>
+            </>
+          )}
+        </>
+      }
+    />
+  ));
 
+  const mineHeader = (
+    <PlacPageHeader
+      title={t("plac.title")}
+      subtitle={subtitle}
+      query={query}
+      onQueryChange={setQuery}
+      placeholder={t("plac.searchPlaceholder")}
+      onSell={() => setSellOpen(true)}
+      showGalleryView={showDig && filteredListings.length > 0}
+      galleryView={view}
+      onGalleryViewChange={setView}
+      navMiddle={
+        showDig ? (
+          <PlacDigFiltersToggle
+            open={filtersOpen}
+            onOpenChange={handleFiltersOpenChange}
+            activeCount={activeFacetCount}
+          />
+        ) : null
+      }
+    />
+  );
+
+  const mineEmptyMessage =
+    query.trim() || hasActivePlacFacets(facets)
+      ? t("plac.emptySearch")
+      : t("plac.emptyMine");
+
+  return (
+    <div
+      className={`page page-orders page-plac${
+        showDig ? " page-plac-user page-plac-user--dig" : ""
+      }`}
+    >
       {loading ? (
-        <p className="orders-loading">{t("common.loadingItems")}</p>
+        <>
+          {mine ? (
+            mineHeader
+          ) : (
+            <PlacPageHeader
+              title={t("plac.title")}
+              subtitle={subtitle}
+              query={query}
+              onQueryChange={setQuery}
+              placeholder={t("plac.searchSellersPlaceholder")}
+              onSell={() => setSellOpen(true)}
+              showGalleryView={false}
+            />
+          )}
+          <p className="orders-loading">{t("common.loadingItems")}</p>
+        </>
       ) : mine ? (
-        displayedListings.length === 0 ? (
-          <div className="orders-empty plac-empty">
-            <Store size={40} strokeWidth={1.2} />
-            <p>{t("plac.emptyMine")}</p>
-            <button type="button" className="btn btn-primary" onClick={() => setSellOpen(true)}>
-              <Plus size={18} aria-hidden />
-              {t("plac.sell")}
-            </button>
-          </div>
-        ) : (
-          <div className={`plac-grid plac-grid--${view}`}>
-              {displayedListings.map((listing) => (
-              <PlacListingCard
-                key={listing.id}
-                listing={listing}
-                showSeller={false}
-                detailLink
-                view={view}
-                iconActions={view === "large" || view === "compact"}
-                actions={
-                  <>
-                    {listing.status !== "active" && (
-                      <span className={`plac-status plac-status--${listing.status}`}>
-                        {t(`plac.${listing.status}`)}
-                      </span>
-                    )}
-                    {listing.status === "active" && (
-                      <>
-                        <button
-                          type="button"
-                          className={`btn btn-ghost btn-sm${
-                            view === "list" || view === "discogs" ? "" : " plac-card-icon-btn"
-                          }`}
-                          disabled={busyId === listing.id}
-                          onClick={() => setEditListing(listing)}
-                          title={t("plac.edit")}
-                          aria-label={t("plac.edit")}
-                        >
-                          <Pencil size={16} aria-hidden />
-                          {(view === "list" || view === "discogs") && t("plac.edit")}
-                        </button>
-                        <button
-                          type="button"
-                          className={`btn btn-ghost btn-sm${
-                            view === "list" || view === "discogs" ? "" : " plac-card-icon-btn"
-                          }`}
-                          disabled={busyId === listing.id}
-                          onClick={() => handleMarkSold(listing.id)}
-                          title={t("plac.markSold")}
-                          aria-label={t("plac.markSold")}
-                        >
-                          <BadgeCheck size={16} aria-hidden />
-                          {(view === "list" || view === "discogs") && t("plac.markSold")}
-                        </button>
-                        <button
-                          type="button"
-                          className={`btn btn-ghost btn-sm btn-danger-text${
-                            view === "list" || view === "discogs" ? "" : " plac-card-icon-btn"
-                          }`}
-                          disabled={busyId === listing.id}
-                          onClick={() => handleRemove(listing.id)}
-                          title={t("plac.remove")}
-                          aria-label={t("plac.remove")}
-                        >
-                          <Trash2 size={16} aria-hidden />
-                          {(view === "list" || view === "discogs") && t("plac.remove")}
-                        </button>
-                      </>
-                    )}
-                  </>
-                }
-              />
-            ))}
+        !showDig ? (
+          <>
+            {mineHeader}
+            <div className="orders-empty plac-empty">
+              <Store size={40} strokeWidth={1.2} />
+              <p>{mineEmptyMessage}</p>
+              <button type="button" className="btn btn-primary" onClick={() => setSellOpen(true)}>
+                <Plus size={18} aria-hidden />
+                {t("plac.sell")}
+              </button>
             </div>
+          </>
+        ) : (
+          <div className={`plac-dig${filtersOpen ? " plac-dig--filters-open" : ""}`}>
+            <PlacDigFilters
+              options={facetOptions}
+              selected={facets}
+              onChange={setFacets}
+              open={filtersOpen}
+            />
+
+            <div className="plac-dig-main">
+              {mineHeader}
+
+              <div className="plac-dig-toolbar">
+                <p className="plac-dig-toolbar-count muted fine">
+                  {t("plac.facets.showing", {
+                    shown: filteredListings.length,
+                    total: listings.length,
+                  })}
+                </p>
+              </div>
+
+              {filteredListings.length === 0 ? (
+                <div className="orders-empty plac-empty plac-dig-empty">
+                  <Store size={40} strokeWidth={1.2} />
+                  <p>{t("plac.emptySearch")}</p>
+                </div>
+              ) : (
+                <div className={`plac-grid plac-user-gallery plac-grid--${view}`}>
+                  {listingCards}
+                </div>
+              )}
+            </div>
+          </div>
         )
-      ) : sellers.length === 0 ? (
-        <div className="orders-empty plac-empty">
-          <Store size={40} strokeWidth={1.2} />
-          <p>{t("plac.empty")}</p>
-          <button type="button" className="btn btn-primary" onClick={() => setSellOpen(true)}>
-            <Plus size={18} aria-hidden />
-            {t("plac.sell")}
-          </button>
-        </div>
       ) : (
-        <div className="plac-seller-grid">
-          {sellers.map((seller) => (
-            <PlacSellerCard key={seller.id} seller={seller} />
-          ))}
-        </div>
+        <>
+          <PlacPageHeader
+            title={t("plac.title")}
+            subtitle={subtitle}
+            query={query}
+            onQueryChange={setQuery}
+            placeholder={t("plac.searchSellersPlaceholder")}
+            onSell={() => setSellOpen(true)}
+            showGalleryView={false}
+          />
+          {sellers.length === 0 ? (
+            <div className="orders-empty plac-empty">
+              <Store size={40} strokeWidth={1.2} />
+              <p>{t("plac.empty")}</p>
+              <button type="button" className="btn btn-primary" onClick={() => setSellOpen(true)}>
+                <Plus size={18} aria-hidden />
+                {t("plac.sell")}
+              </button>
+            </div>
+          ) : (
+            <div className="plac-seller-grid">
+              {sellers.map((seller) => (
+                <PlacSellerCard key={seller.id} seller={seller} />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       <PlacSellDialog
@@ -222,6 +347,7 @@ export function Plac() {
         onClose={() => setEditListing(null)}
         onSaved={(updated) => {
           setListings((prev) => prev.map((row) => (row.id === updated.id ? updated : row)));
+          setEditListing(updated);
         }}
       />
     </div>

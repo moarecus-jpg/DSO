@@ -822,8 +822,6 @@ export default {
     viewDefault: "Običajen",
     viewLarge: "Velik",
     viewList: "Seznam",
-    viewDiscogs: "Discogs",
-    viewDetails: "Podrobnosti",
     backToSeller: "Nazaj k prodajalcu",
     listingNotFound: "Oglas ni bil najden.",
     seller: "Prodajalec",
