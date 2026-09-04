@@ -8725,17 +8725,21 @@ a.order-preview-item-title:hover {
 .plac-grid--compact .plac-card-body {
   padding: 0.55rem 0.6rem 0.65rem;
   gap: 0.28rem;
+  align-items: center;
+  text-align: center;
 }
 
 .plac-grid--compact .plac-card-title,
 .plac-grid--compact .plac-card-title--plain {
   display: block;
+  width: 100%;
   font-size: 0.74rem;
   font-weight: 700;
   line-height: 1.25;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: center;
 }
 
 .plac-grid--compact .plac-card-title svg {
@@ -8745,15 +8749,19 @@ a.order-preview-item-title:hover {
 .plac-grid--compact .plac-card-release-info {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 0.2rem;
   min-width: 0;
+  width: 100%;
 }
 
 .plac-grid--compact .plac-card-meta {
   flex-wrap: nowrap;
+  justify-content: center;
   gap: 0.2rem 0.3rem;
   font-size: 0.62rem;
   overflow: hidden;
+  max-width: 100%;
 }
 
 .plac-grid--compact .plac-card-meta span {
@@ -8774,10 +8782,13 @@ a.order-preview-item-title:hover {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
+  text-align: center;
 }
 
 .plac-grid--compact .plac-card-conditions {
   flex-wrap: nowrap;
+  justify-content: center;
   gap: 0.2rem;
   overflow: hidden;
 }
@@ -8798,6 +8809,8 @@ a.order-preview-item-title:hover {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
+  text-align: center;
 }
 
 .plac-grid--compact .plac-card-bottom {
@@ -8814,6 +8827,7 @@ a.order-preview-item-title:hover {
 .plac-grid--compact .plac-card-price,
 .plac-grid--compact .plac-price {
   font-size: 0.86rem;
+  justify-content: center;
 }
 
 .plac-grid--compact .plac-price-original {
@@ -8827,6 +8841,7 @@ a.order-preview-item-title:hover {
 
 .plac-grid--compact .plac-card-seller {
   gap: 0.28rem;
+  justify-content: center;
 }
 
 .plac-grid--compact .plac-card-seller img,
@@ -8884,14 +8899,47 @@ a.order-preview-item-title:hover {
 .plac-grid--large .plac-card-body {
   padding: 1rem 1.1rem 1.1rem;
   gap: 0.55rem;
+  align-items: center;
+  text-align: center;
 }
 
-.plac-grid--large .plac-card-title {
+.plac-grid--large .plac-card-title,
+.plac-grid--large .plac-card-title--plain {
   font-size: 1rem;
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+}
+
+.plac-grid--large .plac-card-release-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 0.35rem;
+}
+
+.plac-grid--large .plac-card-meta {
+  justify-content: center;
+}
+
+.plac-grid--large .plac-card-format {
+  text-align: center;
+  max-width: 100%;
+}
+
+.plac-grid--large .plac-card-conditions {
+  justify-content: center;
+}
+
+.plac-grid--large .plac-card-note {
+  text-align: center;
+  max-width: 100%;
 }
 
 .plac-grid--large .plac-card-price {
   font-size: 1.15rem;
+  justify-content: center;
 }
 
 .plac-grid--large .plac-card-bottom {
@@ -8903,6 +8951,10 @@ a.order-preview-item-title:hover {
   display: flex;
   justify-content: center;
   width: 100%;
+}
+
+.plac-grid--large .plac-card-seller {
+  justify-content: center;
 }
 
 .plac-grid--large .plac-card-actions {
@@ -9095,14 +9147,18 @@ a.order-preview-item-title:hover {
 .plac-grid--discogs {
   grid-template-columns: 1fr;
   gap: 0;
+  max-width: 58rem;
+  margin-inline: auto;
+  width: 100%;
 }
 
 .plac-grid--discogs .plac-card--discogs {
   display: grid;
-  grid-template-columns: 4.75rem minmax(0, 1fr) minmax(8.5rem, 11rem);
-  gap: 0.85rem 1rem;
-  align-items: start;
-  padding: 0.85rem 0.35rem;
+  grid-template-columns: 5rem minmax(0, 1.4fr) minmax(6.5rem, 8.5rem) minmax(7.5rem, 9.5rem);
+  gap: 0.85rem 1.25rem;
+  align-items: center;
+  justify-items: stretch;
+  padding: 1rem 0.75rem;
   border-radius: 0;
   border: 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -9125,20 +9181,22 @@ a.order-preview-item-title:hover {
 }
 
 .plac-grid--discogs .plac-card-cover {
-  width: 4.75rem;
-  height: 4.75rem;
-  min-width: 4.75rem;
+  width: 5rem;
+  height: 5rem;
+  min-width: 5rem;
   aspect-ratio: unset;
   border-radius: 0.35rem;
   overflow: hidden;
+  justify-self: start;
 }
 
 .plac-discogs-main {
   min-width: 0;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 0.28rem;
-  padding-top: 0.1rem;
+  padding-inline: 0.35rem 0.75rem;
 }
 
 .plac-discogs-title {
@@ -9183,29 +9241,42 @@ a.order-preview-item-title:hover {
 
 .plac-discogs-note {
   margin: 0.15rem 0 0;
-  max-width: 42rem;
+  max-width: 36rem;
 }
 
-.plac-discogs-details-link {
-  margin-top: 0.2rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #a78bfa;
+.plac-discogs-price-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  text-align: center;
+  min-width: 0;
+}
+
+.plac-discogs-price {
+  font-size: 1.2rem;
+  font-weight: 800;
+  justify-content: center;
+}
+
+.plac-discogs-price-col .plac-card-seller {
+  justify-content: center;
 }
 
 .plac-discogs-aside {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 0.45rem;
-  text-align: right;
-  padding-top: 0.1rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  text-align: center;
 }
 
-.plac-discogs-price {
-  font-size: 1.15rem;
-  font-weight: 800;
-  justify-content: flex-end;
+.plac-discogs-details-link {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #a78bfa;
 }
 
 .plac-discogs-actions {
@@ -9214,7 +9285,7 @@ a.order-preview-item-title:hover {
   align-items: stretch;
   gap: 0.35rem;
   width: 100%;
-  max-width: 10.5rem;
+  max-width: 9.5rem;
 }
 
 .plac-discogs-actions .plac-add-to-cart {
@@ -9236,14 +9307,19 @@ a.order-preview-item-title:hover {
   width: 100%;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 860px) {
+  .plac-grid--discogs {
+    max-width: none;
+  }
+
   .plac-grid--discogs .plac-card--discogs {
     grid-template-columns: 3.75rem minmax(0, 1fr);
     grid-template-areas:
       "cover main"
-      "aside aside";
+      "price actions";
     gap: 0.65rem 0.75rem;
     padding: 0.75rem 0.15rem;
+    align-items: start;
   }
 
   .plac-grid--discogs .plac-card-cover {
@@ -9255,21 +9331,26 @@ a.order-preview-item-title:hover {
 
   .plac-discogs-main {
     grid-area: main;
+    padding-inline: 0;
   }
 
-  .plac-discogs-aside {
-    grid-area: aside;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
+  .plac-discogs-price-col {
+    grid-area: price;
+    align-items: flex-start;
     text-align: left;
     padding-left: 0.15rem;
   }
 
+  .plac-discogs-price {
+    justify-content: flex-start;
+  }
+
+  .plac-discogs-aside {
+    grid-area: actions;
+    align-items: flex-end;
+  }
+
   .plac-discogs-actions {
-    flex-direction: row;
-    flex-wrap: wrap;
     max-width: none;
     width: auto;
   }

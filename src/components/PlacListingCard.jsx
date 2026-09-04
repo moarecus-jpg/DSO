@@ -118,21 +118,16 @@ export function PlacListingCard({
           </div>
 
           {listing.note && <p className="plac-card-note plac-discogs-note muted fine">{listing.note}</p>}
-
-          {detailLink && (
-            <span className="plac-discogs-details-link">{t("plac.viewDetails")}</span>
-          )}
         </div>
 
-        <div className="plac-discogs-aside">
+        <div className="plac-discogs-price-col">
           <PlacPrice listing={listing} className="plac-card-price plac-discogs-price" />
-
           {showSeller && listing.seller && (
             <div className="plac-card-seller">
               <UserAvatar
                 name={listing.seller.name}
                 avatarUrl={resolveUserAvatarUrl(listing.seller)}
-                size={24}
+                size={22}
               />
               <span className="plac-card-seller-name">
                 {listing.seller.discogsUsername
@@ -141,14 +136,19 @@ export function PlacListingCard({
               </span>
             </div>
           )}
+        </div>
 
+        <div className="plac-discogs-aside" onClick={(e) => e.stopPropagation()}>
           {(actions || showCart) && (
-            <div className="plac-card-actions plac-discogs-actions" onClick={(e) => e.stopPropagation()}>
+            <div className="plac-card-actions plac-discogs-actions">
               {showCart && listing.status !== "sold" && listing.status !== "removed" && (
                 <PlacAddToCartButton listing={listing} />
               )}
               {actions}
             </div>
+          )}
+          {detailLink && (
+            <span className="plac-discogs-details-link">{t("plac.viewDetails")}</span>
           )}
         </div>
       </article>
