@@ -10076,15 +10076,14 @@ img.plac-user-avatar {
   flex: 0 0 auto;
 }
 
-/* Row height = 16:9 frame only. Playlist stretches to that — card shell unchanged. */
+/* Playlist height locks to the 16:9 frame — list scrolls, must not grow the card. */
 .plac-release-secondary .plac-release-playlist {
   flex: 0 0 auto;
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(11rem, 0.9fr);
-  grid-template-rows: auto;
   gap: 0.55rem;
-  align-items: stretch;
+  align-items: start;
   width: 100%;
 }
 
@@ -10109,9 +10108,10 @@ img.plac-user-avatar {
   position: static;
   inset: auto;
   align-self: stretch;
-  height: auto;
+  /* Don't let list content set the row height; fill the player row instead */
+  height: 0;
+  min-height: 100%;
   max-height: none;
-  min-height: 0;
   width: auto;
   overflow-x: hidden;
   overflow-y: auto;
@@ -10119,7 +10119,6 @@ img.plac-user-avatar {
   padding-right: 0.2rem;
   border-left: 1px solid rgba(255, 255, 255, 0.08);
   padding-left: 0.45rem;
-  /* Show scrollbar so the video list reads as a list */
   scrollbar-width: thin;
   scrollbar-color: rgba(167, 139, 250, 0.55) rgba(255, 255, 255, 0.06);
   -ms-overflow-style: auto;
