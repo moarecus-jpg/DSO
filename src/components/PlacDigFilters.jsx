@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, SlidersHorizontal } from "lucide-react";
 import {
   PLAC_FACET_DEFAULT_OPEN,
@@ -6,7 +6,61 @@ import {
 } from "../../shared/placFacets.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 
-const COLLAPSED_VISIBLE = 8;
+const MIN_VISIBLE = 6;
+const HEAD_H = 40;
+const PILL_H = 34;
+const CHIP_ROW_H = 36;
+const MORE_H = 26;
+const SECTION_GAP = 8;
+const PANEL_PAD = 24;
+
+function estimateSectionBodyHeight(facetKey, visibleCount) {
+  if (visibleCount <= 0) return 0;
+  if (facetKey === "country") {
+    const rows = Math.ceil(visibleCount / 2);
+    return rows * CHIP_ROW_H + MORE_H;
+  }
+  return visibleCount * PILL_H + MORE_H;
+}
+
+function distributeVisibleCounts(panelHeight, sections) {
+  const collapsed = sections.filter((s) => !s.open);
+  const open = sections.filter((s) => s.open);
+  const collapsedH = collapsed.length * HEAD_H;
+  const openHeadsH = open.length * (HEAD_H + SECTION_GAP);
+  let budget = Math.max(
+    0,
+    panelHeight - PANEL_PAD - collapsedH - openHeadsH
+  );
+
+  const counts = Object.fromEntries(sections.map((s) => [s.key, 0]));
+
+  for (const section of open) {
+    const baseline = Math.min(MIN_VISIBLE, section.total);
+    budget -= estimateSectionBodyHeight(section.key, baseline);
+    counts[section.key] = baseline;
+  }
+
+  let grew = true;
+  while (grew && budget > PILL_H) {
+    grew = false;
+    for (const section of open) {
+      if (counts[section.key] >= section.total) continue;
+      const step = section.key === "country" ? 2 : 1;
+      const capped = Math.min(counts[section.key] + step, section.total);
+      const delta =
+        estimateSectionBodyHeight(section.key, capped) -
+        estimateSectionBodyHeight(section.key, counts[section.key]);
+      if (delta <= budget + 1) {
+        budget -= delta;
+        counts[section.key] = capped;
+        grew = true;
+      }
+    }
+  }
+
+  return counts;
+}
 
 function FacetGroup({
   facetKey,
@@ -14,15 +68,19 @@ function FacetGroup({
   selectedValues,
   onToggle,
   optionLabel,
-  defaultOpen,
+  open,
+  onOpenChange,
+  visibleLimit,
 }) {
   const { t } = useLocale();
-  const [open, setOpen] = useState(defaultOpen);
-  // Show the full list by default so the rail fills top-to-bottom.
-  const [showAll, setShowAll] = useState(true);
+  const [forcedAll, setForcedAll] = useState(false);
 
-  const visible = showAll ? options : options.slice(0, COLLAPSED_VISIBLE);
-  const canToggleList = options.length > COLLAPSED_VISIBLE;
+  const limit = forcedAll
+    ? options.length
+    : Math.max(MIN_VISIBLE, visibleLimit ?? MIN_VISIBLE);
+  const visible = options.slice(0, Math.min(limit, options.length));
+  const canShowMore = !forcedAll && options.length > visible.length;
+  const canShowLess = forcedAll && options.length > MIN_VISIBLE;
   const isChip = facetKey === "country";
   const activeInGroup = selectedValues.length;
 
@@ -33,7 +91,7 @@ function FacetGroup({
       <button
         type="button"
         className="plac-dig-facet-head"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => onOpenChange(!open)}
         aria-expanded={open}
       >
         <span className="plac-dig-facet-title">
@@ -77,13 +135,13 @@ function FacetGroup({
               );
             })}
           </div>
-          {canToggleList && (
+          {(canShowMore || canShowLess) && (
             <button
               type="button"
               className="plac-dig-facet-more"
-              onClick={() => setShowAll((v) => !v)}
+              onClick={() => setForcedAll((v) => !v)}
             >
-              {showAll ? t("plac.facets.showLess") : t("plac.facets.showMore")}
+              {canShowLess ? t("plac.facets.showLess") : t("plac.facets.showMore")}
             </button>
           )}
         </div>
@@ -115,6 +173,13 @@ export function PlacDigFiltersToggle({ open, onOpenChange, activeCount = 0 }) {
 
 export function PlacDigFilters({ options, selected, onChange, open }) {
   const { t } = useLocale();
+  const panelRef = useRef(null);
+  const [panelHeight, setPanelHeight] = useState(0);
+  const [openMap, setOpenMap] = useState(() =>
+    Object.fromEntries(
+      PLAC_FACET_KEYS.map((key) => [key, PLAC_FACET_DEFAULT_OPEN.has(key)])
+    )
+  );
 
   function toggle(facetKey, value) {
     const current = selected[facetKey] ?? [];
@@ -151,11 +216,60 @@ export function PlacDigFilters({ options, selected, onChange, open }) {
   );
   const hasAnyOptions = visibleKeys.length > 0;
 
+  useLayoutEffect(() => {
+    const node = panelRef.current;
+    if (!node || typeof ResizeObserver === "undefined") return undefined;
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      setPanelHeight(Math.floor(entry.contentRect.height));
+    });
+    ro.observe(node);
+    setPanelHeight(Math.floor(node.getBoundingClientRect().height));
+    return () => ro.disconnect();
+  }, [open]);
+
+  useEffect(() => {
+    setOpenMap((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const key of visibleKeys) {
+        if (!(key in next)) {
+          next[key] = PLAC_FACET_DEFAULT_OPEN.has(key);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [visibleKeys]);
+
+  const sectionSpecs = useMemo(
+    () =>
+      visibleKeys.map((key) => ({
+        key,
+        open: Boolean(openMap[key]),
+        total: (options[key] ?? []).length,
+      })),
+    [visibleKeys, openMap, options]
+  );
+
+  const visibleCounts = useMemo(() => {
+    if (!panelHeight) {
+      return Object.fromEntries(
+        visibleKeys.map((key) => [
+          key,
+          openMap[key] ? MIN_VISIBLE : 0,
+        ])
+      );
+    }
+    return distributeVisibleCounts(panelHeight, sectionSpecs);
+  }, [panelHeight, sectionSpecs, visibleKeys, openMap]);
+
   if (!open) return null;
 
   return (
     <aside className="plac-dig-filters is-open">
-      <div className="plac-dig-filters-panel">
+      <div className="plac-dig-filters-panel" ref={panelRef}>
         {activeCount > 0 && (
           <div className="plac-dig-filters-header">
             <button
@@ -179,7 +293,11 @@ export function PlacDigFilters({ options, selected, onChange, open }) {
               selectedValues={selected[key] ?? []}
               onToggle={toggle}
               optionLabel={optionLabel}
-              defaultOpen={PLAC_FACET_DEFAULT_OPEN.has(key)}
+              open={Boolean(openMap[key])}
+              onOpenChange={(nextOpen) =>
+                setOpenMap((prev) => ({ ...prev, [key]: nextOpen }))
+              }
+              visibleLimit={visibleCounts[key] ?? MIN_VISIBLE}
             />
           ))
         )}
