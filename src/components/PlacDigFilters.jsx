@@ -7,12 +7,13 @@ import {
 import { useLocale } from "../hooks/useLocale.jsx";
 
 const MIN_VISIBLE = 6;
-const HEAD_H = 38;
+const STYLE_SOFT_CAP = 8;
+const HEAD_H = 40;
 const PILL_H = 32;
 const CHIP_ROW_H = 34;
-const MORE_H = 22;
+const MORE_H = 24;
 const SECTION_GAP = 4;
-const PANEL_PAD = 20;
+const PANEL_PAD = 28;
 
 function estimateSectionBodyHeight(facetKey, visibleCount, { includeMore = true } = {}) {
   if (visibleCount <= 0) return 0;
@@ -24,6 +25,13 @@ function estimateSectionBodyHeight(facetKey, visibleCount, { includeMore = true 
   return visibleCount * PILL_H + more;
 }
 
+function sectionSoftCap(section) {
+  if (section.key === "style") {
+    return Math.min(section.total, STYLE_SOFT_CAP);
+  }
+  return section.total;
+}
+
 function distributeVisibleCounts(panelHeight, sections) {
   const collapsed = sections.filter((s) => !s.open);
   const open = sections.filter((s) => s.open);
@@ -31,6 +39,7 @@ function distributeVisibleCounts(panelHeight, sections) {
     return Object.fromEntries(sections.map((s) => [s.key, 0]));
   }
 
+  // Keep every collapsed header (Year / Condition / Price) on-screen.
   const collapsedH = collapsed.length * HEAD_H;
   const openHeadsH = open.length * (HEAD_H + SECTION_GAP);
   let budget = Math.max(
@@ -41,36 +50,38 @@ function distributeVisibleCounts(panelHeight, sections) {
   const counts = Object.fromEntries(sections.map((s) => [s.key, 0]));
 
   for (const section of open) {
-    const baseline = Math.min(MIN_VISIBLE, section.total);
+    const baseline = Math.min(MIN_VISIBLE, sectionSoftCap(section));
     const includeMore = baseline < section.total;
     budget -= estimateSectionBodyHeight(section.key, baseline, { includeMore });
     counts[section.key] = baseline;
   }
 
-  // Prefer filling Style first (usually the longest list), then others.
+  // Grow Format/Country first, then Style — but Style stays soft-capped
+  // so Price remains visible under the collapsed rows.
   const growOrder = [
-    ...open.filter((s) => s.key === "style"),
     ...open.filter((s) => s.key !== "style"),
+    ...open.filter((s) => s.key === "style"),
   ];
 
   let grew = true;
   while (grew && budget > 8) {
     grew = false;
     for (const section of growOrder) {
-      if (counts[section.key] >= section.total) continue;
+      const cap = sectionSoftCap(section);
+      if (counts[section.key] >= cap) continue;
       const step = section.key === "country" ? 2 : 1;
       const from = counts[section.key];
-      const capped = Math.min(from + step, section.total);
+      const next = Math.min(from + step, cap);
       const before = estimateSectionBodyHeight(section.key, from, {
         includeMore: from < section.total,
       });
-      const after = estimateSectionBodyHeight(section.key, capped, {
-        includeMore: capped < section.total,
+      const after = estimateSectionBodyHeight(section.key, next, {
+        includeMore: next < section.total,
       });
       const delta = after - before;
       if (delta <= budget + 2) {
         budget -= delta;
-        counts[section.key] = capped;
+        counts[section.key] = next;
         grew = true;
       }
     }
