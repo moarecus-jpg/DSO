@@ -104,6 +104,13 @@ export function PlacUser() {
     [facets]
   );
 
+  function handleFiltersOpenChange(nextOpen) {
+    setFiltersOpen(nextOpen);
+    if (!nextOpen) {
+      setFacets(createEmptyPlacFacetSelection());
+    }
+  }
+
   const pageHeader = (
     <PlacPageHeader
       backTo={{ to: "/plac", label: t("plac.backToMarketplace") }}
@@ -130,7 +137,7 @@ export function PlacUser() {
         showDig ? (
           <PlacDigFiltersToggle
             open={filtersOpen}
-            onOpenChange={setFiltersOpen}
+            onOpenChange={handleFiltersOpenChange}
             activeCount={activeFacetCount}
           />
         ) : null
