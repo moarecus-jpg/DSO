@@ -9662,19 +9662,11 @@ img.plac-user-avatar {
 .plac-dig-filters-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 0.75rem;
-  margin-bottom: 0.55rem;
+  margin-bottom: 0.35rem;
   padding: 0 0.15rem;
   flex: 0 0 auto;
-}
-
-.plac-dig-filters-heading {
-  margin: 0;
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.96);
-  letter-spacing: -0.01em;
 }
 
 .plac-dig-filters-clear {

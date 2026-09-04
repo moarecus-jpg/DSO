@@ -155,9 +155,8 @@ export function PlacDigFilters({ options, selected, onChange, open }) {
   return (
     <aside className="plac-dig-filters is-open">
       <div className="plac-dig-filters-panel">
-        <div className="plac-dig-filters-header">
-          <h2 className="plac-dig-filters-heading">{t("plac.facets.filters")}</h2>
-          {activeCount > 0 && (
+        {activeCount > 0 && (
+          <div className="plac-dig-filters-header">
             <button
               type="button"
               className="plac-dig-filters-clear"
@@ -165,8 +164,8 @@ export function PlacDigFilters({ options, selected, onChange, open }) {
             >
               {t("plac.facets.clearAll")}
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         {!hasAnyOptions ? (
           <p className="muted fine">{t("plac.facets.empty")}</p>
