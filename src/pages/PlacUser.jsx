@@ -18,8 +18,11 @@ import { PlacSellDialog } from "../components/PlacSellDialog.jsx";
 import { UserAvatar } from "../components/UserAvatar.jsx";
 import { api } from "../api.js";
 import { useLocale } from "../hooks/useLocale.jsx";
+import { useMediaQuery } from "../hooks/useMediaQuery.js";
 import { usePlacGalleryView } from "../hooks/usePlacGalleryView.js";
 import { resolveUserAvatarUrl } from "../utils/userAvatarUrl.js";
+
+const NARROW_DIG_MQ = "(max-width: 1100px)";
 
 function sellerLabel(seller) {
   if (seller?.discogsUsername) return `@${seller.discogsUsername}`;
@@ -38,7 +41,16 @@ export function PlacUser() {
   const [query, setQuery] = useState("");
   const [sellOpen, setSellOpen] = useState(false);
   const [facets, setFacets] = useState(createEmptyPlacFacetSelection);
-  const [filtersOpen, setFiltersOpen] = useState(true);
+  const isNarrowDig = useMediaQuery(NARROW_DIG_MQ);
+  const [filtersOpen, setFiltersOpen] = useState(() =>
+    typeof window === "undefined"
+      ? true
+      : !window.matchMedia(NARROW_DIG_MQ).matches
+  );
+
+  useEffect(() => {
+    setFiltersOpen(!isNarrowDig);
+  }, [isNarrowDig]);
 
   useEffect(() => {
     setLoading(true);
@@ -112,9 +124,6 @@ export function PlacUser() {
 
   function handleFiltersOpenChange(nextOpen) {
     setFiltersOpen(nextOpen);
-    if (!nextOpen) {
-      setFacets(createEmptyPlacFacetSelection());
-    }
   }
 
   const pageHeader = (
@@ -177,6 +186,7 @@ export function PlacUser() {
             selected={facets}
             onChange={setFacets}
             open={filtersOpen}
+            onClose={() => setFiltersOpen(false)}
           />
 
           <div className="plac-dig-main">

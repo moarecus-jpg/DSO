@@ -19,7 +19,10 @@ import { PlacSellerCard } from "../components/PlacSellerCard.jsx";
 import { PlacSellDialog } from "../components/PlacSellDialog.jsx";
 import { api } from "../api.js";
 import { useLocale } from "../hooks/useLocale.jsx";
+import { useMediaQuery } from "../hooks/useMediaQuery.js";
 import { usePlacGalleryView } from "../hooks/usePlacGalleryView.js";
+
+const NARROW_DIG_MQ = "(max-width: 1100px)";
 
 export function Plac() {
   const { t } = useLocale();
@@ -34,7 +37,16 @@ export function Plac() {
   const [editListing, setEditListing] = useState(null);
   const [busyId, setBusyId] = useState(null);
   const [facets, setFacets] = useState(createEmptyPlacFacetSelection);
-  const [filtersOpen, setFiltersOpen] = useState(true);
+  const isNarrowDig = useMediaQuery(NARROW_DIG_MQ);
+  const [filtersOpen, setFiltersOpen] = useState(() =>
+    typeof window === "undefined"
+      ? true
+      : !window.matchMedia(NARROW_DIG_MQ).matches
+  );
+
+  useEffect(() => {
+    setFiltersOpen(!isNarrowDig);
+  }, [isNarrowDig]);
 
   useEffect(() => {
     if (!mine) return undefined;
@@ -95,9 +107,6 @@ export function Plac() {
 
   function handleFiltersOpenChange(nextOpen) {
     setFiltersOpen(nextOpen);
-    if (!nextOpen) {
-      setFacets(createEmptyPlacFacetSelection());
-    }
   }
 
   const subtitle = useMemo(() => {
@@ -279,6 +288,7 @@ export function Plac() {
               selected={facets}
               onChange={setFacets}
               open={filtersOpen}
+              onClose={() => setFiltersOpen(false)}
             />
 
             <div className="plac-dig-main">

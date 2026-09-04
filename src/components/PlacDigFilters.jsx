@@ -1,10 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, ChevronRight, SlidersHorizontal } from "lucide-react";
 import {
   PLAC_FACET_DEFAULT_OPEN,
   PLAC_FACET_KEYS,
 } from "../../shared/placFacets.js";
 import { useLocale } from "../hooks/useLocale.jsx";
+import { useMediaQuery } from "../hooks/useMediaQuery.js";
 
 const MIN_VISIBLE = 6;
 const HEAD_H = 40;
@@ -13,6 +15,7 @@ const CHIP_ROW_H = 34;
 const MORE_H = 24;
 const SECTION_GAP = 4;
 const PANEL_PAD = 20;
+const NARROW_DIG_MQ = "(max-width: 1100px)";
 
 function estimateSectionBodyHeight(facetKey, visibleCount, { includeMore = true } = {}) {
   if (visibleCount <= 0) return 0;
@@ -195,8 +198,9 @@ export function PlacDigFiltersToggle({ open, onOpenChange, activeCount = 0 }) {
   );
 }
 
-export function PlacDigFilters({ options, selected, onChange, open }) {
+export function PlacDigFilters({ options, selected, onChange, open, onClose }) {
   const { t } = useLocale();
+  const isNarrowDig = useMediaQuery(NARROW_DIG_MQ);
   const panelRef = useRef(null);
   const [panelHeight, setPanelHeight] = useState(0);
   const [openMap, setOpenMap] = useState(() =>
@@ -263,7 +267,7 @@ export function PlacDigFilters({ options, selected, onChange, open }) {
     ro.observe(node);
     if (node.parentElement) ro.observe(node.parentElement);
     return () => ro.disconnect();
-  }, [open]);
+  }, [open, isNarrowDig]);
 
   useEffect(() => {
     setOpenMap((prev) => {
@@ -278,6 +282,26 @@ export function PlacDigFilters({ options, selected, onChange, open }) {
       return changed ? next : prev;
     });
   }, [visibleKeys]);
+
+  useEffect(() => {
+    if (!open || typeof onClose !== "function") return undefined;
+    const onKey = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  useEffect(() => {
+    if (!open || !isNarrowDig) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.body.classList.add("modal-open");
+    return () => {
+      document.body.style.overflow = prev;
+      document.body.classList.remove("modal-open");
+    };
+  }, [open, isNarrowDig]);
 
   const sectionSpecs = useMemo(
     () =>
@@ -303,7 +327,7 @@ export function PlacDigFilters({ options, selected, onChange, open }) {
 
   if (!open) return null;
 
-  return (
+  const panel = (
     <aside className="plac-dig-filters is-open">
       <div className="plac-dig-filters-panel" ref={panelRef}>
         {activeCount > 0 && (
@@ -339,5 +363,22 @@ export function PlacDigFilters({ options, selected, onChange, open }) {
         )}
       </div>
     </aside>
+  );
+
+  if (!isNarrowDig || typeof document === "undefined") {
+    return panel;
+  }
+
+  return createPortal(
+    <div className="plac-dig-filters-drawer">
+      <button
+        type="button"
+        className="plac-dig-filters-backdrop"
+        aria-label={t("common.close")}
+        onClick={onClose}
+      />
+      {panel}
+    </div>,
+    document.body
   );
 }

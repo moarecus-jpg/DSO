@@ -8534,7 +8534,7 @@ a.order-preview-item-title:hover {
 
 .plac-page-header-row--top {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(22rem, 42rem) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 42rem) minmax(0, 1fr);
   align-items: center;
   gap: 1rem 1.25rem;
 }
@@ -9112,6 +9112,63 @@ a.order-preview-item-title:hover {
   order: 1;
 }
 
+@media (max-width: 900px) {
+  .plac-grid--list .plac-card {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .plac-grid--list .plac-card-body {
+    flex: 1 1 calc(100% - 5.5rem);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "title bottom"
+      "meta meta";
+    align-items: start;
+    gap: 0.35rem 0.75rem;
+  }
+
+  .plac-grid--list .plac-card-title {
+    grid-area: title;
+    flex: none;
+    max-width: none;
+    min-width: 0;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-clamp: 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .plac-grid--list .plac-card-release-info {
+    grid-area: meta;
+    position: static;
+    left: auto;
+    top: auto;
+    transform: none;
+    max-width: none;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    pointer-events: auto;
+    gap: 0.35rem 0.65rem;
+  }
+
+  .plac-grid--list .plac-card-bottom {
+    grid-area: bottom;
+    margin-left: 0;
+    justify-content: flex-end;
+  }
+
+  .plac-grid--list .plac-card-meta,
+  .plac-grid--list .plac-card-format,
+  .plac-grid--list .plac-card-conditions {
+    white-space: normal;
+  }
+}
+
 @media (max-width: 640px) {
   .plac-grid--list .plac-card {
     gap: 0.65rem 0.75rem;
@@ -9125,9 +9182,12 @@ a.order-preview-item-title:hover {
     max-width: 3.75rem;
   }
 
-  .plac-grid--list .plac-card-title {
-    flex: 0 1 38%;
-    min-width: 2.5rem;
+  .plac-grid--list .plac-card-body {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "title"
+      "meta"
+      "bottom";
   }
 
   .plac-grid--list .plac-card-format,
@@ -9137,6 +9197,11 @@ a.order-preview-item-title:hover {
 
   .plac-grid--list .plac-card-condition:last-child {
     display: none;
+  }
+
+  .plac-grid--list .plac-card-bottom {
+    justify-content: space-between;
+    width: 100%;
   }
 
   .plac-grid--list .plac-card-price {
@@ -9811,6 +9876,18 @@ img.plac-user-avatar {
   min-height: 0;
 }
 
+.plac-dig-filters-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+}
+
+.plac-dig-filters-backdrop {
+  display: none;
+  pointer-events: auto;
+}
+
 .plac-dig-filters-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -10085,7 +10162,7 @@ img.plac-user-avatar {
   margin-top: 0;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .app-main-v2:has(.page-plac-user) {
     overflow-y: auto;
   }
@@ -10105,15 +10182,63 @@ img.plac-user-avatar {
     grid-template-columns: 1fr;
   }
 
-  .plac-dig-filters,
+  .plac-dig-filters-backdrop {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: rgba(4, 3, 10, 0.58);
+    cursor: pointer;
+  }
+
+  .plac-dig-filters-drawer .plac-dig-filters.is-open {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1;
+    width: min(20rem, 92vw);
+    height: 100%;
+    max-height: none;
+    margin: 0;
+    padding: 0.75rem;
+    box-sizing: border-box;
+    pointer-events: auto;
+  }
+
   .plac-dig-filters-panel,
   .plac-dig-main {
     height: auto;
     max-height: none;
   }
 
+  .plac-dig-filters-drawer .plac-dig-filters.is-open .plac-dig-filters-panel {
+    height: 100%;
+    max-height: none;
+  }
+
+  .plac-page-header-row--top {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr) auto;
+    gap: 0.75rem 0.85rem;
+  }
+
+  .plac-page-header-nav {
+    flex-wrap: wrap;
+  }
+
+  .plac-page-header-nav .plac-toolbar-actions,
+  .plac-page-header-back,
+  .plac-page-header-nav .plac-sell-btn {
+    flex: 1 1 auto;
+  }
+}
+
+@media (max-width: 900px) {
   .plac-dig-filters-panel {
-    max-height: min(28rem, 55vh);
+    max-height: none;
   }
 }
 
@@ -10184,6 +10309,16 @@ img.plac-user-avatar {
     flex: 1 1 100%;
     max-width: none;
     justify-self: stretch;
+  }
+
+  .plac-page-header-title-main {
+    gap: 0.65rem;
+  }
+
+  .plac-page-header-title .plac-user-avatar {
+    width: 2.75rem !important;
+    height: 2.75rem !important;
+    min-width: 2.75rem;
   }
 
   .plac-page-header-row--controls {
