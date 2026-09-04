@@ -7,13 +7,12 @@ import {
 import { useLocale } from "../hooks/useLocale.jsx";
 
 const MIN_VISIBLE = 6;
-const STYLE_SOFT_CAP = 8;
 const HEAD_H = 40;
 const PILL_H = 32;
 const CHIP_ROW_H = 34;
 const MORE_H = 24;
 const SECTION_GAP = 4;
-const PANEL_PAD = 28;
+const PANEL_PAD = 20;
 
 function estimateSectionBodyHeight(facetKey, visibleCount, { includeMore = true } = {}) {
   if (visibleCount <= 0) return 0;
@@ -25,13 +24,6 @@ function estimateSectionBodyHeight(facetKey, visibleCount, { includeMore = true 
   return visibleCount * PILL_H + more;
 }
 
-function sectionSoftCap(section) {
-  if (section.key === "style") {
-    return Math.min(section.total, STYLE_SOFT_CAP);
-  }
-  return section.total;
-}
-
 function distributeVisibleCounts(panelHeight, sections) {
   const collapsed = sections.filter((s) => !s.open);
   const open = sections.filter((s) => s.open);
@@ -39,7 +31,7 @@ function distributeVisibleCounts(panelHeight, sections) {
     return Object.fromEntries(sections.map((s) => [s.key, 0]));
   }
 
-  // Keep every collapsed header (Year / Condition / Price) on-screen.
+  // Reserve room for Year / Condition / Price headers, then spend the rest.
   const collapsedH = collapsed.length * HEAD_H;
   const openHeadsH = open.length * (HEAD_H + SECTION_GAP);
   let budget = Math.max(
@@ -50,14 +42,14 @@ function distributeVisibleCounts(panelHeight, sections) {
   const counts = Object.fromEntries(sections.map((s) => [s.key, 0]));
 
   for (const section of open) {
-    const baseline = Math.min(MIN_VISIBLE, sectionSoftCap(section));
+    const baseline = Math.min(MIN_VISIBLE, section.total);
     const includeMore = baseline < section.total;
     budget -= estimateSectionBodyHeight(section.key, baseline, { includeMore });
     counts[section.key] = baseline;
   }
 
-  // Grow Format/Country first, then Style — but Style stays soft-capped
-  // so Price remains visible under the collapsed rows.
+  // Fill leftover space: Format/Country first, then Style — stop before
+  // eating the reserved collapsed-header band (Price stays visible).
   const growOrder = [
     ...open.filter((s) => s.key !== "style"),
     ...open.filter((s) => s.key === "style"),
@@ -67,11 +59,10 @@ function distributeVisibleCounts(panelHeight, sections) {
   while (grew && budget > 8) {
     grew = false;
     for (const section of growOrder) {
-      const cap = sectionSoftCap(section);
-      if (counts[section.key] >= cap) continue;
+      if (counts[section.key] >= section.total) continue;
       const step = section.key === "country" ? 2 : 1;
       const from = counts[section.key];
-      const next = Math.min(from + step, cap);
+      const next = Math.min(from + step, section.total);
       const before = estimateSectionBodyHeight(section.key, from, {
         includeMore: from < section.total,
       });
