@@ -15,8 +15,6 @@ export function HeaderAccount({ className = "", compact = false }) {
   const { t } = useLocale();
   const { isSeller } = usePlacCounts();
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const isLaptop = useMediaQuery("(max-width: 1800px)");
-  const compactActions = compact || isMobile || isLaptop;
 
   if (!user) return null;
 
@@ -50,10 +48,10 @@ export function HeaderAccount({ className = "", compact = false }) {
 
   return (
     <div className={`header-account-bar ${className}`.trim()}>
-      <PlacCartLink compact={compactActions} />
-      {isSeller && <PlacOrdersLink compact={compactActions} />}
-      <PlacInboxLink compact={compactActions} />
-      {isSeller && <PlacShopLink compact={compactActions} />}
+      <PlacCartLink compact />
+      {isSeller && <PlacOrdersLink compact />}
+      <PlacInboxLink compact />
+      {isSeller && <PlacShopLink compact />}
       <div className="header-account">
         <Link to="/settings" className="header-account-card">
         <UserAvatar
