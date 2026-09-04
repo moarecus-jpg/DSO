@@ -4536,6 +4536,13 @@ body.modal-open .order-sticky-backdrop {
   padding-bottom: 1.5rem;
 }
 
+.app-main-v2:has(.page-plac-user) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 1.25rem;
+}
+
 .page-orders {
   max-width: none;
 }
@@ -9531,8 +9538,22 @@ img.plac-user-avatar {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
-  align-items: start;
+  align-items: stretch;
   margin-top: 0.35rem;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.page-plac-user {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.page-plac-user .plac-page-header {
+  flex: 0 0 auto;
 }
 
 .plac-dig--filters-open {
@@ -9541,6 +9562,10 @@ img.plac-user-avatar {
 
 .plac-dig-filters {
   min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .plac-dig-filters-toolbar {
@@ -9549,6 +9574,7 @@ img.plac-user-avatar {
   align-items: center;
   gap: 0.35rem;
   margin-bottom: 0.55rem;
+  flex: 0 0 auto;
 }
 
 .plac-dig-filters-toggle {
@@ -9573,6 +9599,10 @@ img.plac-user-avatar {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  max-height: none;
   padding: 1rem 0.95rem 1.1rem;
   border-radius: 1.15rem;
   border: 1px solid rgba(255, 255, 255, 0.07);
@@ -9582,8 +9612,9 @@ img.plac-user-avatar {
     rgba(18, 16, 28, 0.96) 100%
   );
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  max-height: min(74vh, 56rem);
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .plac-dig-filters-header {
@@ -9593,6 +9624,7 @@ img.plac-user-avatar {
   gap: 0.75rem;
   margin-bottom: 0.55rem;
   padding: 0 0.15rem;
+  flex: 0 0 auto;
 }
 
 .plac-dig-filters-heading {
@@ -9620,6 +9652,7 @@ img.plac-user-avatar {
 
 .plac-dig-facet {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
+  flex: 0 0 auto;
 }
 
 .plac-dig-facet:first-of-type {
@@ -9777,6 +9810,12 @@ img.plac-user-avatar {
 
 .plac-dig-main {
   min-width: 0;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .plac-dig-toolbar {
@@ -9785,6 +9824,7 @@ img.plac-user-avatar {
   justify-content: space-between;
   gap: 0.75rem;
   margin-bottom: 0.65rem;
+  flex: 0 0 auto;
 }
 
 .plac-dig-toolbar-count {
@@ -9796,12 +9836,32 @@ img.plac-user-avatar {
 }
 
 @media (max-width: 900px) {
+  .app-main-v2:has(.page-plac-user) {
+    overflow-y: auto;
+  }
+
+  .page-plac-user {
+    height: auto;
+  }
+
+  .plac-dig {
+    flex: none;
+    min-height: 0;
+  }
+
   .plac-dig--filters-open {
     grid-template-columns: 1fr;
   }
 
-  .plac-dig-filters-panel {
+  .plac-dig-filters,
+  .plac-dig-filters-panel,
+  .plac-dig-main {
+    height: auto;
     max-height: none;
+  }
+
+  .plac-dig-filters-panel {
+    max-height: min(28rem, 55vh);
   }
 }
 
