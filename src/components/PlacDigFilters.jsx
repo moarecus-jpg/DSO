@@ -78,6 +78,11 @@ function distributeVisibleCounts(panelHeight, sections) {
     }
   }
 
+  // Leave a little air under Price: show 3 fewer Style rows by default.
+  if (counts.style > 0) {
+    counts.style = Math.max(MIN_VISIBLE, counts.style - 3);
+  }
+
   return counts;
 }
 
