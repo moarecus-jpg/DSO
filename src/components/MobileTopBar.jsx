@@ -1,14 +1,10 @@
 import { Link, useLocation } from "react-router-dom";
-import { Settings } from "lucide-react";
 import { BrandMark } from "./BrandMark.jsx";
-import { NotificationToggle } from "./NotificationToggle.jsx";
 import { StealthModeToggle } from "./StealthModeToggle.jsx";
 import { HeaderAccount } from "./HeaderAccount.jsx";
-import { useLocale } from "../hooks/useLocale.jsx";
 
 export function MobileTopBar() {
   const { pathname } = useLocation();
-  const { t } = useLocale();
 
   if (pathname.startsWith("/session/")) {
     return null;
@@ -22,20 +18,6 @@ export function MobileTopBar() {
 
       <div className="mobile-topbar-actions">
         <StealthModeToggle variant="icon" />
-
-        <NotificationToggle variant="icon" />
-
-        <Link
-          to="/settings"
-          className={`mobile-topbar-icon-btn${
-            pathname === "/settings" ? " mobile-topbar-icon-btn--active" : ""
-          }`}
-          aria-label={t("settings.title")}
-          title={t("settings.title")}
-        >
-          <Settings size={18} />
-        </Link>
-
         <HeaderAccount compact />
       </div>
     </header>
