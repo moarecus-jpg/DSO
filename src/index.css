@@ -4543,19 +4543,12 @@ body.modal-open .order-sticky-backdrop {
   padding-bottom: 1.25rem;
 }
 
-/* Seller dig: lift filters to the vinyl disc top; keep profile on the title baseline. */
+/* Seller dig: filter panel top aligns with mid-avatar / vinyl rim (not above it). */
 @media (min-width: 769px) {
-  .app-main-v2:has(.page-plac-user--dig) {
-    padding-top: calc(
-      var(--page-header-offset, 2rem) - var(--sidebar-logo-disc-inset, 1.26rem)
-    );
-  }
-
-  .page-plac-user--dig .plac-dig-main {
-    padding-top: var(--sidebar-logo-disc-inset, 1.26rem);
-  }
-
   .page-plac-user--dig .plac-dig-filters.is-open {
+    --plac-dig-filter-offset: 1.75rem; /* half of 56px seller avatar */
+    margin-top: var(--plac-dig-filter-offset);
+    height: calc(100% - var(--plac-dig-filter-offset));
     align-self: stretch;
   }
 }
@@ -9595,6 +9588,10 @@ img.plac-user-avatar {
   align-self: stretch;
 }
 
+.plac-dig-filters.is-open {
+  min-height: 0;
+}
+
 .plac-dig-filters-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -9637,9 +9634,9 @@ img.plac-user-avatar {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-height: 0;
-  height: auto;
+  height: 100%;
   max-height: none;
   padding: 0.75rem 0.85rem 0.85rem;
   border-radius: 1.15rem;
@@ -9653,10 +9650,6 @@ img.plac-user-avatar {
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-}
-
-.plac-dig-filters.is-open .plac-dig-filters-panel {
-  flex: 1 1 auto;
 }
 
 .plac-dig-filters-header {

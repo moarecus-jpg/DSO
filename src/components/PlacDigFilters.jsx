@@ -7,25 +7,30 @@ import {
 import { useLocale } from "../hooks/useLocale.jsx";
 
 const MIN_VISIBLE = 6;
-const HEAD_H = 40;
-const PILL_H = 34;
-const CHIP_ROW_H = 36;
-const MORE_H = 26;
-const SECTION_GAP = 8;
-const PANEL_PAD = 24;
+const HEAD_H = 38;
+const PILL_H = 32;
+const CHIP_ROW_H = 34;
+const MORE_H = 22;
+const SECTION_GAP = 4;
+const PANEL_PAD = 20;
 
-function estimateSectionBodyHeight(facetKey, visibleCount) {
+function estimateSectionBodyHeight(facetKey, visibleCount, { includeMore = true } = {}) {
   if (visibleCount <= 0) return 0;
+  const more = includeMore ? MORE_H : 0;
   if (facetKey === "country") {
     const rows = Math.ceil(visibleCount / 2);
-    return rows * CHIP_ROW_H + MORE_H;
+    return rows * CHIP_ROW_H + more;
   }
-  return visibleCount * PILL_H + MORE_H;
+  return visibleCount * PILL_H + more;
 }
 
 function distributeVisibleCounts(panelHeight, sections) {
   const collapsed = sections.filter((s) => !s.open);
   const open = sections.filter((s) => s.open);
+  if (open.length === 0) {
+    return Object.fromEntries(sections.map((s) => [s.key, 0]));
+  }
+
   const collapsedH = collapsed.length * HEAD_H;
   const openHeadsH = open.length * (HEAD_H + SECTION_GAP);
   let budget = Math.max(
@@ -37,21 +42,33 @@ function distributeVisibleCounts(panelHeight, sections) {
 
   for (const section of open) {
     const baseline = Math.min(MIN_VISIBLE, section.total);
-    budget -= estimateSectionBodyHeight(section.key, baseline);
+    const includeMore = baseline < section.total;
+    budget -= estimateSectionBodyHeight(section.key, baseline, { includeMore });
     counts[section.key] = baseline;
   }
 
+  // Prefer filling Style first (usually the longest list), then others.
+  const growOrder = [
+    ...open.filter((s) => s.key === "style"),
+    ...open.filter((s) => s.key !== "style"),
+  ];
+
   let grew = true;
-  while (grew && budget > PILL_H) {
+  while (grew && budget > 8) {
     grew = false;
-    for (const section of open) {
+    for (const section of growOrder) {
       if (counts[section.key] >= section.total) continue;
       const step = section.key === "country" ? 2 : 1;
-      const capped = Math.min(counts[section.key] + step, section.total);
-      const delta =
-        estimateSectionBodyHeight(section.key, capped) -
-        estimateSectionBodyHeight(section.key, counts[section.key]);
-      if (delta <= budget + 1) {
+      const from = counts[section.key];
+      const capped = Math.min(from + step, section.total);
+      const before = estimateSectionBodyHeight(section.key, from, {
+        includeMore: from < section.total,
+      });
+      const after = estimateSectionBodyHeight(section.key, capped, {
+        includeMore: capped < section.total,
+      });
+      const delta = after - before;
+      if (delta <= budget + 2) {
         budget -= delta;
         counts[section.key] = capped;
         grew = true;
@@ -218,14 +235,26 @@ export function PlacDigFilters({ options, selected, onChange, open }) {
 
   useLayoutEffect(() => {
     const node = panelRef.current;
-    if (!node || typeof ResizeObserver === "undefined") return undefined;
-    const ro = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (!entry) return;
-      setPanelHeight(Math.floor(entry.contentRect.height));
-    });
+    if (!node) return undefined;
+
+    const measure = () => {
+      // Use the stretched column height, not content-sized height.
+      const aside = node.parentElement;
+      const h = Math.floor(
+        aside?.clientHeight || node.clientHeight || node.getBoundingClientRect().height
+      );
+      if (h > 0) setPanelHeight(h);
+    };
+
+    measure();
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", measure);
+      return () => window.removeEventListener("resize", measure);
+    }
+
+    const ro = new ResizeObserver(() => measure());
     ro.observe(node);
-    setPanelHeight(Math.floor(node.getBoundingClientRect().height));
+    if (node.parentElement) ro.observe(node.parentElement);
     return () => ro.disconnect();
   }, [open]);
 
