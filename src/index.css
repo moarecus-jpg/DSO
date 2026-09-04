@@ -9938,29 +9938,31 @@ img.plac-user-avatar {
 
 .plac-release-secondary {
   display: grid;
-  grid-template-columns: max-content minmax(13rem, 16rem);
+  grid-template-columns: minmax(0, 1.7fr) minmax(14rem, 0.9fr);
   gap: 0.75rem;
-  align-items: start;
-  justify-content: start;
+  width: 100%;
+  /* Equal column bottoms: Tracklist / Videos / aside align. */
+  align-items: stretch;
+  justify-content: stretch;
 }
 
 .plac-release-secondary:not(:has(.plac-release-secondary-media > :nth-child(2))) {
-  grid-template-columns: max-content minmax(13rem, 16rem);
+  grid-template-columns: minmax(0, 1.25fr) minmax(14rem, 0.9fr);
 }
 
 .plac-release-secondary-media {
   display: grid;
-  grid-template-columns: minmax(14rem, 20rem) max-content;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
   gap: 0.75rem;
   min-width: 0;
-  width: max-content;
-  max-width: 100%;
-  align-items: start;
-  justify-content: start;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  align-items: stretch;
 }
 
 .plac-release-secondary-media:has(> :only-child) {
-  grid-template-columns: max-content;
+  grid-template-columns: 1fr;
 }
 
 .plac-release-secondary-aside {
@@ -9968,9 +9970,23 @@ img.plac-user-avatar {
   flex-direction: column;
   gap: 0.75rem;
   min-width: 0;
+  min-height: 0;
   width: 100%;
-  max-width: 16rem;
-  align-self: start;
+  max-width: none;
+  height: 100%;
+  align-self: stretch;
+}
+
+.plac-release-secondary-aside .plac-release-stats {
+  flex: 0 0 auto;
+}
+
+/* Grow offer card so its bottom matches Videos. */
+.plac-release-secondary-aside .plac-release-offer {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .plac-release-secondary > .card,
@@ -9978,25 +9994,22 @@ img.plac-user-avatar {
 .plac-release-secondary-aside > .card {
   margin-bottom: 0;
   min-width: 0;
-  width: auto;
-  max-width: 100%;
-  height: auto;
-  align-self: start;
+  width: 100%;
+  max-width: none;
+  height: 100%;
   padding: 0.85rem 0.95rem 0.95rem;
 }
 
 .plac-release-secondary-media > .plac-release-tracklist {
-  width: 100%;
-  max-width: 20rem;
-}
-
-.plac-release-secondary-media > .plac-release-media {
-  width: max-content;
-  max-width: min(100%, 36rem);
+  align-self: stretch;
 }
 
 .plac-release-secondary-aside > .card {
   width: 100%;
+}
+
+.plac-release-secondary-aside .plac-release-stats {
+  height: auto;
 }
 
 .plac-release-secondary .plac-release-section-title {
@@ -10005,8 +10018,8 @@ img.plac-user-avatar {
 }
 
 .plac-release-secondary .plac-release-tracklist-body {
-  max-height: 18rem;
-  overflow: auto;
+  max-height: none;
+  overflow: visible;
   min-height: 0;
 }
 
@@ -10040,39 +10053,71 @@ img.plac-user-avatar {
   line-height: 1.4;
 }
 
-/* Card hugs 16:9 player; playlist scrolls beside it. Never stretch/enlarge. */
+/* Fill video + playlist to the existing card bottom — do not grow the card. */
+.plac-release-secondary-media > .plac-release-media {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.plac-release-secondary .plac-release-listen {
+  flex: 0 0 auto;
+}
+
+.plac-release-secondary .plac-release-videos {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.plac-release-secondary .plac-release-videos > .plac-release-section-title {
+  flex: 0 0 auto;
+}
+
 .plac-release-secondary .plac-release-playlist {
-  --plac-player-w: 20rem;
-  --plac-playlist-w: 13.5rem;
-  position: relative;
-  display: block;
-  width: calc(var(--plac-player-w) + 0.55rem + var(--plac-playlist-w));
-  max-width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(11rem, 0.9fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: stretch;
+  width: 100%;
 }
 
 .plac-release-secondary .plac-release-playlist-player {
-  width: var(--plac-player-w);
-  max-width: 100%;
+  width: auto;
+  max-width: none;
   min-width: 0;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .plac-release-secondary .plac-release-video-frame {
-  aspect-ratio: 16 / 9;
+  flex: 1 1 auto;
   width: 100%;
-  height: auto;
+  height: 100%;
   min-height: 0;
+  aspect-ratio: auto;
 }
 
 .plac-release-secondary .plac-release-playlist-list {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: calc(var(--plac-player-w) + 0.55rem);
-  width: var(--plac-playlist-w);
+  position: static;
+  inset: auto;
+  height: 100%;
+  min-height: 0;
+  width: auto;
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: scroll;
   overscroll-behavior: contain;
+  padding-right: 0.2rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  padding-left: 0.45rem;
+  /* Show scrollbar so the video list reads as a list */
   scrollbar-width: thin;
   scrollbar-color: rgba(167, 139, 250, 0.55) rgba(255, 255, 255, 0.06);
   -ms-overflow-style: auto;
@@ -10697,8 +10742,10 @@ img.plac-user-avatar {
     height: auto;
   }
 
+  .plac-release-secondary-aside .plac-release-stats,
   .plac-release-secondary-aside .plac-release-offer {
     flex: none;
+    height: auto;
     margin-top: 0;
   }
 
@@ -10710,6 +10757,7 @@ img.plac-user-avatar {
     width: 100%;
     max-width: none;
     height: auto;
+    align-self: start;
   }
 
   .plac-release-secondary .plac-release-playlist {
