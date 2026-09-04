@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ChevronDown, ChevronRight, SlidersHorizontal } from "lucide-react";
 import {
   PLAC_FACET_DEFAULT_OPEN,
   PLAC_FACET_KEYS,
@@ -91,13 +91,28 @@ function FacetGroup({
   );
 }
 
-export function PlacDigFilters({
-  options,
-  selected,
-  onChange,
-  open,
-  onOpenChange,
-}) {
+export function PlacDigFiltersToggle({ open, onOpenChange, activeCount = 0 }) {
+  const { t } = useLocale();
+
+  return (
+    <button
+      type="button"
+      className={`btn btn-ghost btn-sm plac-dig-filters-toggle${
+        open ? " is-active" : ""
+      }`}
+      onClick={() => onOpenChange(!open)}
+      aria-expanded={open}
+    >
+      <SlidersHorizontal size={16} aria-hidden />
+      {t("plac.facets.filters")}
+      {activeCount > 0 && (
+        <span className="plac-dig-filters-badge">{activeCount}</span>
+      )}
+    </button>
+  );
+}
+
+export function PlacDigFilters({ options, selected, onChange, open }) {
   const { t } = useLocale();
 
   function toggle(facetKey, value) {
@@ -135,59 +150,40 @@ export function PlacDigFilters({
   );
   const hasAnyOptions = visibleKeys.length > 0;
 
+  if (!open) return null;
+
   return (
-    <aside className={`plac-dig-filters${open ? " is-open" : ""}`}>
-      <div className="plac-dig-filters-toolbar">
-        <button
-          type="button"
-          className="btn btn-ghost btn-sm plac-dig-filters-toggle"
-          onClick={() => onOpenChange(!open)}
-          aria-expanded={open}
-        >
-          {open ? (
-            <PanelLeftClose size={16} aria-hidden />
-          ) : (
-            <PanelLeftOpen size={16} aria-hidden />
-          )}
-          {t("plac.facets.filters")}
+    <aside className="plac-dig-filters is-open">
+      <div className="plac-dig-filters-panel">
+        <div className="plac-dig-filters-header">
+          <h2 className="plac-dig-filters-heading">{t("plac.facets.filters")}</h2>
           {activeCount > 0 && (
-            <span className="plac-dig-filters-badge">{activeCount}</span>
-          )}
-        </button>
-      </div>
-
-      {open && (
-        <div className="plac-dig-filters-panel">
-          <div className="plac-dig-filters-header">
-            <h2 className="plac-dig-filters-heading">{t("plac.facets.filters")}</h2>
-            {activeCount > 0 && (
-              <button
-                type="button"
-                className="plac-dig-filters-clear"
-                onClick={clearAll}
-              >
-                {t("plac.facets.clearAll")}
-              </button>
-            )}
-          </div>
-
-          {!hasAnyOptions ? (
-            <p className="muted fine">{t("plac.facets.empty")}</p>
-          ) : (
-            visibleKeys.map((key) => (
-              <FacetGroup
-                key={key}
-                facetKey={key}
-                options={options[key] ?? []}
-                selectedValues={selected[key] ?? []}
-                onToggle={toggle}
-                optionLabel={optionLabel}
-                defaultOpen={PLAC_FACET_DEFAULT_OPEN.has(key)}
-              />
-            ))
+            <button
+              type="button"
+              className="plac-dig-filters-clear"
+              onClick={clearAll}
+            >
+              {t("plac.facets.clearAll")}
+            </button>
           )}
         </div>
-      )}
+
+        {!hasAnyOptions ? (
+          <p className="muted fine">{t("plac.facets.empty")}</p>
+        ) : (
+          visibleKeys.map((key) => (
+            <FacetGroup
+              key={key}
+              facetKey={key}
+              options={options[key] ?? []}
+              selectedValues={selected[key] ?? []}
+              onToggle={toggle}
+              optionLabel={optionLabel}
+              defaultOpen={PLAC_FACET_DEFAULT_OPEN.has(key)}
+            />
+          ))
+        )}
+      </div>
     </aside>
   );
 }

@@ -19,12 +19,14 @@ export function PlacPageHeader({
   onGalleryViewChange,
   backTo,
   titleLeading,
+  navMiddle = null,
 }) {
   const { t } = useLocale();
   const searchEnabled = showSearch && typeof onQueryChange === "function";
   const sellWithBack = Boolean(backTo);
   const showEndSell = showSell && !sellWithBack;
-  const showControlsRow = Boolean(backTo) || showGalleryView || sellWithBack;
+  const showControlsRow =
+    Boolean(backTo) || showGalleryView || sellWithBack || Boolean(navMiddle);
 
   return (
     <header className="plac-page-header">
@@ -67,15 +69,18 @@ export function PlacPageHeader({
       {showControlsRow && (
         <div
           className={`plac-page-header-row plac-page-header-row--controls${
-            backTo ? "" : " plac-page-header-row--controls-only"
+            backTo || navMiddle ? "" : " plac-page-header-row--controls-only"
           }`}
         >
-          {backTo && (
+          {(backTo || navMiddle || sellWithBack) && (
             <div className="plac-page-header-nav">
-              <Link to={backTo.to} className="plac-page-header-back btn btn-ghost">
-                <ArrowLeft size={16} aria-hidden />
-                {backTo.label}
-              </Link>
+              {backTo && (
+                <Link to={backTo.to} className="plac-page-header-back btn btn-ghost">
+                  <ArrowLeft size={16} aria-hidden />
+                  {backTo.label}
+                </Link>
+              )}
+              {navMiddle}
               {sellWithBack && (
                 <PlacToolbarActions onSell={onSell} showSell={showSell} />
               )}

@@ -6,8 +6,12 @@ import {
   createEmptyPlacFacetSelection,
   filterListingsByPlacFacets,
   hasActivePlacFacets,
+  PLAC_FACET_KEYS,
 } from "../../shared/placFacets.js";
-import { PlacDigFilters } from "../components/PlacDigFilters.jsx";
+import {
+  PlacDigFilters,
+  PlacDigFiltersToggle,
+} from "../components/PlacDigFilters.jsx";
 import { PlacListingCard } from "../components/PlacListingCard.jsx";
 import { PlacPageHeader } from "../components/PlacPageHeader.jsx";
 import { PlacSellDialog } from "../components/PlacSellDialog.jsx";
@@ -94,6 +98,12 @@ export function PlacUser() {
       ? t("plac.emptySearch")
       : t("plac.sellerEmpty");
 
+  const activeFacetCount = useMemo(
+    () =>
+      PLAC_FACET_KEYS.reduce((sum, key) => sum + (facets[key]?.length ?? 0), 0),
+    [facets]
+  );
+
   const pageHeader = (
     <PlacPageHeader
       backTo={{ to: "/plac", label: t("plac.backToMarketplace") }}
@@ -116,6 +126,15 @@ export function PlacUser() {
       showGalleryView={showDig && filteredListings.length > 0}
       galleryView={view}
       onGalleryViewChange={setView}
+      navMiddle={
+        showDig ? (
+          <PlacDigFiltersToggle
+            open={filtersOpen}
+            onOpenChange={setFiltersOpen}
+            activeCount={activeFacetCount}
+          />
+        ) : null
+      }
     />
   );
 
@@ -145,7 +164,6 @@ export function PlacUser() {
             selected={facets}
             onChange={setFacets}
             open={filtersOpen}
-            onOpenChange={setFiltersOpen}
           />
 
           <div className="plac-dig-main">

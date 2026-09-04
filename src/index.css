@@ -4543,6 +4543,23 @@ body.modal-open .order-sticky-backdrop {
   padding-bottom: 1.25rem;
 }
 
+/* Seller dig: lift filters to the vinyl disc top; keep profile on the title baseline. */
+@media (min-width: 769px) {
+  .app-main-v2:has(.page-plac-user--dig) {
+    padding-top: calc(
+      var(--page-header-offset, 2rem) - var(--sidebar-logo-disc-inset, 1.26rem)
+    );
+  }
+
+  .page-plac-user--dig .plac-dig-main {
+    padding-top: var(--sidebar-logo-disc-inset, 1.26rem);
+  }
+
+  .page-plac-user--dig .plac-dig-filters.is-open {
+    align-self: stretch;
+  }
+}
+
 .page-orders {
   max-width: none;
 }
@@ -9536,7 +9553,7 @@ img.plac-user-avatar {
 
 .plac-dig {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem 1.15rem;
   align-items: stretch;
   margin-top: 0;
@@ -9569,10 +9586,6 @@ img.plac-user-avatar {
   grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr);
 }
 
-.plac-dig:not(.plac-dig--filters-open) {
-  grid-template-columns: auto minmax(0, 1fr);
-}
-
 .plac-dig-filters {
   min-width: 0;
   min-height: 0;
@@ -9593,6 +9606,17 @@ img.plac-user-avatar {
 
 .plac-dig-filters-toggle {
   gap: 0.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.plac-dig-filters-toggle.is-active {
+  border-color: rgba(167, 139, 250, 0.45);
+  background: rgba(124, 58, 237, 0.18);
+  color: #ede9fe;
+}
+
+.plac-page-header-nav .plac-dig-filters-toggle {
+  flex-shrink: 0;
 }
 
 .plac-dig-filters-badge {
