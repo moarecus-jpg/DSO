@@ -5123,14 +5123,6 @@ body.modal-open .order-sticky-backdrop {
   background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
 }
 
-.sidebar-link-v2.active .sidebar-link-icon--plac-inbox {
-  background: linear-gradient(135deg, #38bdf8 0%, #6366f1 100%);
-}
-
-.sidebar-link-v2.active .sidebar-link-icon--plac-shop {
-  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
-}
-
 .sidebar-link-label {
   min-width: 0;
   flex: 1;
@@ -5616,6 +5608,11 @@ body.modal-open .order-sticky-backdrop {
 }
 
 .plac-cart-link-compact {
+  position: relative;
+}
+
+.plac-inbox-link-compact,
+.plac-shop-link-compact {
   position: relative;
 }
 
@@ -10065,8 +10062,18 @@ img.plac-user-avatar {
   gap: 0.4rem;
 }
 
+.plac-inbox-link,
+.plac-shop-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .plac-cart-link.active,
-.plac-orders-link.active {
+.plac-orders-link.active,
+.plac-inbox-link.active,
+.plac-shop-link.active {
   border-color: rgba(139, 92, 246, 0.45);
   background: rgba(124, 58, 237, 0.16);
   color: #fff;

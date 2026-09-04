@@ -6,10 +6,8 @@ import {
   ChevronRight,
   CircleOff,
   Folder,
-  Inbox,
   Lock,
   Package,
-  Percent,
   Plus,
   Settings,
   Store,
@@ -80,19 +78,6 @@ const PLAC_LINKS = [
     iconClass: "plac-mine",
     labelKey: "placMine",
     countKey: "placMine",
-  },
-  {
-    to: "/plac/inbox",
-    icon: Inbox,
-    iconClass: "plac-inbox",
-    labelKey: "placInbox",
-    countKey: "placInbox",
-  },
-  {
-    to: "/plac/shop",
-    icon: Percent,
-    iconClass: "plac-shop",
-    labelKey: "placShop",
   },
 ];
 
@@ -183,11 +168,7 @@ export function Sidebar() {
             {PLAC_LINKS.map((item) => {
               const Icon = item.icon;
               const count =
-                item.countKey === "placMine"
-                  ? placCounts?.mine
-                  : item.countKey === "placInbox"
-                    ? placCounts?.inboxUnread
-                    : 0;
+                item.countKey === "placMine" ? placCounts?.mine : 0;
 
               return (
                 <NavLink

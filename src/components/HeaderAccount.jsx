@@ -5,7 +5,9 @@ import { useLocale } from "../hooks/useLocale.jsx";
 import { useMediaQuery } from "../hooks/useMediaQuery.js";
 import { usePlacCounts } from "../hooks/usePlacCounts.js";
 import { PlacCartLink } from "./PlacCartLink.jsx";
+import { PlacInboxLink } from "./PlacInboxLink.jsx";
 import { PlacOrdersLink } from "./PlacOrdersLink.jsx";
+import { PlacShopLink } from "./PlacShopLink.jsx";
 import { UserAvatar } from "./UserAvatar.jsx";
 
 export function HeaderAccount({ className = "", compact = false }) {
@@ -22,6 +24,8 @@ export function HeaderAccount({ className = "", compact = false }) {
       <div className={`header-account-bar header-account-bar--compact ${className}`.trim()}>
         <PlacCartLink compact />
         {isSeller && <PlacOrdersLink compact />}
+        <PlacInboxLink compact />
+        {isSeller && <PlacShopLink compact />}
         <Link
           to="/settings"
           className="mobile-topbar-account-btn"
@@ -47,6 +51,8 @@ export function HeaderAccount({ className = "", compact = false }) {
     <div className={`header-account-bar ${className}`.trim()}>
       <PlacCartLink compact={compactActions} />
       {isSeller && <PlacOrdersLink compact={compactActions} />}
+      <PlacInboxLink compact={compactActions} />
+      {isSeller && <PlacShopLink compact={compactActions} />}
       <div className="header-account">
         <Link to="/settings" className="header-account-card">
         <UserAvatar
