@@ -6,7 +6,7 @@ import {
 } from "../../shared/placFacets.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 
-const INITIAL_VISIBLE = 7;
+const COLLAPSED_VISIBLE = 8;
 
 function FacetGroup({
   facetKey,
@@ -18,10 +18,11 @@ function FacetGroup({
 }) {
   const { t } = useLocale();
   const [open, setOpen] = useState(defaultOpen);
-  const [showAll, setShowAll] = useState(false);
+  // Show the full list by default so the rail fills top-to-bottom.
+  const [showAll, setShowAll] = useState(true);
 
-  const visible = showAll ? options : options.slice(0, INITIAL_VISIBLE);
-  const canShowMore = options.length > INITIAL_VISIBLE;
+  const visible = showAll ? options : options.slice(0, COLLAPSED_VISIBLE);
+  const canToggleList = options.length > COLLAPSED_VISIBLE;
   const isChip = facetKey === "country";
   const activeInGroup = selectedValues.length;
 
@@ -76,7 +77,7 @@ function FacetGroup({
               );
             })}
           </div>
-          {canShowMore && (
+          {canToggleList && (
             <button
               type="button"
               className="plac-dig-facet-more"

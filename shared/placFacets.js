@@ -74,7 +74,15 @@ export const PLAC_FACET_KEYS = [
 ];
 
 /** Facets shown expanded by default in the dig sidebar. */
-export const PLAC_FACET_DEFAULT_OPEN = new Set(["style", "format", "country"]);
+export const PLAC_FACET_DEFAULT_OPEN = new Set([
+  "style",
+  "format",
+  "country",
+  "year",
+  "condition",
+  "price",
+  "category",
+]);
 
 export function hasActivePlacFacets(selected) {
   return Object.values(selected ?? {}).some((values) => values.length > 0);
