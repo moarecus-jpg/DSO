@@ -1,13 +1,15 @@
-import { List, Maximize2 } from "lucide-react";
+import { List, Maximize2, Minimize2 } from "lucide-react";
 import { PLAC_GALLERY_VIEWS } from "../hooks/usePlacGalleryView.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 
 const VIEW_ICONS = {
+  compact: Minimize2,
   large: Maximize2,
   list: List,
 };
 
 const VIEW_LABEL_KEYS = {
+  compact: "plac.viewCompact",
   large: "plac.viewLarge",
   list: "plac.viewList",
 };

@@ -8713,6 +8713,169 @@ a.order-preview-item-title:hover {
   gap: 1rem;
 }
 
+.plac-grid--compact {
+  grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+  gap: 0.7rem;
+}
+
+.plac-grid--compact .plac-card {
+  border-radius: 0.75rem;
+}
+
+.plac-grid--compact .plac-card-body {
+  padding: 0.55rem 0.6rem 0.65rem;
+  gap: 0.28rem;
+}
+
+.plac-grid--compact .plac-card-title,
+.plac-grid--compact .plac-card-title--plain {
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plac-grid--compact .plac-card-title svg {
+  display: none;
+}
+
+.plac-grid--compact .plac-card-release-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.plac-grid--compact .plac-card-meta {
+  flex-wrap: nowrap;
+  gap: 0.2rem 0.3rem;
+  font-size: 0.62rem;
+  overflow: hidden;
+}
+
+.plac-grid--compact .plac-card-meta span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.plac-grid--compact .plac-card-meta span::after {
+  margin-left: 0.3rem;
+}
+
+.plac-grid--compact .plac-card-format {
+  margin: 0;
+  font-size: 0.6rem;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plac-grid--compact .plac-card-conditions {
+  flex-wrap: nowrap;
+  gap: 0.2rem;
+  overflow: hidden;
+}
+
+.plac-grid--compact .plac-card-condition {
+  padding: 0.08rem 0.32rem;
+  font-size: 0.58rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.plac-grid--compact .plac-card-note {
+  margin: 0;
+  font-size: 0.6rem;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plac-grid--compact .plac-card-bottom {
+  gap: 0.25rem;
+  padding-top: 0.15rem;
+}
+
+.plac-grid--compact .plac-card-footer {
+  justify-content: center;
+  width: 100%;
+  gap: 0.35rem;
+}
+
+.plac-grid--compact .plac-card-price,
+.plac-grid--compact .plac-price {
+  font-size: 0.86rem;
+}
+
+.plac-grid--compact .plac-price-original {
+  font-size: 0.68rem;
+}
+
+.plac-grid--compact .plac-price-badge {
+  font-size: 0.58rem;
+  padding: 0.06rem 0.28rem;
+}
+
+.plac-grid--compact .plac-card-seller {
+  gap: 0.28rem;
+}
+
+.plac-grid--compact .plac-card-seller img,
+.plac-grid--compact .plac-card-seller > span {
+  width: 1.15rem !important;
+  height: 1.15rem !important;
+  font-size: 0.55rem;
+  flex-shrink: 0;
+}
+
+.plac-grid--compact .plac-card-seller-name {
+  font-size: 0.6rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plac-grid--compact .plac-card-actions {
+  justify-content: center;
+  flex-wrap: nowrap;
+  width: 100%;
+  min-height: unset;
+  gap: 0.25rem;
+}
+
+.plac-grid--compact .plac-card-icon-btn {
+  width: 1.85rem;
+  height: 1.85rem;
+}
+
+.plac-grid--compact .plac-card-category,
+.plac-grid--compact .plac-card-sale {
+  top: 0.35rem;
+  font-size: 0.58rem;
+  padding: 0.12rem 0.32rem;
+}
+
+.plac-grid--compact .plac-card-category {
+  left: 0.35rem;
+}
+
+.plac-grid--compact .plac-card-sale {
+  right: 0.35rem;
+}
+
+.plac-grid--compact .plac-status {
+  font-size: 0.58rem;
+}
+
 .plac-grid--large {
   grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr));
   gap: 1.15rem;

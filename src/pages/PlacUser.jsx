@@ -205,7 +205,7 @@ export function PlacUser() {
                     showSeller={false}
                     showCart
                     detailLink
-                    iconActions={view === "large"}
+                    iconActions={view === "large" || view === "compact"}
                   />
                 ))}
               </div>
