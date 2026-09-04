@@ -134,7 +134,6 @@ export function PlacUser() {
             onChange={setFacets}
             open={filtersOpen}
             onOpenChange={setFiltersOpen}
-            resultCount={filteredListings.length}
           />
 
           <div className="plac-dig-main">
