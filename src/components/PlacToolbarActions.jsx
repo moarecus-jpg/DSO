@@ -8,9 +8,9 @@ export function PlacToolbarActions({ onSell, showSell = true }) {
 
   return (
     <div className="plac-toolbar-actions">
-      <button type="button" className="btn btn-primary plac-sell-btn" onClick={onSell}>
+      <button type="button" className="btn btn-primary plac-sell-btn" onClick={onSell} aria-label={t("plac.sell")}>
         <Plus size={18} aria-hidden />
-        {t("plac.sell")}
+        <span className="ui-label">{t("plac.sell")}</span>
       </button>
     </div>
   );

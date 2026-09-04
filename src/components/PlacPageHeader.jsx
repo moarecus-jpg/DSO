@@ -75,9 +75,14 @@ export function PlacPageHeader({
           {(backTo || navMiddle || sellWithBack) && (
             <div className="plac-page-header-nav">
               {backTo && (
-                <Link to={backTo.to} className="plac-page-header-back btn btn-ghost">
+                <Link
+                  to={backTo.to}
+                  className="plac-page-header-back btn btn-ghost"
+                  aria-label={backTo.label}
+                  title={backTo.label}
+                >
                   <ArrowLeft size={16} aria-hidden />
-                  {backTo.label}
+                  <span className="ui-label">{backTo.label}</span>
                 </Link>
               )}
               {navMiddle}

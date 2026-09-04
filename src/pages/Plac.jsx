@@ -22,7 +22,7 @@ import { useLocale } from "../hooks/useLocale.jsx";
 import { useMediaQuery } from "../hooks/useMediaQuery.js";
 import { usePlacGalleryView } from "../hooks/usePlacGalleryView.js";
 
-const NARROW_DIG_MQ = "(max-width: 1100px)";
+const NARROW_DIG_MQ = "(max-width: 1500px)";
 
 export function Plac() {
   const { t } = useLocale();

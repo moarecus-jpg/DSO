@@ -15,7 +15,8 @@ export function HeaderAccount({ className = "", compact = false }) {
   const { t } = useLocale();
   const { isSeller } = usePlacCounts();
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const compactActions = compact || isMobile;
+  const isLaptop = useMediaQuery("(max-width: 1500px)");
+  const compactActions = compact || isMobile || isLaptop;
 
   if (!user) return null;
 

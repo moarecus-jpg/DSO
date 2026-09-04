@@ -22,7 +22,7 @@ import { useMediaQuery } from "../hooks/useMediaQuery.js";
 import { usePlacGalleryView } from "../hooks/usePlacGalleryView.js";
 import { resolveUserAvatarUrl } from "../utils/userAvatarUrl.js";
 
-const NARROW_DIG_MQ = "(max-width: 1100px)";
+const NARROW_DIG_MQ = "(max-width: 1500px)";
 
 function sellerLabel(seller) {
   if (seller?.discogsUsername) return `@${seller.discogsUsername}`;

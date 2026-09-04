@@ -15,7 +15,7 @@ const CHIP_ROW_H = 34;
 const MORE_H = 24;
 const SECTION_GAP = 4;
 const PANEL_PAD = 20;
-const NARROW_DIG_MQ = "(max-width: 1100px)";
+const NARROW_DIG_MQ = "(max-width: 1500px)";
 
 function estimateSectionBodyHeight(facetKey, visibleCount, { includeMore = true } = {}) {
   if (visibleCount <= 0) return 0;
@@ -188,9 +188,11 @@ export function PlacDigFiltersToggle({ open, onOpenChange, activeCount = 0 }) {
       }`}
       onClick={() => onOpenChange(!open)}
       aria-expanded={open}
+      aria-label={t("plac.facets.filters")}
+      title={t("plac.facets.filters")}
     >
       <SlidersHorizontal size={16} aria-hidden />
-      {t("plac.facets.filters")}
+      <span className="ui-label">{t("plac.facets.filters")}</span>
       {activeCount > 0 && (
         <span className="plac-dig-filters-badge">{activeCount}</span>
       )}
