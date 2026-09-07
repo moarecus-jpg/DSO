@@ -4,6 +4,7 @@ import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { useMediaQuery } from "../hooks/useMediaQuery.js";
 import { usePlacCounts } from "../hooks/usePlacCounts.js";
+import { CommunitySwitcher } from "./CommunitySwitcher.jsx";
 import { PlacCartLink } from "./PlacCartLink.jsx";
 import { PlacInboxLink } from "./PlacInboxLink.jsx";
 import { PlacOrdersLink } from "./PlacOrdersLink.jsx";
@@ -21,6 +22,7 @@ export function HeaderAccount({ className = "", compact = false }) {
   if (compact) {
     return (
       <div className={`header-account-bar header-account-bar--compact ${className}`.trim()}>
+        <CommunitySwitcher compact />
         <PlacCartLink compact />
         {isSeller && <PlacOrdersLink compact />}
         <PlacInboxLink compact />
@@ -48,35 +50,36 @@ export function HeaderAccount({ className = "", compact = false }) {
 
   return (
     <div className={`header-account-bar ${className}`.trim()}>
+      <CommunitySwitcher />
       <PlacCartLink compact />
       {isSeller && <PlacOrdersLink compact />}
       <PlacInboxLink compact />
       {isSeller && <PlacShopLink compact />}
       <div className="header-account">
         <Link to="/settings" className="header-account-card">
-        <UserAvatar
-          name={user.name}
-          avatarUrl={user.discogsConnected ? user.discogsAvatarUrl : user.picture}
-          className="header-account-avatar"
-          size={34}
-        />
-        <div className="header-account-text">
-          <p className="header-account-name">{user.name}</p>
-          <p className="header-account-meta">
-            {user.isAdmin ? t("nav.admin") : t("settings.title")}
-          </p>
-        </div>
-        <ChevronDown size={16} className="header-account-chevron" aria-hidden />
-      </Link>
-      <button
-        type="button"
-        className="header-account-logout"
-        onClick={logout}
-        aria-label={t("nav.logout")}
-        title={t("nav.logout")}
-      >
-        <LogOut size={16} aria-hidden />
-      </button>
+          <UserAvatar
+            name={user.name}
+            avatarUrl={user.discogsConnected ? user.discogsAvatarUrl : user.picture}
+            className="header-account-avatar"
+            size={34}
+          />
+          <div className="header-account-text">
+            <p className="header-account-name">{user.name}</p>
+            <p className="header-account-meta">
+              {user.isAdmin ? t("nav.admin") : t("settings.title")}
+            </p>
+          </div>
+          <ChevronDown size={16} className="header-account-chevron" aria-hidden />
+        </Link>
+        <button
+          type="button"
+          className="header-account-logout"
+          onClick={logout}
+          aria-label={t("nav.logout")}
+          title={t("nav.logout")}
+        >
+          <LogOut size={16} aria-hidden />
+        </button>
       </div>
     </div>
   );

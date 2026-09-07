@@ -16,7 +16,6 @@ import { useLocale } from "../hooks/useLocale.jsx";
 import { BrandMark } from "./BrandMark.jsx";
 import { StealthModeToggle } from "./StealthModeToggle.jsx";
 import { NotificationToggle } from "./NotificationToggle.jsx";
-import { CommunitySwitcher } from "./CommunitySwitcher.jsx";
 import { api } from "../api.js";
 
 const ORDER_LINKS = [
@@ -105,7 +104,6 @@ export function Sidebar() {
         <Link to="/" className="sidebar-brand" title="DSO — Discogs Slovenia Orders">
           <BrandMark variant="sidebar" />
         </Link>
-        <CommunitySwitcher />
 
         <NavLink
           to={{ pathname, search: "?new=1" }}

@@ -12001,11 +12001,21 @@ img.plac-user-avatar {
   }
 }
 
-/* Community switcher + setup */
+/* Community switcher (header) */
 .community-switcher {
   position: relative;
   z-index: 5;
-  width: 100%;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 13.5rem;
+}
+
+.community-switcher--header {
+  width: auto;
+}
+
+.community-switcher--compact {
+  max-width: 9.5rem;
 }
 
 .community-switcher-trigger {
@@ -12013,15 +12023,20 @@ img.plac-user-avatar {
   align-items: center;
   gap: 0.4rem;
   width: 100%;
-  padding: 0.45rem 0.55rem;
+  max-width: 100%;
+  padding: 0.4rem 0.6rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.55rem;
+  border-radius: 0.65rem;
   background: rgba(255, 255, 255, 0.04);
   color: rgba(244, 244, 245, 0.92);
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
   text-align: left;
+}
+
+.header-account-bar .community-switcher-trigger {
+  min-height: 2.15rem;
 }
 
 .community-switcher-trigger:hover {
@@ -12039,8 +12054,9 @@ img.plac-user-avatar {
 .community-switcher-menu {
   position: absolute;
   top: calc(100% + 0.35rem);
-  left: 0;
   right: 0;
+  left: auto;
+  min-width: max(100%, 12rem);
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
@@ -12082,24 +12098,15 @@ img.plac-user-avatar {
   font-size: 0.72rem;
 }
 
-.mobile-topbar-community {
-  display: none;
-  flex: 1;
-  min-width: 0;
-  justify-content: center;
+@media (max-width: 1100px) {
+  .community-switcher:not(.community-switcher--compact) {
+    max-width: 10.5rem;
+  }
 }
 
 @media (max-width: 768px) {
-  .mobile-topbar-community {
-    display: flex;
-  }
-
-  .mobile-topbar-community .community-switcher {
-    max-width: 11rem;
-  }
-
-  .sidebar-v2 .community-switcher {
-    display: none;
+  .community-switcher--compact .community-switcher-name {
+    max-width: 5.5rem;
   }
 }
 
