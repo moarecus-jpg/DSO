@@ -8861,7 +8861,7 @@ a.order-preview-item-title:hover {
   max-width: 100%;
   flex-wrap: nowrap;
   justify-content: flex-end;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .plac-page-header-end .plac-toolbar-actions {
@@ -8957,13 +8957,6 @@ a.order-preview-item-title:hover {
   background: linear-gradient(135deg, rgba(124, 58, 237, 0.45), rgba(99, 102, 241, 0.35));
   color: #fff;
   box-shadow: 0 4px 16px rgba(124, 58, 237, 0.2);
-}
-
-.plac-sell-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  flex-shrink: 0;
 }
 
 .plac-grid {
@@ -10758,6 +10751,18 @@ img.plac-user-avatar {
   align-items: center;
   gap: 0.5rem;
   flex-shrink: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.plac-sell-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
 }
 
 .plac-cart-link {
