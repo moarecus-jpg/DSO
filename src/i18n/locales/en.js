@@ -941,9 +941,18 @@ export default {
     regenerateConfirm:
       "Generate a new invite code? The old link and QR will stop working.",
     regenerateError: "Could not regenerate invite code.",
+    inviteByEmailTitle: "Invite by email",
+    inviteByEmailHint:
+      "We’ll email the invite link, code, and a QR code they can scan.",
+    inviteEmailPlaceholder: "friend@example.com",
+    inviteEmailSend: "Send invite",
+    inviteEmailSent: "Invite sent to {{email}}",
+    inviteEmailError: "Could not send invite email.",
+    inviteEmailInvalid: "Enter a valid email address.",
     membersTitle: "Members",
     membersHint: "People in {{name}}.",
     membersEmpty: "No members yet.",
+    showMembers: "Show members",
     roleOwner: "Owner",
     roleAdmin: "Admin",
     roleMember: "Member",

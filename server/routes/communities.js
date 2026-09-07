@@ -26,6 +26,9 @@ import {
 import { googleConfigured } from "../auth/google.js";
 import { MOCK_USER } from "../mock.js";
 import { isAppAdmin } from "../auth/appAdmin.js";
+import { appBaseUrl } from "../appUrl.js";
+import { isDeliverableEmail } from "../email/mailer.js";
+import { sendCommunityInviteEmail } from "../email/notifications.js";
 
 const router = Router();
 
@@ -252,6 +255,51 @@ router.post("/:id/regenerate-invite", requireUser, (req, res) => {
   } catch (err) {
     res.status(403).json({ error: err.message ?? "Could not regenerate invite." });
   }
+});
+
+router.post("/:id/invite-email", requireUser, async (req, res) => {
+  const email = String(req.body?.email ?? "").trim().toLowerCase();
+  if (!isDeliverableEmail(email)) {
+    return res.status(400).json({ error: "Enter a valid email address." });
+  }
+
+  const community = getCommunityForMember(req.params.id, req.session.userId);
+  if (!community) {
+    return res.status(403).json({ error: "You are not a member of this community." });
+  }
+  if (!["owner", "admin"].includes(community.role)) {
+    return res.status(403).json({
+      error: "Only community owners or admins can send invite emails.",
+    });
+  }
+
+  const publicRow = publicCommunity(community, { includeInvite: true });
+  if (!publicRow?.inviteCode) {
+    return res.status(400).json({ error: "This community has no invite code." });
+  }
+
+  const sender = findUserById(req.session.userId);
+  const result = await sendCommunityInviteEmail({
+    baseUrl: appBaseUrl(req),
+    to: email,
+    community: publicRow,
+    invitedByName: sender?.name ?? sender?.username ?? sender?.email ?? null,
+  });
+
+  if (!result.ok && result.reason !== undefined && result.reason !== "invalid_recipient") {
+    const status = result.reason === "not_configured" ? 503 : 502;
+    return res.status(status).json({
+      error:
+        result.reason === "not_configured"
+          ? "Email is not configured on the server."
+          : "Could not send the invite email.",
+    });
+  }
+  if (!result.ok) {
+    return res.status(400).json({ error: "Enter a valid email address." });
+  }
+
+  res.json({ ok: true, email, community: publicRow });
 });
 
 router.post("/:id/transfer-ownership", requireUser, (req, res) => {

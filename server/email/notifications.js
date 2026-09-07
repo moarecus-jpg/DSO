@@ -1,3 +1,4 @@
+import QRCode from "qrcode";
 import { sendEmail } from "./mailer.js";
 import {
   listUsersForNewOrderNotifications,
@@ -120,4 +121,69 @@ export async function sendPasswordResetEmail({ baseUrl, user, token }) {
 <p>If you did not request this, you can ignore this email.</p>`;
 
   return sendEmail({ to: user.email, subject, text, html });
+}
+
+export async function sendCommunityInviteEmail({
+  baseUrl,
+  to,
+  community,
+  invitedByName,
+}) {
+  const inviteCode = community?.inviteCode ?? community?.invite_code;
+  if (!inviteCode) {
+    return { ok: false, reason: "missing_invite_code" };
+  }
+
+  const origin = baseUrl.replace(/\/$/, "");
+  const inviteUrl = `${origin}/invite/${encodeURIComponent(inviteCode)}`;
+  const communityName = community.name ?? "a community";
+  const fromName = invitedByName?.trim() || "A Diggers community member";
+
+  let qrBuffer = null;
+  try {
+    qrBuffer = await QRCode.toBuffer(inviteUrl, {
+      type: "png",
+      width: 440,
+      margin: 1,
+      color: { dark: "#111113", light: "#ffffff" },
+    });
+  } catch (err) {
+    console.error("[email] QR generation failed:", err.message);
+  }
+
+  const subject = `DSO: You're invited to ${communityName}`;
+  const text = `${fromName} invited you to join ${communityName} on Diggers Community Orders (DSO).
+
+Invite code: ${inviteCode}
+
+Open this link to join:
+${inviteUrl}
+
+Or scan the attached QR code (if your email client shows attachments).`;
+
+  const qrHtml = qrBuffer
+    ? `<p><img src="cid:invite-qr" alt="Invite QR code" width="220" height="220" style="display:block;border:0;border-radius:12px;" /></p>
+<p style="color:#666;font-size:13px;">Scan the QR code, or use the invite code / link above.</p>`
+    : `<p style="color:#666;font-size:13px;">Use the invite code or link above to join.</p>`;
+
+  const html = `<p><strong>${fromName}</strong> invited you to join <strong>${communityName}</strong> on Diggers Community Orders (DSO).</p>
+<p>Invite code: <strong style="letter-spacing:0.06em;">${inviteCode}</strong></p>
+<p><a href="${inviteUrl}">Open invite</a></p>
+${qrHtml}`;
+
+  return sendEmail({
+    to,
+    subject,
+    text,
+    html,
+    attachments: qrBuffer
+      ? [
+          {
+            filename: "dso-invite-qr.png",
+            content: qrBuffer,
+            contentId: "invite-qr",
+          },
+        ]
+      : undefined,
+  });
 }

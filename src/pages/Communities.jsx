@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -10,6 +11,7 @@ import {
   RefreshCw,
   UserPlus,
   Users,
+  X,
 } from "lucide-react";
 import QRCode from "qrcode";
 import { api } from "../api.js";
@@ -413,10 +415,15 @@ export function CommunitiesSetup() {
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [members, setMembers] = useState([]);
   const [membersLoading, setMembersLoading] = useState(false);
+  const [membersOpen, setMembersOpen] = useState(false);
   const [regenBusy, setRegenBusy] = useState(false);
   const [leaveBusy, setLeaveBusy] = useState(false);
   const [transferBusyId, setTransferBusyId] = useState(null);
   const [manageError, setManageError] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteEmailBusy, setInviteEmailBusy] = useState(false);
+  const [inviteEmailMsg, setInviteEmailMsg] = useState("");
+  const [inviteEmailErr, setInviteEmailErr] = useState("");
 
   const communities = user?.communities ?? [];
   const active = user?.activeCommunity ?? null;
@@ -484,8 +491,28 @@ export function CommunitiesSetup() {
   }, [loadRequests]);
 
   useEffect(() => {
+    if (!membersOpen) return undefined;
     loadMembers();
-  }, [loadMembers]);
+    document.body.classList.add("modal-open");
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function onKeyDown(event) {
+      if (event.key === "Escape") setMembersOpen(false);
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.classList.remove("modal-open");
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [membersOpen, loadMembers]);
+
+  useEffect(() => {
+    setMembersOpen(false);
+    setMembers([]);
+  }, [active?.id]);
 
   if (!communities.length) {
     return <Navigate to="/join" replace />;
@@ -528,6 +555,34 @@ export function CommunitiesSetup() {
       setManageError(err.message ?? t("communities.regenerateError"));
     } finally {
       setRegenBusy(false);
+    }
+  }
+
+  async function sendInviteEmail(e) {
+    e.preventDefault();
+    if (!active?.id || inviteEmailBusy) return;
+    const email = inviteEmail.trim();
+    if (!email.includes("@")) {
+      setInviteEmailErr(t("communities.inviteEmailInvalid"));
+      setInviteEmailMsg("");
+      return;
+    }
+    setInviteEmailBusy(true);
+    setInviteEmailErr("");
+    setInviteEmailMsg("");
+    try {
+      const data = await api(`/api/communities/${active.id}/invite-email`, {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      });
+      setInviteEmailMsg(
+        t("communities.inviteEmailSent", { email: data.email ?? email })
+      );
+      setInviteEmail("");
+    } catch (err) {
+      setInviteEmailErr(err.message ?? t("communities.inviteEmailError"));
+    } finally {
+      setInviteEmailBusy(false);
     }
   }
 
@@ -702,7 +757,17 @@ export function CommunitiesSetup() {
                   </span>
                 </div>
                 {isActive ? (
-                  <span className="communities-active-pill">{t("communities.active")}</span>
+                  <div className="communities-list-actions">
+                    <span className="communities-active-pill">{t("communities.active")}</span>
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={() => setMembersOpen(true)}
+                    >
+                      <Users size={16} strokeWidth={2.2} aria-hidden />
+                      {t("communities.showMembers")}
+                    </button>
+                  </div>
                 ) : (
                   <button
                     type="button"
@@ -717,6 +782,21 @@ export function CommunitiesSetup() {
             );
           })}
         </ul>
+
+        {active ? (
+          <div className="communities-leave-row">
+            <button
+              type="button"
+              className="btn btn-ghost communities-leave-btn"
+              disabled={leaveBusy}
+              onClick={leaveActive}
+            >
+              <LogOut size={16} strokeWidth={2.2} aria-hidden />
+              {leaveBusy ? t("common.loading") : t("communities.leave")}
+            </button>
+            <p className="muted fine">{t("communities.leaveHint")}</p>
+          </div>
+        ) : null}
       </div>
 
       {active?.inviteCode ? (
@@ -769,6 +849,47 @@ export function CommunitiesSetup() {
           ) : null}
 
           {canManageActive ? (
+            <form
+              className="communities-invite-email"
+              onSubmit={sendInviteEmail}
+            >
+              <div>
+                <strong>{t("communities.inviteByEmailTitle")}</strong>
+                <p className="muted fine">{t("communities.inviteByEmailHint")}</p>
+              </div>
+              <div className="communities-invite-email-row">
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => {
+                    setInviteEmail(e.target.value);
+                    setInviteEmailErr("");
+                    setInviteEmailMsg("");
+                  }}
+                  placeholder={t("communities.inviteEmailPlaceholder")}
+                  autoComplete="email"
+                  required
+                />
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={inviteEmailBusy || !inviteEmail.trim()}
+                >
+                  {inviteEmailBusy
+                    ? t("common.loading")
+                    : t("communities.inviteEmailSend")}
+                </button>
+              </div>
+              {inviteEmailMsg ? (
+                <p className="communities-invite-email-ok">{inviteEmailMsg}</p>
+              ) : null}
+              {inviteEmailErr ? (
+                <p className="error communities-invite-email-err">{inviteEmailErr}</p>
+              ) : null}
+            </form>
+          ) : null}
+
+          {canManageActive ? (
             <label className="communities-listed-toggle communities-listed-toggle--manage">
               <input
                 type="checkbox"
@@ -785,71 +906,82 @@ export function CommunitiesSetup() {
         </div>
       ) : null}
 
-      {active ? (
-        <div className="card settings-card communities-card">
-          <div className="communities-card-head">
-            <span className="communities-card-icon" aria-hidden>
-              <Users size={20} strokeWidth={2.1} />
-            </span>
-            <div>
-              <h2>{t("communities.membersTitle")}</h2>
-              <p className="muted settings-privacy-hint">
-                {t("communities.membersHint", { name: active.name })}
-              </p>
-            </div>
-          </div>
-
-          {membersLoading ? (
-            <p className="muted">{t("common.loading")}</p>
-          ) : members.length === 0 ? (
-            <p className="muted">{t("communities.membersEmpty")}</p>
-          ) : (
-            <ul className="communities-list">
-              {members.map((member) => {
-                const isSelf = member.id === user?.id;
-                return (
-                  <li key={member.id} className="communities-list-item">
-                    <div className="communities-list-meta">
-                      <strong>{memberDisplayName(member)}</strong>
-                      <span className="muted fine">
-                        {roleLabel(member.role)}
-                        {isSelf ? ` · ${t("communities.you")}` : null}
-                      </span>
-                    </div>
-                    {isOwner && !isSelf ? (
-                      <button
-                        type="button"
-                        className="btn btn-ghost"
-                        disabled={Boolean(transferBusyId)}
-                        onClick={() => transferOwnership(member.id)}
-                      >
-                        {transferBusyId === member.id
-                          ? t("common.loading")
-                          : t("communities.makeOwner")}
-                      </button>
-                    ) : (
-                      <span className="communities-role-pill">{roleLabel(member.role)}</span>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-
-          <div className="communities-leave-row">
-            <button
-              type="button"
-              className="btn btn-ghost communities-leave-btn"
-              disabled={leaveBusy}
-              onClick={leaveActive}
+      {membersOpen && active
+        ? createPortal(
+            <div
+              className="modal-overlay"
+              onClick={() => setMembersOpen(false)}
+              role="presentation"
             >
-              <LogOut size={16} strokeWidth={2.2} aria-hidden />
-              {leaveBusy ? t("common.loading") : t("communities.leave")}
-            </button>
-            <p className="muted fine">{t("communities.leaveHint")}</p>
-          </div>
-        </div>
-      ) : null}
+              <div
+                className="modal card modal-new-order communities-members-modal"
+                onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="communities-members-title"
+              >
+                <div className="modal-header">
+                  <h2 id="communities-members-title">
+                    <Users size={20} aria-hidden />
+                    {t("communities.membersTitle")}
+                  </h2>
+                  <button
+                    type="button"
+                    className="modal-close"
+                    onClick={() => setMembersOpen(false)}
+                    aria-label={t("common.close")}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+                <div className="modal-body">
+                  <p className="muted settings-privacy-hint">
+                    {t("communities.membersHint", { name: active.name })}
+                  </p>
+                  {membersLoading ? (
+                    <p className="muted">{t("common.loading")}</p>
+                  ) : members.length === 0 ? (
+                    <p className="muted">{t("communities.membersEmpty")}</p>
+                  ) : (
+                    <ul className="communities-list">
+                      {members.map((member) => {
+                        const isSelf = member.id === user?.id;
+                        return (
+                          <li key={member.id} className="communities-list-item">
+                            <div className="communities-list-meta">
+                              <strong>{memberDisplayName(member)}</strong>
+                              <span className="muted fine">
+                                {roleLabel(member.role)}
+                                {isSelf ? ` · ${t("communities.you")}` : null}
+                              </span>
+                            </div>
+                            {isOwner && !isSelf ? (
+                              <button
+                                type="button"
+                                className="btn btn-ghost"
+                                disabled={Boolean(transferBusyId)}
+                                onClick={() => transferOwnership(member.id)}
+                              >
+                                {transferBusyId === member.id
+                                  ? t("common.loading")
+                                  : t("communities.makeOwner")}
+                              </button>
+                            ) : (
+                              <span className="communities-role-pill">
+                                {roleLabel(member.role)}
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
 
       <div className="communities-footer-actions">
         <Link to="/communities/create" className="btn btn-primary">

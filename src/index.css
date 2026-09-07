@@ -12404,6 +12404,49 @@ img.plac-user-avatar {
   background: #fff;
 }
 
+.communities-invite-email {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 1.15rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.communities-invite-email strong {
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.communities-invite-email-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.communities-invite-email-row input {
+  flex: 1 1 14rem;
+  min-width: 0;
+  padding: 0.7rem 0.85rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.28);
+  color: #f4f4f5;
+  font-size: 0.95rem;
+}
+
+.communities-invite-email-ok {
+  margin: 0;
+  color: #86efac;
+  font-size: 0.88rem;
+}
+
+.communities-invite-email-err {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
 .communities-role-pill {
   display: inline-flex;
   align-items: center;
@@ -12424,6 +12467,29 @@ img.plac-user-avatar {
   margin-top: 1.1rem;
   padding-top: 1rem;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.communities-list-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.communities-members-modal {
+  max-width: min(32rem, calc(100vw - 2rem));
+  max-height: min(85vh, 40rem);
+  display: flex;
+  flex-direction: column;
+}
+
+.communities-members-modal .modal-body {
+  overflow: auto;
+  padding-top: 0.25rem;
+}
+
+.communities-members-modal .communities-list {
+  margin-top: 0.85rem;
 }
 
 .communities-leave-btn {
