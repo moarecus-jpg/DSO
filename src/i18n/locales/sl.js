@@ -684,7 +684,7 @@ export default {
     subtitle: "Skupinska tržnica za člane DSO",
     browse: "Tržnica",
     mine: "Moji oglasi",
-    sell: "Objavi oglas",
+    sell: "Prodaj",
     sellTitle: "Objavi oglas",
     listingType: "Vrsta oglasa",
     typeVinyl: "Plošča (Discogs)",

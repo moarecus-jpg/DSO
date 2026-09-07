@@ -8639,8 +8639,18 @@ a.order-preview-item-title:hover {
   align-items: center;
   gap: calc(0.45rem * var(--ui-scale, 1));
   min-width: 0;
+  max-width: 100%;
   flex-wrap: nowrap;
   justify-content: flex-end;
+  overflow: hidden;
+}
+
+.plac-page-header-end .plac-toolbar-actions {
+  flex-shrink: 0;
+}
+
+.plac-page-header-end .plac-sell-btn {
+  white-space: nowrap;
 }
 
 .plac-page-header-account {

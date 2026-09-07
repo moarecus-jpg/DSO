@@ -672,7 +672,7 @@ export default {
     subtitle: "Community marketplace for DSO members",
     browse: "Marketplace",
     mine: "My listings",
-    sell: "Sell item",
+    sell: "Sell",
     sellTitle: "List item for sale",
     listingType: "Listing type",
     typeVinyl: "Vinyl (Discogs)",
