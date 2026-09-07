@@ -2147,6 +2147,21 @@ export function resolveCommunityJoinRequest(requestId, actorUserId, decision) {
 export function getCommunityPreviewByInviteCode(code) {
   const community = findCommunityByInviteCode(code);
   if (!community) return null;
+  const recentOrderCount =
+    db
+      .prepare(
+        `SELECT COUNT(*) AS n FROM group_sessions
+         WHERE community_id = ?
+           AND datetime(created_at) >= datetime('now', '-30 days')`
+      )
+      .get(community.id)?.n ?? 0;
+  const openOrderCount =
+    db
+      .prepare(
+        `SELECT COUNT(*) AS n FROM group_sessions
+         WHERE community_id = ? AND status = 'open'`
+      )
+      .get(community.id)?.n ?? 0;
   return {
     id: community.id,
     name: community.name,
@@ -2154,6 +2169,8 @@ export function getCommunityPreviewByInviteCode(code) {
     city: community.city,
     country: community.country,
     memberCount: communityMemberCount(community.id),
+    recentOrderCount,
+    openOrderCount,
   };
 }
 

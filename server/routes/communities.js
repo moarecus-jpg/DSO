@@ -85,7 +85,7 @@ router.get("/join-requests", requireUser, (req, res) => {
   }
 });
 
-router.get("/preview/:code", requireUser, (req, res) => {
+router.get("/preview/:code", (req, res) => {
   const preview = getCommunityPreviewByInviteCode(req.params.code);
   if (!preview) {
     return res.status(404).json({ error: "Invalid invite code." });

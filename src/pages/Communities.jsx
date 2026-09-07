@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -9,6 +9,7 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
+import QRCode from "qrcode";
 import { api } from "../api.js";
 import { HeaderAccount } from "../components/HeaderAccount.jsx";
 import { useAuth } from "../hooks/useAuth.jsx";
@@ -50,6 +51,7 @@ export function JoinCommunity() {
   const [error, setError] = useState("");
   const [inviteBusy, setInviteBusy] = useState(false);
   const [requestBusyId, setRequestBusyId] = useState(null);
+  const autoJoinAttempted = useRef(false);
   const hasCommunities = (user?.communities?.length ?? 0) > 0;
 
   const loadDirectory = useCallback(async () => {
@@ -96,6 +98,26 @@ export function JoinCommunity() {
       cancelled = true;
     };
   }, [code, t]);
+
+  useEffect(() => {
+    const trimmed = codeParam?.trim();
+    if (!trimmed || autoJoinAttempted.current) return;
+    autoJoinAttempted.current = true;
+    setInviteBusy(true);
+    setError("");
+    api("/api/communities/join", {
+      method: "POST",
+      body: JSON.stringify({ code: trimmed }),
+    })
+      .then(async () => {
+        await refresh();
+        navigate("/", { replace: true });
+      })
+      .catch((err) => {
+        setError(err.message ?? t("communities.joinError"));
+        setInviteBusy(false);
+      });
+  }, [codeParam, navigate, refresh, t]);
 
   async function onInviteSubmit(e) {
     e.preventDefault();
@@ -235,6 +257,12 @@ export function JoinCommunity() {
                 name: preview.name,
                 count: preview.memberCount ?? 0,
               })}
+              {preview.openOrderCount != null || preview.recentOrderCount != null
+                ? ` · ${t("communities.previewOrders", {
+                    open: preview.openOrderCount ?? 0,
+                    recent: preview.recentOrderCount ?? 0,
+                  })}`
+                : null}
             </span>
           </div>
         ) : null}
@@ -379,12 +407,38 @@ export function CommunitiesSetup() {
   const [requests, setRequests] = useState([]);
   const [resolveBusyId, setResolveBusyId] = useState(null);
   const [listingBusy, setListingBusy] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState("");
 
   const communities = user?.communities ?? [];
   const active = user?.activeCommunity ?? null;
   const canReview = communities.some((c) => c.role === "owner" || c.role === "admin");
   const canManageActive =
     active && (active.role === "owner" || active.role === "admin");
+  const inviteUrl = active?.inviteCode
+    ? `${window.location.origin}/invite/${active.inviteCode}`
+    : "";
+
+  useEffect(() => {
+    if (!inviteUrl) {
+      setQrDataUrl("");
+      return;
+    }
+    let cancelled = false;
+    QRCode.toDataURL(inviteUrl, {
+      width: 220,
+      margin: 1,
+      color: { dark: "#111113", light: "#ffffff" },
+    })
+      .then((url) => {
+        if (!cancelled) setQrDataUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) setQrDataUrl("");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [inviteUrl]);
 
   const loadRequests = useCallback(async () => {
     if (!canReview) {
@@ -419,11 +473,9 @@ export function CommunitiesSetup() {
   }
 
   async function copyInvite() {
-    if (!active?.inviteCode) return;
+    if (!inviteUrl) return;
     try {
-      await navigator.clipboard.writeText(
-        `${window.location.origin}/join/${active.inviteCode}`
-      );
+      await navigator.clipboard.writeText(inviteUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -580,7 +632,7 @@ export function CommunitiesSetup() {
           </div>
 
           <div className="communities-invite-row">
-            <code className="communities-invite-code">{active.inviteCode}</code>
+            <code className="communities-invite-code">{inviteUrl || active.inviteCode}</code>
             <button type="button" className="btn btn-ghost" onClick={copyInvite}>
               {copied ? (
                 <Check size={16} strokeWidth={2.2} aria-hidden />
@@ -590,6 +642,18 @@ export function CommunitiesSetup() {
               {copied ? t("communities.copied") : t("communities.copyInvite")}
             </button>
           </div>
+
+          {qrDataUrl ? (
+            <div className="communities-invite-qr">
+              <img
+                src={qrDataUrl}
+                alt={t("communities.inviteQrAlt", { name: active.name })}
+                width={220}
+                height={220}
+              />
+              <p className="muted fine">{t("communities.inviteQrHint")}</p>
+            </div>
+          ) : null}
 
           {canManageActive ? (
             <label className="communities-listed-toggle communities-listed-toggle--manage">

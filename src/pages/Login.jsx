@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import {
   AtSign,
   Eye,
@@ -103,9 +103,16 @@ function AuthPasswordField({
 
 export function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, loading, login, register } = useAuth();
   const { t } = useLocale();
-  const [mode, setMode] = useState("login");
+  const nextRaw = searchParams.get("next") || "";
+  const nextPath =
+    nextRaw.startsWith("/") && !nextRaw.startsWith("//") ? nextRaw : "/";
+  const modeParam = searchParams.get("mode");
+  const [mode, setMode] = useState(
+    modeParam === "register" || modeParam === "forgot" ? modeParam : "login"
+  );
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
@@ -150,7 +157,7 @@ export function Login() {
   }
 
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={nextPath} replace />;
   }
 
   async function handleLogin(e) {
@@ -169,7 +176,7 @@ export function Login() {
       } catch {
         /* ignore */
       }
-      navigate("/", { replace: true });
+      navigate(nextPath, { replace: true });
     } catch (err) {
       setError(err.message ?? t("auth.loginFailed"));
     } finally {
@@ -183,7 +190,7 @@ export function Login() {
     setSubmitting(true);
     try {
       await register({ ...registerForm, rememberMe: true });
-      navigate("/", { replace: true });
+      navigate(nextPath, { replace: true });
     } catch (err) {
       setError(err.message ?? t("auth.registerFailed"));
     } finally {

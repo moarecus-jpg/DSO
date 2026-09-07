@@ -27,6 +27,7 @@ import {
   CreateCommunity,
   JoinCommunity,
 } from "./pages/Communities.jsx";
+import { InviteLanding } from "./pages/InviteLanding.jsx";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -56,6 +57,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/invite/:code" element={<InviteLanding />} />
       <Route
         element={
           <PrivateRoute>
