@@ -1,3 +1,6 @@
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import QRCode from "qrcode";
 import { sendEmail } from "./mailer.js";
 import {
@@ -12,15 +15,69 @@ import {
 } from "../../shared/orderShare.js";
 import { APP_FULL_NAME, APP_SHORT_NAME } from "../../shared/brand.js";
 
-async function notifyUsers(users, { subject, text, html }) {
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const LOGO_CANDIDATES = [
+  path.join(__dirname, "..", "..", "public", "dco-email-logo.png"),
+  path.join(__dirname, "..", "..", "dist", "dco-email-logo.png"),
+  path.join(__dirname, "..", "..", "public", "dso-icon.png"),
+  path.join(__dirname, "..", "..", "dist", "dso-icon.png"),
+];
+
+function loadEmailLogoBuffer() {
+  for (const candidate of LOGO_CANDIDATES) {
+    try {
+      if (fs.existsSync(candidate)) {
+        return fs.readFileSync(candidate);
+      }
+    } catch {
+      // try next path
+    }
+  }
+  return null;
+}
+
+function emailBrandHeaderHtml({ baseUrl, includeCidLogo }) {
+  const origin = baseUrl.replace(/\/$/, "");
+  const logoSrc = includeCidLogo ? "cid:dco-logo" : `${origin}/dco-email-logo.png`;
+  return `<div style="margin:0 0 20px;padding:0 0 16px;border-bottom:1px solid #e5e5e5;">
+  <img src="${logoSrc}" alt="${APP_SHORT_NAME}" width="56" height="56" style="display:block;border:0;border-radius:12px;" />
+  <p style="margin:10px 0 0;font-size:15px;font-weight:700;color:#111113;">${APP_FULL_NAME}</p>
+</div>`;
+}
+
+function withBrandAttachments(attachments, logoBuffer) {
+  const list = Array.isArray(attachments) ? [...attachments] : [];
+  if (logoBuffer) {
+    list.unshift({
+      filename: "dco-logo.png",
+      content: logoBuffer,
+      contentId: "dco-logo",
+    });
+  }
+  return list.length ? list : undefined;
+}
+
+async function notifyUsers(users, { subject, text, html, attachments }) {
   for (const user of users) {
     await sendEmail({
       to: user.email,
       subject,
       text,
       html,
+      attachments,
     });
   }
+}
+
+function brandedHtml(baseUrl, bodyHtml) {
+  const logoBuffer = loadEmailLogoBuffer();
+  return {
+    html: `${emailBrandHeaderHtml({
+      baseUrl,
+      includeCidLogo: Boolean(logoBuffer),
+    })}${bodyHtml}`,
+    logoBuffer,
+  };
 }
 
 export async function notifyNewOrderOpened({ baseUrl, session, excludeUserId }) {
@@ -36,11 +93,19 @@ export async function notifyNewOrderOpened({ baseUrl, session, excludeUserId }) 
   const summary = orderShareDescription(session, "en");
   const subject = `${APP_SHORT_NAME}: New order opened — ${title}`;
   const text = `A new group order was opened: ${title}\n\n${summary}\n\n${linkLabel}: ${url}`;
-  const html = `<p>A new group order was opened: <strong>${title}</strong></p>
+  const { html, logoBuffer } = brandedHtml(
+    baseUrl,
+    `<p>A new group order was opened: <strong>${title}</strong></p>
 <p>${summary}</p>
-<p><a href="${url}">${linkLabel}</a></p>`;
+<p><a href="${url}">${linkLabel}</a></p>`
+  );
 
-  await notifyUsers(users, { subject, text, html });
+  await notifyUsers(users, {
+    subject,
+    text,
+    html,
+    attachments: withBrandAttachments(undefined, logoBuffer),
+  });
 }
 
 export async function notifyOrderNotePosted({
@@ -60,11 +125,19 @@ export async function notifyOrderNotePosted({
     note.body.length > 200 ? `${note.body.slice(0, 200)}…` : note.body;
   const subject = `${APP_SHORT_NAME}: New note on ${title}`;
   const text = `${authorName} posted a note on ${title}:\n\n"${preview}"\n\n${linkLabel}: ${url}`;
-  const html = `<p><strong>${authorName}</strong> posted a note on <strong>${title}</strong>:</p>
+  const { html, logoBuffer } = brandedHtml(
+    baseUrl,
+    `<p><strong>${authorName}</strong> posted a note on <strong>${title}</strong>:</p>
 <blockquote>${preview.replace(/\n/g, "<br>")}</blockquote>
-<p><a href="${url}">${linkLabel}</a></p>`;
+<p><a href="${url}">${linkLabel}</a></p>`
+  );
 
-  await notifyUsers(users, { subject, text, html });
+  await notifyUsers(users, {
+    subject,
+    text,
+    html,
+    attachments: withBrandAttachments(undefined, logoBuffer),
+  });
 }
 
 export async function notifyOrderClosed({
@@ -85,43 +158,58 @@ export async function notifyOrderClosed({
       ? {
           subject: `${APP_SHORT_NAME}: Order marked unplaced — ${title}`,
           text: `The group order ${title} was closed as unplaced (not ordered).\n\n${linkLabel}: ${url}`,
-          html: `<p>The group order <strong>${title}</strong> was closed as <strong>unplaced</strong> (not ordered).</p>
+          body: `<p>The group order <strong>${title}</strong> was closed as <strong>unplaced</strong> (not ordered).</p>
 <p><a href="${url}">${linkLabel}</a></p>`,
         }
       : kind === "canceled"
         ? {
             subject: `${APP_SHORT_NAME}: Order canceled — ${title}`,
             text: `The group order ${title} was canceled.\n\n${linkLabel}: ${url}`,
-            html: `<p>The group order <strong>${title}</strong> was <strong>canceled</strong>.</p>
+            body: `<p>The group order <strong>${title}</strong> was <strong>canceled</strong>.</p>
 <p><a href="${url}">${linkLabel}</a></p>`,
           }
-      : kind === "auto"
-        ? {
-            subject: `${APP_SHORT_NAME}: Order auto-closed — ${title}`,
-            text: `The group order ${title} was automatically closed after 14 days without activity.\n\n${linkLabel}: ${url}`,
-            html: `<p>The group order <strong>${title}</strong> was automatically closed after 14 days without activity.</p>
+        : kind === "auto"
+          ? {
+              subject: `${APP_SHORT_NAME}: Order auto-closed — ${title}`,
+              text: `The group order ${title} was automatically closed after 14 days without activity.\n\n${linkLabel}: ${url}`,
+              body: `<p>The group order <strong>${title}</strong> was automatically closed after 14 days without activity.</p>
 <p><a href="${url}">${linkLabel}</a></p>`,
-          }
-        : {
-            subject: `${APP_SHORT_NAME}: Order closed — ${title}`,
-            text: `The group order ${title} has been closed.\n\n${linkLabel}: ${url}`,
-            html: `<p>The group order <strong>${title}</strong> has been closed.</p>
+            }
+          : {
+              subject: `${APP_SHORT_NAME}: Order closed — ${title}`,
+              text: `The group order ${title} has been closed.\n\n${linkLabel}: ${url}`,
+              body: `<p>The group order <strong>${title}</strong> has been closed.</p>
 <p><a href="${url}">${linkLabel}</a></p>`,
-          };
+            };
 
-  await notifyUsers(users, copy);
+  const { html, logoBuffer } = brandedHtml(baseUrl, copy.body);
+  await notifyUsers(users, {
+    subject: copy.subject,
+    text: copy.text,
+    html,
+    attachments: withBrandAttachments(undefined, logoBuffer),
+  });
 }
 
 export async function sendPasswordResetEmail({ baseUrl, user, token }) {
   const url = `${baseUrl.replace(/\/$/, "")}/reset-password?token=${encodeURIComponent(token)}`;
   const subject = `${APP_SHORT_NAME}: Reset your password`;
   const text = `Hello ${user.name ?? user.username ?? "there"},\n\nReset your password using this link (valid for 1 hour):\n\n${url}\n\nIf you did not request this, you can ignore this email.`;
-  const html = `<p>Hello ${user.name ?? user.username ?? "there"},</p>
+  const { html, logoBuffer } = brandedHtml(
+    baseUrl,
+    `<p>Hello ${user.name ?? user.username ?? "there"},</p>
 <p>Reset your password using this link (valid for 1 hour):</p>
 <p><a href="${url}">${url}</a></p>
-<p>If you did not request this, you can ignore this email.</p>`;
+<p>If you did not request this, you can ignore this email.</p>`
+  );
 
-  return sendEmail({ to: user.email, subject, text, html });
+  return sendEmail({
+    to: user.email,
+    subject,
+    text,
+    html,
+    attachments: withBrandAttachments(undefined, logoBuffer),
+  });
 }
 
 export async function sendCommunityInviteEmail({
@@ -167,24 +255,30 @@ Or scan the attached QR code (if your email client shows attachments).`;
 <p style="color:#666;font-size:13px;">Scan the QR code, or use the invite code / link above.</p>`
     : `<p style="color:#666;font-size:13px;">Use the invite code or link above to join.</p>`;
 
-  const html = `<p><strong>${fromName}</strong> invited you to join <strong>${communityName}</strong> on ${APP_FULL_NAME} (${APP_SHORT_NAME}).</p>
+  const { html, logoBuffer } = brandedHtml(
+    baseUrl,
+    `<p><strong>${fromName}</strong> invited you to join <strong>${communityName}</strong> on ${APP_FULL_NAME} (${APP_SHORT_NAME}).</p>
 <p>Invite code: <strong style="letter-spacing:0.06em;">${inviteCode}</strong></p>
 <p><a href="${inviteUrl}">Open invite</a></p>
-${qrHtml}`;
+${qrHtml}`
+  );
 
   return sendEmail({
     to,
     subject,
     text,
     html,
-    attachments: qrBuffer
-      ? [
-          {
-            filename: "dco-invite-qr.png",
-            content: qrBuffer,
-            contentId: "invite-qr",
-          },
-        ]
-      : undefined,
+    attachments: withBrandAttachments(
+      qrBuffer
+        ? [
+            {
+              filename: "dco-invite-qr.png",
+              content: qrBuffer,
+              contentId: "invite-qr",
+            },
+          ]
+        : undefined,
+      logoBuffer
+    ),
   });
 }
