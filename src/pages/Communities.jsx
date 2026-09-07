@@ -5,7 +5,9 @@ import {
   Check,
   Copy,
   Link2,
+  LogOut,
   Plus,
+  RefreshCw,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -402,18 +404,26 @@ export function CreateCommunity() {
 export function CommunitiesSetup() {
   const { user, refresh } = useAuth();
   const { t } = useLocale();
+  const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
   const [busyId, setBusyId] = useState(null);
   const [requests, setRequests] = useState([]);
   const [resolveBusyId, setResolveBusyId] = useState(null);
   const [listingBusy, setListingBusy] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState("");
+  const [members, setMembers] = useState([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [regenBusy, setRegenBusy] = useState(false);
+  const [leaveBusy, setLeaveBusy] = useState(false);
+  const [transferBusyId, setTransferBusyId] = useState(null);
+  const [manageError, setManageError] = useState("");
 
   const communities = user?.communities ?? [];
   const active = user?.activeCommunity ?? null;
   const canReview = communities.some((c) => c.role === "owner" || c.role === "admin");
   const canManageActive =
     active && (active.role === "owner" || active.role === "admin");
+  const isOwner = active?.role === "owner";
   const inviteUrl = active?.inviteCode
     ? `${window.location.origin}/invite/${active.inviteCode}`
     : "";
@@ -453,9 +463,29 @@ export function CommunitiesSetup() {
     }
   }, [canReview]);
 
+  const loadMembers = useCallback(async () => {
+    if (!active?.id) {
+      setMembers([]);
+      return;
+    }
+    setMembersLoading(true);
+    try {
+      const data = await api(`/api/communities/${active.id}/members`);
+      setMembers(data.members ?? []);
+    } catch {
+      setMembers([]);
+    } finally {
+      setMembersLoading(false);
+    }
+  }, [active?.id]);
+
   useEffect(() => {
     loadRequests();
   }, [loadRequests]);
+
+  useEffect(() => {
+    loadMembers();
+  }, [loadMembers]);
 
   if (!communities.length) {
     return <Navigate to="/join" replace />;
@@ -464,6 +494,7 @@ export function CommunitiesSetup() {
   async function switchTo(id) {
     if (!id || id === active?.id || busyId) return;
     setBusyId(id);
+    setManageError("");
     try {
       await api(`/api/communities/${id}/active`, { method: "POST" });
       await refresh();
@@ -483,6 +514,62 @@ export function CommunitiesSetup() {
     }
   }
 
+  async function regenerateInvite() {
+    if (!active?.id || regenBusy) return;
+    if (!window.confirm(t("communities.regenerateConfirm"))) return;
+    setRegenBusy(true);
+    setManageError("");
+    try {
+      await api(`/api/communities/${active.id}/regenerate-invite`, {
+        method: "POST",
+      });
+      await refresh();
+    } catch (err) {
+      setManageError(err.message ?? t("communities.regenerateError"));
+    } finally {
+      setRegenBusy(false);
+    }
+  }
+
+  async function leaveActive() {
+    if (!active?.id || leaveBusy) return;
+    if (!window.confirm(t("communities.leaveConfirm", { name: active.name }))) {
+      return;
+    }
+    setLeaveBusy(true);
+    setManageError("");
+    try {
+      await api(`/api/communities/${active.id}/leave`, { method: "POST" });
+      const nextUser = await refresh();
+      if ((nextUser?.communities?.length ?? 0) === 0) {
+        navigate("/join", { replace: true });
+      }
+    } catch (err) {
+      setManageError(err.message ?? t("communities.leaveError"));
+    } finally {
+      setLeaveBusy(false);
+    }
+  }
+
+  async function transferOwnership(memberId) {
+    if (!active?.id || !memberId || transferBusyId) return;
+    if (!window.confirm(t("communities.transferConfirm"))) return;
+    setTransferBusyId(memberId);
+    setManageError("");
+    try {
+      await api(`/api/communities/${active.id}/transfer-ownership`, {
+        method: "POST",
+        body: JSON.stringify({ userId: memberId }),
+      });
+      await refresh();
+      await loadMembers();
+    } catch (err) {
+      setManageError(err.message ?? t("communities.transferError"));
+    } finally {
+      setTransferBusyId(null);
+    }
+  }
+
   async function resolveRequest(requestId, decision) {
     setResolveBusyId(requestId);
     try {
@@ -491,6 +578,7 @@ export function CommunitiesSetup() {
         body: JSON.stringify({ decision }),
       });
       await loadRequests();
+      await loadMembers();
     } finally {
       setResolveBusyId(null);
     }
@@ -510,6 +598,18 @@ export function CommunitiesSetup() {
     }
   }
 
+  function roleLabel(role) {
+    if (role === "owner") return t("communities.roleOwner");
+    if (role === "admin") return t("communities.roleAdmin");
+    return t("communities.roleMember");
+  }
+
+  function memberDisplayName(member) {
+    if (member.name) return member.name;
+    if (member.username) return `@${member.username}`;
+    return t("common.unknown");
+  }
+
   return (
     <div className="page page-settings page-communities">
       <CommunitiesPageHeader
@@ -517,6 +617,8 @@ export function CommunitiesSetup() {
         subtitle={t("communities.manageSubtitle")}
         backTo={{ to: "/", label: t("communities.backHome") }}
       />
+
+      {manageError ? <p className="communities-form-error">{manageError}</p> : null}
 
       {requests.length > 0 ? (
         <div className="card settings-card communities-card">
@@ -641,6 +743,17 @@ export function CommunitiesSetup() {
               )}
               {copied ? t("communities.copied") : t("communities.copyInvite")}
             </button>
+            {canManageActive ? (
+              <button
+                type="button"
+                className="btn btn-ghost"
+                disabled={regenBusy}
+                onClick={regenerateInvite}
+              >
+                <RefreshCw size={16} strokeWidth={2.2} aria-hidden />
+                {regenBusy ? t("common.loading") : t("communities.regenerateInvite")}
+              </button>
+            ) : null}
           </div>
 
           {qrDataUrl ? (
@@ -669,6 +782,72 @@ export function CommunitiesSetup() {
               </span>
             </label>
           ) : null}
+        </div>
+      ) : null}
+
+      {active ? (
+        <div className="card settings-card communities-card">
+          <div className="communities-card-head">
+            <span className="communities-card-icon" aria-hidden>
+              <Users size={20} strokeWidth={2.1} />
+            </span>
+            <div>
+              <h2>{t("communities.membersTitle")}</h2>
+              <p className="muted settings-privacy-hint">
+                {t("communities.membersHint", { name: active.name })}
+              </p>
+            </div>
+          </div>
+
+          {membersLoading ? (
+            <p className="muted">{t("common.loading")}</p>
+          ) : members.length === 0 ? (
+            <p className="muted">{t("communities.membersEmpty")}</p>
+          ) : (
+            <ul className="communities-list">
+              {members.map((member) => {
+                const isSelf = member.id === user?.id;
+                return (
+                  <li key={member.id} className="communities-list-item">
+                    <div className="communities-list-meta">
+                      <strong>{memberDisplayName(member)}</strong>
+                      <span className="muted fine">
+                        {roleLabel(member.role)}
+                        {isSelf ? ` · ${t("communities.you")}` : null}
+                      </span>
+                    </div>
+                    {isOwner && !isSelf ? (
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        disabled={Boolean(transferBusyId)}
+                        onClick={() => transferOwnership(member.id)}
+                      >
+                        {transferBusyId === member.id
+                          ? t("common.loading")
+                          : t("communities.makeOwner")}
+                      </button>
+                    ) : (
+                      <span className="communities-role-pill">{roleLabel(member.role)}</span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <div className="communities-leave-row">
+            <button
+              type="button"
+              className="btn btn-ghost communities-leave-btn"
+              disabled={leaveBusy}
+              onClick={leaveActive}
+            >
+              <LogOut size={16} strokeWidth={2.2} aria-hidden />
+              {leaveBusy ? t("common.loading") : t("communities.leave")}
+            </button>
+            <p className="muted fine">{t("communities.leaveHint")}</p>
+          </div>
         </div>
       ) : null}
 

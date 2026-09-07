@@ -12404,6 +12404,32 @@ img.plac-user-avatar {
   background: #fff;
 }
 
+.communities-role-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(244, 244, 245, 0.85);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.communities-leave-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.45rem;
+  margin-top: 1.1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.communities-leave-btn {
+  color: #fca5a5;
+}
+
 .invite-landing-page .invite-landing-card {
   max-width: 28rem;
 }

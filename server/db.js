@@ -2190,6 +2190,117 @@ export function regenerateCommunityInviteCode(communityId, userId) {
   return findCommunityById(communityId);
 }
 
+export function listCommunityMembers(communityId, actorUserId) {
+  if (!isCommunityMember(communityId, actorUserId)) {
+    throw new Error("Only members can view the member list.");
+  }
+  return db
+    .prepare(
+      `SELECT u.id, u.name, u.username, u.picture,
+              u.discogs_username, u.discogs_avatar_url,
+              cm.role, cm.joined_at
+       FROM community_members cm
+       JOIN users u ON u.id = cm.user_id
+       WHERE cm.community_id = ?
+       ORDER BY
+         CASE cm.role
+           WHEN 'owner' THEN 0
+           WHEN 'admin' THEN 1
+           ELSE 2
+         END,
+         datetime(cm.joined_at) ASC,
+         u.name COLLATE NOCASE ASC`
+    )
+    .all(communityId);
+}
+
+export function transferCommunityOwnership(communityId, actorUserId, newOwnerId) {
+  if (!communityId || !actorUserId || !newOwnerId) {
+    throw new Error("Missing ownership transfer details.");
+  }
+  if (actorUserId === newOwnerId) {
+    throw new Error("You are already the owner.");
+  }
+  const actor = getCommunityMembership(communityId, actorUserId);
+  if (!actor || actor.role !== "owner") {
+    throw new Error("Only the community owner can transfer ownership.");
+  }
+  const target = getCommunityMembership(communityId, newOwnerId);
+  if (!target) {
+    throw new Error("New owner must already be a community member.");
+  }
+
+  const apply = db.transaction(() => {
+    db.prepare(
+      `UPDATE community_members
+       SET role = 'admin'
+       WHERE community_id = ? AND user_id = ?`
+    ).run(communityId, actorUserId);
+    db.prepare(
+      `UPDATE community_members
+       SET role = 'owner'
+       WHERE community_id = ? AND user_id = ?`
+    ).run(communityId, newOwnerId);
+    db.prepare("UPDATE communities SET created_by = ? WHERE id = ?").run(
+      newOwnerId,
+      communityId
+    );
+  });
+  apply();
+  return getCommunityForMember(communityId, actorUserId);
+}
+
+export function leaveCommunity(communityId, userId) {
+  const membership = getCommunityMembership(communityId, userId);
+  if (!membership) {
+    throw new Error("You are not a member of this community.");
+  }
+
+  if (membership.role === "owner") {
+    const otherMembers =
+      db
+        .prepare(
+          `SELECT COUNT(*) AS n FROM community_members
+           WHERE community_id = ? AND user_id != ?`
+        )
+        .get(communityId, userId)?.n ?? 0;
+    const otherOwners =
+      db
+        .prepare(
+          `SELECT COUNT(*) AS n FROM community_members
+           WHERE community_id = ? AND role = 'owner' AND user_id != ?`
+        )
+        .get(communityId, userId)?.n ?? 0;
+    if (otherMembers > 0 && otherOwners === 0) {
+      throw new Error(
+        "Transfer ownership to another member before leaving."
+      );
+    }
+  }
+
+  const apply = db.transaction(() => {
+    db.prepare(
+      `DELETE FROM community_members
+       WHERE community_id = ? AND user_id = ?`
+    ).run(communityId, userId);
+    db.prepare(
+      `UPDATE community_join_requests
+       SET status = 'rejected', resolved_at = datetime('now'), resolved_by = ?
+       WHERE community_id = ? AND user_id = ? AND status = 'pending'`
+    ).run(userId, communityId, userId);
+
+    const user = findUserById(userId);
+    if (user?.active_community_id === communityId) {
+      const next = listUserCommunities(userId)[0];
+      db.prepare("UPDATE users SET active_community_id = ? WHERE id = ?").run(
+        next?.id ?? null,
+        userId
+      );
+    }
+  });
+  apply();
+}
+
 export function getCommunityForMember(communityId, userId) {
   if (!isCommunityMember(communityId, userId)) return null;
   return db

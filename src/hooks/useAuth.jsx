@@ -17,23 +17,16 @@ export function AuthProvider({ children }) {
 
 
   const refresh = useCallback(async () => {
-
     try {
-
       const { user: u } = await api("/auth/me");
-
       setUser(u);
-
+      return u;
     } catch {
-
       setUser(null);
-
+      return null;
     } finally {
-
       setLoading(false);
-
     }
-
   }, []);
 
 

@@ -12,10 +12,13 @@ import {
   listUserCommunities,
   publicCommunity,
   publicUserWithCommunities,
+  leaveCommunity,
+  listCommunityMembers,
   regenerateCommunityInviteCode,
   requestCommunityJoin,
   resolveCommunityJoinRequest,
   setActiveCommunity,
+  transferCommunityOwnership,
   upsertGoogleUser,
   ensureMembershipInSloveniaCommunity,
   setCommunityListed,
@@ -217,15 +220,62 @@ router.get("/:id", requireUser, (req, res) => {
   });
 });
 
+router.get("/:id/members", requireUser, (req, res) => {
+  try {
+    const members = listCommunityMembers(req.params.id, req.session.userId).map(
+      (row) => ({
+        id: row.id,
+        name: row.name,
+        username: row.username ?? null,
+        picture: row.picture ?? null,
+        discogsUsername: row.discogs_username ?? null,
+        discogsAvatarUrl: row.discogs_avatar_url ?? null,
+        role: row.role,
+        joinedAt: row.joined_at,
+      })
+    );
+    res.json({ members });
+  } catch (err) {
+    res.status(403).json({ error: err.message ?? "Could not load members." });
+  }
+});
+
 router.post("/:id/regenerate-invite", requireUser, (req, res) => {
   try {
     const updated = regenerateCommunityInviteCode(req.params.id, req.session.userId);
     const community = getCommunityForMember(updated.id, req.session.userId);
+    const user = findUserById(req.session.userId);
     res.json({
       community: publicCommunity(community, { includeInvite: true }),
+      user: withAdminFlag(user),
     });
   } catch (err) {
     res.status(403).json({ error: err.message ?? "Could not regenerate invite." });
+  }
+});
+
+router.post("/:id/transfer-ownership", requireUser, (req, res) => {
+  const newOwnerId = req.body?.userId ?? req.body?.newOwnerId ?? "";
+  try {
+    transferCommunityOwnership(req.params.id, req.session.userId, newOwnerId);
+    const user = findUserById(req.session.userId);
+    res.json({ user: withAdminFlag(user) });
+  } catch (err) {
+    const status = /Only the community owner/i.test(err.message ?? "") ? 403 : 400;
+    res.status(status).json({
+      error: err.message ?? "Could not transfer ownership.",
+    });
+  }
+});
+
+router.post("/:id/leave", requireUser, (req, res) => {
+  try {
+    leaveCommunity(req.params.id, req.session.userId);
+    const user = findUserById(req.session.userId);
+    res.json({ user: withAdminFlag(user) });
+  } catch (err) {
+    const status = /Transfer ownership/i.test(err.message ?? "") ? 400 : 403;
+    res.status(status).json({ error: err.message ?? "Could not leave community." });
   }
 });
 
