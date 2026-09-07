@@ -12,7 +12,10 @@ export function NotificationToggle({ className = "", variant = "sidebar" }) {
 
   const canNotify = Boolean(user?.hasRealEmail);
   const active = Boolean(
-    user?.notifyNewOrder || user?.notifyOrderNote || user?.notifyOrderClosed
+    user?.notifyNewOrder ||
+      user?.notifyOrderNote ||
+      user?.notifyOrderClosed ||
+      user?.notifyOrderAttention
   );
 
   async function handleChange(enabled) {
@@ -26,6 +29,7 @@ export function NotificationToggle({ className = "", variant = "sidebar" }) {
           notifyNewOrder: enabled,
           notifyOrderNote: enabled,
           notifyOrderClosed: enabled,
+          notifyOrderAttention: enabled,
         }),
       });
       await refresh();

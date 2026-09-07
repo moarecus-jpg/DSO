@@ -567,6 +567,7 @@ export default {
     notifyNewOrder: "New order opened",
     notifyOrderNote: "Note posted in an order I'm in",
     notifyOrderClosed: "Order closed",
+    notifyOrderAttention: "My order needs attention (idle or past target date)",
   },
   admin: {
     title: "User admin",

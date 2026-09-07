@@ -355,6 +355,30 @@ export function Settings() {
           />
           <span className="sidebar-theme-toggle-track" aria-hidden />
         </label>
+        <label className="settings-theme-toggle">
+          <span>{t("settings.notifyOrderAttention")}</span>
+          <input
+            type="checkbox"
+            className="sidebar-theme-toggle-input"
+            checked={Boolean(user?.notifyOrderAttention)}
+            disabled={!user?.hasRealEmail}
+            onChange={async (e) => {
+              try {
+                await api("/auth/me/notifications", {
+                  method: "PATCH",
+                  body: JSON.stringify({ notifyOrderAttention: e.target.checked }),
+                });
+                await refresh();
+                setMessageType("ok");
+                setMessage(t("settings.notificationsSaved"));
+              } catch (err) {
+                setMessageType("warn");
+                setMessage(err.message ?? t("common.error"));
+              }
+            }}
+          />
+          <span className="sidebar-theme-toggle-track" aria-hidden />
+        </label>
       </div>
 
       <div className="card settings-card">

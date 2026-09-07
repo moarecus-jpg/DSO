@@ -1,6 +1,16 @@
-import { appBaseUrl } from "../appUrl.js";
-import { autoCloseStaleOpenSessions } from "../db.js";
-import { notifyOrderClosed } from "../email/notifications.js";
+import {
+  autoCloseStaleOpenSessions,
+  clearSessionAttentionNotified,
+  findUserById,
+  getOrderOwnerForAttentionNotification,
+  isDeliverableEmail,
+  listOpenSessionsNeedingAttentionNotify,
+  markSessionAttentionNotified,
+} from "../db.js";
+import {
+  notifyOrderClosed,
+  notifyOrderNeedsAttention,
+} from "../email/notifications.js";
 import { refreshOpenOrdersAvailability } from "./availability.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -31,12 +41,53 @@ async function runAutoClose() {
   }
 }
 
+async function runAttentionOwnerNotify() {
+  const { needing, recovered } = listOpenSessionsNeedingAttentionNotify();
+  for (const session of recovered) {
+    clearSessionAttentionNotified(session.id);
+  }
+
+  const baseUrl = publicBaseUrl();
+  let sent = 0;
+  for (const session of needing) {
+    const owner = getOrderOwnerForAttentionNotification(session);
+    if (!owner) {
+      const rawOwner = findUserById(session.created_by);
+      // No deliverable email → don't retry forever. Prefs off → retry later.
+      if (!rawOwner || !isDeliverableEmail(rawOwner.email)) {
+        markSessionAttentionNotified(session.id);
+      }
+      continue;
+    }
+    try {
+      await notifyOrderNeedsAttention({ baseUrl, session, owner });
+      markSessionAttentionNotified(session.id);
+      sent += 1;
+    } catch (err) {
+      console.error(
+        `[jobs] attention notify failed for ${session.id}:`,
+        err.message
+      );
+    }
+  }
+  if (sent || recovered.length) {
+    console.log(
+      `[jobs] attention: notified ${sent} owner(s), cleared ${recovered.length} recovered`
+    );
+  }
+}
+
 async function runDailyMaintenance() {
   console.log("[jobs] daily order maintenance started");
   try {
     await runAutoClose();
   } catch (err) {
     console.error("[jobs] auto-close failed:", err);
+  }
+  try {
+    await runAttentionOwnerNotify();
+  } catch (err) {
+    console.error("[jobs] attention notify failed:", err);
   }
   try {
     await refreshOpenOrdersAvailability();

@@ -575,6 +575,8 @@ export default {
     notifyNewOrder: "Odprto novo naročilo",
     notifyOrderNote: "Komentar v naročilu, kjer sodelujem",
     notifyOrderClosed: "Naročilo zaključeno",
+    notifyOrderAttention:
+      "Moje naročilo zahteva pozornost (nedejavno ali mimo ciljnega datuma)",
   },
   admin: {
     title: "Admin računov",

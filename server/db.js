@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { formatOrderTitle } from "../shared/orderTitle.js";
+import { needsAttention } from "../shared/orderDashboard.js";
 import { formatPlacListingFormat, normalizePlacYear } from "../shared/placFormat.js";
 import { normalizeStore } from "../shared/stores.js";
 import { hashPassword, verifyPassword } from "./auth/password.js";
@@ -148,6 +149,8 @@ for (const sql of [
   "ALTER TABLE users ADD COLUMN notify_new_order INTEGER NOT NULL DEFAULT 0",
   "ALTER TABLE users ADD COLUMN notify_order_note INTEGER NOT NULL DEFAULT 0",
   "ALTER TABLE users ADD COLUMN notify_order_closed INTEGER NOT NULL DEFAULT 0",
+  "ALTER TABLE users ADD COLUMN notify_order_attention INTEGER NOT NULL DEFAULT 1",
+  "ALTER TABLE group_sessions ADD COLUMN attention_notified_at TEXT",
   "ALTER TABLE group_sessions ADD COLUMN shipping_mode TEXT DEFAULT 'equal'",
   "ALTER TABLE session_members ADD COLUMN settled_at TEXT",
   "ALTER TABLE group_sessions ADD COLUMN store TEXT DEFAULT 'discogs'",
@@ -1580,6 +1583,10 @@ export function updateNotificationPrefs(userId, prefs) {
     fields.push("notify_order_closed = ?");
     values.push(prefs.notifyOrderClosed ? 1 : 0);
   }
+  if (typeof prefs.notifyOrderAttention === "boolean") {
+    fields.push("notify_order_attention = ?");
+    values.push(prefs.notifyOrderAttention ? 1 : 0);
+  }
 
   if (!fields.length) return findUserById(userId);
 
@@ -1758,6 +1765,57 @@ export function listSessionMembersForNotifications(sessionId, type, excludeUserI
          AND u.id != ?`
     )
     .all(sessionId, excludeUserId ?? "");
+}
+
+export function listOpenSessionsNeedingAttentionNotify() {
+  const rows = db
+    .prepare(
+      `SELECT ${SESSION_LIST_COLUMNS}
+       FROM group_sessions gs
+       JOIN users u ON u.id = gs.created_by
+       WHERE gs.status = 'open'`
+    )
+    .all()
+    .map(withOrderTitle);
+
+  const needing = [];
+  const recovered = [];
+  for (const session of rows) {
+    const needs = needsAttention(session);
+    if (needs && !session.attention_notified_at) {
+      needing.push(session);
+    } else if (!needs && session.attention_notified_at) {
+      recovered.push(session);
+    }
+  }
+  return { needing, recovered };
+}
+
+export function markSessionAttentionNotified(sessionId) {
+  const at = new Date().toISOString();
+  db.prepare(
+    "UPDATE group_sessions SET attention_notified_at = ? WHERE id = ?"
+  ).run(at, sessionId);
+}
+
+export function clearSessionAttentionNotified(sessionId) {
+  db.prepare(
+    "UPDATE group_sessions SET attention_notified_at = NULL WHERE id = ?"
+  ).run(sessionId);
+}
+
+export function getOrderOwnerForAttentionNotification(session) {
+  const ownerId = session?.created_by;
+  if (!ownerId) return null;
+  const owner = findUserById(ownerId);
+  if (!owner?.notify_order_attention) return null;
+  if (!isDeliverableEmail(owner.email)) return null;
+  return {
+    id: owner.id,
+    email: owner.email,
+    name: owner.name,
+    username: owner.username,
+  };
 }
 
 export function publicCommunity(row, { includeInvite = false } = {}) {
@@ -2338,6 +2396,10 @@ export function publicUser(user) {
     notifyNewOrder: Boolean(user.notify_new_order),
     notifyOrderNote: Boolean(user.notify_order_note),
     notifyOrderClosed: Boolean(user.notify_order_closed),
+    notifyOrderAttention:
+      user.notify_order_attention == null
+        ? true
+        : Boolean(user.notify_order_attention),
     shopDiscountPercent: Number(user.shop_discount_percent) || 0,
     shopDiscountLabel: user.shop_discount_label ?? null,
     activeCommunityId: user.active_community_id ?? null,

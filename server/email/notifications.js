@@ -9,11 +9,29 @@ import {
 } from "../db.js";
 import { displayOrderTitle } from "../../shared/orderTitle.js";
 import {
+  ATTENTION_IDLE_DAYS,
+  lastActivityTs,
+} from "../../shared/orderDashboard.js";
+import {
   orderEmailLinkLabel,
   orderShareDescription,
   orderShareUrl,
 } from "../../shared/orderShare.js";
 import { APP_FULL_NAME, APP_SHORT_NAME } from "../../shared/brand.js";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function attentionReason(session, now = Date.now()) {
+  const idle = now - lastActivityTs(session) >= ATTENTION_IDLE_DAYS * DAY_MS;
+  let pastTarget = false;
+  if (session?.target_date) {
+    const target = new Date(`${session.target_date}T12:00:00`).getTime();
+    pastTarget = !Number.isNaN(target) && target < now;
+  }
+  if (idle && pastTarget) return "both";
+  if (pastTarget) return "target";
+  return "idle";
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LOGO_CANDIDATES = [
@@ -186,6 +204,46 @@ export async function notifyOrderClosed({
   await notifyUsers(users, {
     subject: copy.subject,
     text: copy.text,
+    html,
+    attachments: withBrandAttachments(undefined, logoBuffer),
+  });
+}
+
+export async function notifyOrderNeedsAttention({ baseUrl, session, owner, reason }) {
+  if (!owner?.email) return;
+
+  const title = displayOrderTitle(session);
+  const url = orderShareUrl(baseUrl, session.id);
+  const linkLabel = orderEmailLinkLabel(session, { locale: "en", action: "view" });
+  const summary = orderShareDescription(session, "en");
+  const kind = reason ?? attentionReason(session);
+  const reasonText =
+    kind === "target"
+      ? "The target date for this order has passed."
+      : kind === "both"
+        ? `This order has been inactive for ${ATTENTION_IDLE_DAYS}+ days and its target date has passed.`
+        : `This order has been inactive for ${ATTENTION_IDLE_DAYS}+ days.`;
+
+  const subject = `${APP_SHORT_NAME}: Order needs attention — ${title}`;
+  const text = `Your group order needs attention: ${title}
+
+${reasonText}
+
+${summary}
+
+${linkLabel}: ${url}`;
+  const { html, logoBuffer } = brandedHtml(
+    baseUrl,
+    `<p>Your group order needs attention: <strong>${title}</strong></p>
+<p>${reasonText}</p>
+<p>${summary}</p>
+<p><a href="${url}">${linkLabel}</a></p>`
+  );
+
+  await sendEmail({
+    to: owner.email,
+    subject,
+    text,
     html,
     attachments: withBrandAttachments(undefined, logoBuffer),
   });

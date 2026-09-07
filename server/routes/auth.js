@@ -164,6 +164,9 @@ router.patch("/me/notifications", (req, res) => {
   if (typeof body.notifyOrderClosed === "boolean") {
     prefs.notifyOrderClosed = body.notifyOrderClosed;
   }
+  if (typeof body.notifyOrderAttention === "boolean") {
+    prefs.notifyOrderAttention = body.notifyOrderAttention;
+  }
 
   const user = findUserById(req.session.userId);
   if (!user) {
@@ -171,7 +174,10 @@ router.patch("/me/notifications", (req, res) => {
   }
 
   const enabling =
-    prefs.notifyNewOrder || prefs.notifyOrderNote || prefs.notifyOrderClosed;
+    prefs.notifyNewOrder ||
+    prefs.notifyOrderNote ||
+    prefs.notifyOrderClosed ||
+    prefs.notifyOrderAttention;
   if (enabling && !isDeliverableEmail(user.email)) {
     return res.status(400).json({
       error: "Najprej vnesi veljaven e-poštni naslov v nastavitvah.",
