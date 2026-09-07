@@ -13,7 +13,9 @@ const SERVER_ERROR_MAP = {
   "Gesli se ne ujemata.": "errors.passwordsMismatch",
   "Registracija ni uspela.": "errors.registerFailed",
   "Vnesi uporabniško ime in geslo.": "errors.loginFields",
+  "Vnesi uporabniško ime ali e-pošto in geslo.": "errors.loginFields",
   "Napačno uporabniško ime ali geslo.": "errors.wrongCredentials",
+  "Napačno uporabniško ime / e-pošta ali geslo.": "errors.wrongCredentials",
   "Prijava ni uspela. Poskusi znova.": "errors.loginFailed",
   "Uporabniško ime mora imeti 3–32 znakov.": "errors.usernameLength",
   "Uporabniško ime sme vsebovati samo črke, številke, piko, podčrtaj ali vezaj.":

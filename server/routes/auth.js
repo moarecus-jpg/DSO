@@ -302,13 +302,18 @@ router.post("/register", async (req, res) => {
 
 router.post("/login", async (req, res) => {
   try {
-    const { username, password, rememberMe } = req.body ?? {};
-    if (!username?.trim() || !password) {
-      return res.status(400).json({ error: "Vnesi uporabniško ime in geslo." });
+    const { username, email, password, rememberMe } = req.body ?? {};
+    const identifier = String(username ?? email ?? "").trim();
+    if (!identifier || !password) {
+      return res.status(400).json({
+        error: "Vnesi uporabniško ime ali e-pošto in geslo.",
+      });
     }
-    const user = verifyLocalUser(username.trim(), password);
+    const user = verifyLocalUser(identifier, password);
     if (!user) {
-      return res.status(401).json({ error: "Napačno uporabniško ime ali geslo." });
+      return res.status(401).json({
+        error: "Napačno uporabniško ime / e-pošta ali geslo.",
+      });
     }
     req.session.userId = user.id;
     applySessionPersistence(req, Boolean(rememberMe));

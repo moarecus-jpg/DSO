@@ -25,6 +25,7 @@ export function OrdersPageHeader({
   onSearchModeChange,
   sort = "recent",
   onSortChange,
+  actions = null,
 }) {
   const { t } = useLocale();
   const mode = ORDER_SEARCH_MODES.includes(searchMode) ? searchMode : "creator";
@@ -42,9 +43,14 @@ export function OrdersPageHeader({
 
   return (
     <div className="orders-page-header">
-      <div>
-        <h1 className="orders-page-title">{title}</h1>
-        {subtitle && <p className="orders-page-subtitle">{subtitle}</p>}
+      <div className="orders-page-header-leading">
+        <div className="orders-page-header-titles">
+          <h1 className="orders-page-title">{title}</h1>
+          {subtitle && <p className="orders-page-subtitle">{subtitle}</p>}
+        </div>
+        {actions ? (
+          <div className="orders-page-header-actions">{actions}</div>
+        ) : null}
       </div>
       <div className="orders-search-bar">
         <div className="orders-search-wrap">

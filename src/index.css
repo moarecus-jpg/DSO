@@ -5583,16 +5583,38 @@ body.modal-open .order-sticky-backdrop {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  /* Middle column must be able to shrink so search/sort never overlap account tools */
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: calc(0.75rem * var(--ui-scale, 1)) calc(1rem * var(--ui-scale, 1));
   margin-bottom: calc(1.15rem * var(--ui-scale, 1));
 }
 
-.orders-page-header > div:first-child {
+.orders-page-header > div:first-child,
+.orders-page-header-leading {
   grid-column: 1;
   justify-self: start;
   min-width: 0;
+}
+
+.orders-page-header-leading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.orders-page-header-titles {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.orders-page-header-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding-top: 0.15rem;
 }
 
 .orders-page-header-account {
@@ -5600,10 +5622,12 @@ body.modal-open .order-sticky-backdrop {
   grid-row: 1;
   justify-self: end;
   align-self: center;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .orders-page-header--no-search {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .orders-page-header--no-search .orders-page-header-account {
@@ -5619,6 +5643,7 @@ body.modal-open .order-sticky-backdrop {
   gap: 0.45rem;
   min-width: 0;
   flex-wrap: nowrap;
+  flex-shrink: 0;
 }
 
 .header-account-bar .btn {
@@ -6362,7 +6387,7 @@ img.header-account-avatar {
 .orders-search-bar {
   grid-column: 2;
   justify-self: center;
-  width: min(var(--header-search-max), 100%);
+  width: 100%;
   max-width: var(--header-search-max);
   display: flex;
   align-items: center;
@@ -6659,15 +6684,9 @@ img.header-account-avatar {
 }
 
 .orders-split--preview .orders-split-scroll .order-card-v2 {
-  flex: 0 0
-    calc(
-      (100% - (var(--order-preview-visible) - 1) * var(--order-preview-gap)) /
-        var(--order-preview-visible)
-    );
-  min-height: calc(
-    (100% - (var(--order-preview-visible) - 1) * var(--order-preview-gap)) /
-      var(--order-preview-visible)
-  );
+  flex: 0 0 auto;
+  min-height: 0;
+  height: auto;
 }
 
 .orders-split--preview .orders-split-main > .orders-pagination,
@@ -6690,8 +6709,9 @@ img.header-account-avatar {
 
 .orders-split--preview .order-card-v2 {
   min-height: 0;
+  height: auto;
   flex-shrink: 0;
-  overflow: hidden;
+  overflow: visible;
   padding: 1.15rem 1.2rem 1.15rem;
   gap: 0.9rem;
 }
@@ -6734,7 +6754,8 @@ img.header-account-avatar {
   align-items: stretch;
   gap: 0.95rem;
   width: 100%;
-  min-height: 11.5rem;
+  min-height: 0;
+  height: auto;
   padding: 1.2rem 1.25rem 1.1rem;
   border-radius: 1.35rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -6744,17 +6765,17 @@ img.header-account-avatar {
   font: inherit;
   text-align: left;
   cursor: pointer;
-  overflow: hidden;
+  overflow: visible;
   transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s, background 0.25s;
 }
 
 .order-card-v2-main {
   display: flex;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   flex-direction: column;
   gap: 0.95rem;
   min-width: 0;
-  min-height: 100%;
+  min-height: 0;
   color: inherit;
   text-decoration: none;
 }
@@ -6865,6 +6886,7 @@ img.header-account-avatar {
 
 .order-card-v2-body {
   min-width: 0;
+  flex-shrink: 0;
 }
 
 .order-card-v2-title {
@@ -6893,6 +6915,7 @@ img.header-account-avatar {
   margin: 0.35rem 0 0;
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.42);
+  flex-shrink: 0;
 }
 
 .order-card-v2-footer {
@@ -6905,6 +6928,7 @@ img.header-account-avatar {
   padding-top: 0.15rem;
   min-width: 0;
   width: 100%;
+  flex-shrink: 0;
 }
 
 .order-card-v2-meta-row {
@@ -8245,6 +8269,22 @@ a.order-preview-item-title:hover {
     padding-top: 0;
   }
 
+  .orders-page-header-leading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  .orders-page-header-actions {
+    padding-top: 0;
+  }
+
+  .orders-page-header-actions .orders-filter-btn {
+    white-space: nowrap;
+  }
+
   .orders-page-header-account {
     display: none;
   }
@@ -8287,24 +8327,46 @@ a.order-preview-item-title:hover {
   .order-card-v2 {
     padding: 1rem 1.05rem;
     border-radius: 1.1rem;
+    overflow: visible;
+    min-height: 0;
+    height: auto;
+  }
+
+  .order-card-v2-main {
+    flex: 0 0 auto;
   }
 
   .order-card-v2-footer {
+    display: flex;
     flex-direction: column;
     align-items: stretch;
     gap: 0.7rem;
+    flex-shrink: 0;
+    margin-top: 0.15rem;
   }
 
   .order-card-v2-actions {
+    display: flex;
     margin-left: 0;
     width: 100%;
     justify-content: stretch;
+    flex-wrap: nowrap;
+    gap: 0.45rem;
   }
 
   .order-card-v2-action {
+    display: inline-flex;
     flex: 1 1 0;
     justify-content: center;
     min-width: 0;
+    min-height: 2.25rem;
+  }
+
+  .order-card-v2-action span {
+    display: inline;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .order-card-v2-avatar {
@@ -10502,6 +10564,42 @@ img.plac-user-avatar {
     justify-content: center;
   }
 
+  /* Same row — drop long labels, keep icons / short values */
+  .orders-sort-filter .app-select-prefix {
+    display: none;
+  }
+
+  .orders-search-filter .app-select-trigger {
+    min-width: 0;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.8rem;
+  }
+
+  .header-account-bar .community-switcher {
+    max-width: none;
+    flex: 0 0 auto;
+  }
+
+  .header-account-bar .community-switcher-name,
+  .header-account-bar .community-switcher-trigger > svg:last-of-type {
+    display: none;
+  }
+
+  .header-account-bar .community-switcher-trigger {
+    width: calc(2.15rem * var(--ui-scale, 1));
+    height: calc(2.15rem * var(--ui-scale, 1));
+    min-height: calc(2.15rem * var(--ui-scale, 1));
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+    border-radius: 0.65rem;
+  }
+
+  .orders-search-wrap {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
   .mobile-topbar-icon-btn {
     width: calc(2.15rem * var(--ui-scale, 1));
     height: calc(2.15rem * var(--ui-scale, 1));
@@ -10546,6 +10644,37 @@ img.plac-user-avatar {
 
   .app-main-v2 {
     padding: 1rem 1.1rem 1.75rem;
+  }
+
+  .orders-page-subtitle {
+    display: none;
+  }
+
+  .orders-page-header-titles {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .orders-page-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .orders-page-header {
+    gap: 0.55rem 0.65rem;
+  }
+
+  .orders-search-bar {
+    gap: 0.4rem;
+  }
+
+  .orders-search-input {
+    font-size: 0.82rem;
+  }
+
+  .header-account-bar {
+    gap: 0.3rem;
   }
 }
 
@@ -10617,14 +10746,19 @@ img.plac-user-avatar {
   }
 
   .plac-page-header-row--top {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.65rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "title end"
+      "search search";
+    align-items: center;
+    gap: 0.65rem 0.75rem;
   }
 
   .plac-page-header-title {
-    width: 100%;
+    grid-area: title;
+    width: auto;
+    min-width: 0;
     overflow: visible;
   }
 
@@ -10640,6 +10774,7 @@ img.plac-user-avatar {
   }
 
   .plac-page-header-search {
+    grid-area: search;
     grid-column: auto;
     width: 100%;
     max-width: none;
@@ -10647,16 +10782,23 @@ img.plac-user-avatar {
   }
 
   .plac-page-header-end {
+    grid-area: end;
     display: flex;
-    width: 100%;
+    width: auto;
     margin-left: 0;
     flex-wrap: nowrap;
     justify-content: flex-end;
+    align-self: start;
     gap: 0.45rem;
+    padding-top: 0.1rem;
   }
 
   .plac-page-header-end .plac-page-header-account {
     display: none;
+  }
+
+  .plac-page-header-end .plac-toolbar-actions {
+    margin: 0;
   }
 
   .plac-page-header-title-main {
@@ -10689,9 +10831,12 @@ img.plac-user-avatar {
   }
 
   .plac-page-header-end .plac-sell-btn {
-    min-height: 2.15rem;
+    width: 2.15rem;
+    min-width: 2.15rem;
     height: 2.15rem;
-    padding: 0 0.85rem;
+    min-height: 2.15rem;
+    padding: 0;
+    justify-content: center;
   }
 
   .plac-page-header-back,

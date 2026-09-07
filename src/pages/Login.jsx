@@ -406,16 +406,16 @@ export function Login() {
         ) : (
           <form className="login-form login-form-v2" onSubmit={handleLogin}>
             <AuthField
-              label={t("auth.username")}
+              label={t("auth.usernameOrEmail")}
               icon={AtSign}
               value={loginForm.username}
               onChange={(e) =>
                 setLoginForm((f) => ({
                   ...f,
-                  username: e.target.value.toLowerCase(),
+                  username: e.target.value,
                 }))
               }
-              placeholder={t("auth.usernamePlaceholder")}
+              placeholder={t("auth.usernameOrEmailPlaceholder")}
               required
               autoComplete="username"
               autoFocus

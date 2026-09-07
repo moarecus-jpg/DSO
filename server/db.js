@@ -631,8 +631,12 @@ export function createLocalUser({ firstName, lastName, password, username: chose
   return findUserById(id);
 }
 
-export function verifyLocalUser(username, password) {
-  const user = findUserByUsername(username);
+export function verifyLocalUser(identifier, password) {
+  const raw = identifier?.trim();
+  if (!raw) return null;
+  const user = raw.includes("@")
+    ? findUserByEmail(raw)
+    : findUserByUsername(raw);
   if (!user?.password_hash) return null;
   if (!verifyPassword(password, user.password_hash)) return null;
   return user;

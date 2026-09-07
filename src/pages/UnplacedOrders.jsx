@@ -65,27 +65,26 @@ export function UnplacedOrders() {
         onSearchModeChange={setSearchMode}
         sort={sort}
         onSortChange={setSort}
+        actions={
+          <OrdersFilterButton
+            searchMode={searchMode}
+            onSearchModeChange={setSearchMode}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            sort={sort}
+            onSortChange={setSort}
+            dirty={filtersDirty}
+            onReset={() => {
+              setSearchMode("creator");
+              setDateRange("any");
+              setSort("recent");
+            }}
+          />
+        }
       />
 
       <div className={`orders-split${showDesktopPreview ? " orders-split--preview" : ""}`}>
         <div className="orders-split-list">
-          <div className="orders-list-toolbar">
-            <OrdersFilterButton
-              searchMode={searchMode}
-              onSearchModeChange={setSearchMode}
-              dateRange={dateRange}
-              onDateRangeChange={setDateRange}
-              sort={sort}
-              onSortChange={setSort}
-              dirty={filtersDirty}
-              onReset={() => {
-                setSearchMode("creator");
-                setDateRange("any");
-                setSort("recent");
-              }}
-            />
-          </div>
-
           {!loading && showPagination && (
             <OrdersPagination
               page={pageData.page}
