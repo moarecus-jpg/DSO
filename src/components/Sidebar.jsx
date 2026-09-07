@@ -12,6 +12,7 @@ import {
   Settings,
   Store,
 } from "lucide-react";
+import { APP_TITLE } from "../../shared/brand.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { BrandMark } from "./BrandMark.jsx";
 import { StealthModeToggle } from "./StealthModeToggle.jsx";
@@ -101,7 +102,7 @@ export function Sidebar() {
   return (
     <aside className="sidebar sidebar-v2">
       <div className="sidebar-top">
-        <Link to="/" className="sidebar-brand" title="DSO — Discogs Slovenia Orders">
+        <Link to="/" className="sidebar-brand" title={APP_TITLE}>
           <BrandMark variant="sidebar" />
         </Link>
 

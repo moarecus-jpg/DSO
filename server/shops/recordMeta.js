@@ -158,7 +158,7 @@ async function fetchShopHtml(url) {
       signal: controller.signal,
       headers: {
         "User-Agent":
-          "DSO-GroupOrders/1.0 (+https://github.com/moarecus-jpg/DSO; group-order metadata)",
+          "DCO-GroupOrders/1.0 (+https://github.com/moarecus-jpg/DSO; group-order metadata)",
         Accept: "text/html,application/xhtml+xml",
         "Accept-Language": "en-US,en;q=0.9,de;q=0.8,fr;q=0.7",
       },

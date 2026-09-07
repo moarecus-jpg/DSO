@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, SlidersHorizontal } from "lucide-react";
-import { ORDER_SEARCH_MODES } from "../../shared/filterOrders.js";
+import {
+  ORDER_DATE_RANGES,
+  ORDER_SEARCH_MODES,
+} from "../../shared/filterOrders.js";
+import { ORDER_SORTS } from "../../shared/orderDashboard.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 
 const SEARCH_MODE_LABELS = {
@@ -8,9 +12,20 @@ const SEARCH_MODE_LABELS = {
   seller: "orders.searchBySeller",
 };
 
+const DATE_RANGE_LABELS = {
+  any: "orders.dateRange.any",
+  today: "orders.dateRange.today",
+  week: "orders.dateRange.week",
+  month: "orders.dateRange.month",
+};
+
 export function OrdersFilterButton({
   searchMode = "creator",
   onSearchModeChange,
+  dateRange = "any",
+  onDateRangeChange,
+  sort = "recent",
+  onSortChange,
   onReset,
   dirty = false,
 }) {
@@ -52,21 +67,77 @@ export function OrdersFilterButton({
 
       {open && (
         <div className="orders-filter-menu" role="dialog" aria-label={t("orders.filters")}>
-          <p className="orders-filter-menu-title">{t("orders.filterScope")}</p>
-          {ORDER_SEARCH_MODES.map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              className={`orders-filter-option${searchMode === mode ? " active" : ""}`}
-              onClick={() => {
-                onSearchModeChange?.(mode);
-                setOpen(false);
-              }}
-            >
-              {t(SEARCH_MODE_LABELS[mode])}
-              {searchMode === mode && <Check size={15} aria-hidden />}
-            </button>
-          ))}
+          {onSearchModeChange ? (
+            <>
+              <p className="orders-filter-menu-title">{t("orders.filterScope")}</p>
+              {ORDER_SEARCH_MODES.map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  className={`orders-filter-option${searchMode === mode ? " active" : ""}`}
+                  onClick={() => {
+                    onSearchModeChange(mode);
+                  }}
+                >
+                  {t(SEARCH_MODE_LABELS[mode])}
+                  {searchMode === mode && <Check size={15} aria-hidden />}
+                </button>
+              ))}
+            </>
+          ) : null}
+
+          {onDateRangeChange ? (
+            <>
+              <p
+                className={`orders-filter-menu-title${
+                  onSearchModeChange ? " orders-filter-menu-title--section" : ""
+                }`}
+              >
+                {t("orders.filterDate")}
+              </p>
+              {ORDER_DATE_RANGES.map((range) => (
+                <button
+                  key={range}
+                  type="button"
+                  className={`orders-filter-option${dateRange === range ? " active" : ""}`}
+                  onClick={() => {
+                    onDateRangeChange(range);
+                  }}
+                >
+                  {t(DATE_RANGE_LABELS[range])}
+                  {dateRange === range && <Check size={15} aria-hidden />}
+                </button>
+              ))}
+            </>
+          ) : null}
+
+          {onSortChange ? (
+            <>
+              <p
+                className={`orders-filter-menu-title${
+                  onSearchModeChange || onDateRangeChange
+                    ? " orders-filter-menu-title--section"
+                    : ""
+                }`}
+              >
+                {t("orders.sortLabel")}
+              </p>
+              {ORDER_SORTS.map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={`orders-filter-option${sort === value ? " active" : ""}`}
+                  onClick={() => {
+                    onSortChange(value);
+                  }}
+                >
+                  {t(`orders.sort.${value}`)}
+                  {sort === value && <Check size={15} aria-hidden />}
+                </button>
+              ))}
+            </>
+          ) : null}
+
           {onReset && (
             <button
               type="button"

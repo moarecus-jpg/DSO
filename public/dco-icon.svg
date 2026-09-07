@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="DCO">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="46%" r="68%">
+      <stop offset="0%" stop-color="#5b21b6"/>
+      <stop offset="55%" stop-color="#4c1d95"/>
+      <stop offset="100%" stop-color="#2e1065"/>
+    </radialGradient>
+    <linearGradient id="stroke" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#ddd6fe"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- Concentric C mark: open on the right, same stroke language as the old S -->
+  <g
+    fill="none"
+    stroke="url(#stroke)"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path
+      stroke-width="34"
+      d="M 348 148
+         A 148 148 0 1 0 348 364"
+    />
+    <path
+      stroke-width="28"
+      d="M 322 176
+         A 112 112 0 1 0 322 336"
+    />
+    <path
+      stroke-width="22"
+      d="M 298 204
+         A 78 78 0 1 0 298 308"
+    />
+    <path
+      stroke-width="18"
+      d="M 278 228
+         A 48 48 0 1 0 278 284"
+    />
+  </g>
+  <circle cx="256" cy="256" r="16" fill="#f5f3ff"/>
+</svg>

@@ -1,5 +1,6 @@
 import OAuth from "oauth";
 import dotenv from "dotenv";
+import { APP_SHORT_NAME } from "../../shared/brand.js";
 
 dotenv.config();
 
@@ -11,7 +12,7 @@ function discogsUserAgent(contactUrl) {
   const base = (contactUrl || process.env.CLIENT_URL || "http://localhost:5173")
     .trim()
     .replace(/\/$/, "");
-  return `DSO/2.0 +${base}`;
+  return `${APP_SHORT_NAME}/2.0 +${base}`;
 }
 
 export function discogsOAuthConfigured() {

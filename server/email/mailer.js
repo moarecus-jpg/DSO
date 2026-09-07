@@ -16,6 +16,7 @@ function resendApiKey() {
 function fromAddress() {
   return (
     process.env.RESEND_FROM?.trim() ||
+    process.env.FROM_EMAIL?.trim() ||
     process.env.SMTP_FROM?.trim() ||
     ""
   );

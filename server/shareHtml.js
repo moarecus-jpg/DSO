@@ -1,3 +1,5 @@
+import { APP_SHORT_NAME } from "../shared/brand.js";
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -8,7 +10,7 @@ function escapeHtml(value) {
 
 export function injectShareMeta(
   html,
-  { title, description, url, imageUrl, siteName = "DSO" }
+  { title, description, url, imageUrl, siteName = APP_SHORT_NAME }
 ) {
   const safeTitle = escapeHtml(title);
   const safeDescription = escapeHtml(description);

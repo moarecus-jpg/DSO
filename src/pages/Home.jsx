@@ -27,6 +27,7 @@ export function Home() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [searchMode, setSearchMode] = useState("creator");
+  const [dateRange, setDateRange] = useState("any");
   const [chip, setChip] = useState("all");
   const [sort, setSort] = useState("recent");
   const [page, setPage] = useState(1);
@@ -41,8 +42,8 @@ export function Home() {
   }, [loadSessions]);
 
   const searchedSessions = useMemo(
-    () => filterSessions(sessions, { query, searchMode }),
-    [sessions, query, searchMode]
+    () => filterSessions(sessions, { query, searchMode, dateRange }),
+    [sessions, query, searchMode, dateRange]
   );
   const stats = useMemo(() => computeDashboardStats(sessions), [sessions]);
   const recentSessions = useMemo(
@@ -68,7 +69,7 @@ export function Home() {
 
   useEffect(() => {
     setPage(1);
-  }, [query, searchMode, chip, sort]);
+  }, [query, searchMode, dateRange, chip, sort]);
 
   const preview = useOrderPreview(filteredSessions, {
     onClosed: async (session) => {
@@ -78,7 +79,12 @@ export function Home() {
   });
 
   const showDesktopPreview = preview.isDesktop && !loading && sessions.length > 0;
-  const filtersDirty = query.trim() !== "" || searchMode !== "creator" || chip !== "all";
+  const filtersDirty =
+    query.trim() !== "" ||
+    searchMode !== "creator" ||
+    dateRange !== "any" ||
+    sort !== "recent" ||
+    chip !== "all";
 
   return (
     <div className="page page-orders">
@@ -115,10 +121,16 @@ export function Home() {
               <OrdersFilterButton
                 searchMode={searchMode}
                 onSearchModeChange={setSearchMode}
+                dateRange={dateRange}
+                onDateRangeChange={setDateRange}
+                sort={sort}
+                onSortChange={setSort}
                 dirty={filtersDirty}
                 onReset={() => {
                   setQuery("");
                   setSearchMode("creator");
+                  setDateRange("any");
+                  setSort("recent");
                   setChip("all");
                 }}
               />
@@ -142,7 +154,7 @@ export function Home() {
                 sessions={pagedSessions}
                 loading={loading}
                 emptyMessage={
-                  query.trim() || chip !== "all"
+                  query.trim() || chip !== "all" || dateRange !== "any"
                     ? t("common.noSearchResults")
                     : t("orders.emptyOpen")
                 }

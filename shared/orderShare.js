@@ -1,5 +1,6 @@
 import { displayOrderTitle } from "./orderTitle.js";
 import { isArchivedSession } from "./orderStatus.js";
+import { APP_SHORT_NAME, APP_TITLE } from "./brand.js";
 
 export function orderSharePath(sessionId) {
   return `/session/${sessionId}`;
@@ -11,7 +12,7 @@ export function orderShareUrl(baseUrl, sessionId) {
 
 export function orderPageTitle(session) {
   const name = displayOrderTitle(session);
-  return name ? `${name} · DSO` : "DSO — Discogs Slovenia Orders";
+  return name ? `${name} · ${APP_SHORT_NAME}` : APP_TITLE;
 }
 
 export function orderShareDescription(session, locale = "en") {

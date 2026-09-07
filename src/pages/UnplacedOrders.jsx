@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { OrderDetailPreview } from "../components/OrderDetailPreview.jsx";
 import { OrderList } from "../components/OrderList.jsx";
+import { OrdersFilterButton } from "../components/OrdersFilterButton.jsx";
 import { OrdersPageHeader } from "../components/OrdersPageHeader.jsx";
 import { OrdersPagination } from "../components/OrdersPagination.jsx";
 import { filterSessions } from "../../shared/filterOrders.js";
@@ -16,6 +17,7 @@ export function UnplacedOrders() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [searchMode, setSearchMode] = useState("creator");
+  const [dateRange, setDateRange] = useState("any");
   const [sort, setSort] = useState("recent");
   const [page, setPage] = useState(1);
 
@@ -29,15 +31,19 @@ export function UnplacedOrders() {
   }, [loadSessions]);
 
   const filteredSessions = useMemo(
-    () => sortSessions(filterSessions(sessions, { query, searchMode }), sort),
-    [sessions, query, searchMode, sort]
+    () =>
+      sortSessions(
+        filterSessions(sessions, { query, searchMode, dateRange }),
+        sort
+      ),
+    [sessions, query, searchMode, dateRange, sort]
   );
 
   const { pageData, showPagination } = useOrdersPageData(filteredSessions, page);
 
   useEffect(() => {
     setPage(1);
-  }, [query, searchMode, sort]);
+  }, [query, searchMode, dateRange, sort]);
 
   const preview = useOrderPreview(filteredSessions, {
     onReopened: loadSessions,
@@ -45,6 +51,8 @@ export function UnplacedOrders() {
 
   const hasOrders = !loading && filteredSessions.length > 0;
   const showDesktopPreview = preview.isDesktop && hasOrders;
+  const filtersDirty =
+    searchMode !== "creator" || dateRange !== "any" || sort !== "recent";
 
   return (
     <div className="page page-orders">
@@ -61,6 +69,23 @@ export function UnplacedOrders() {
 
       <div className={`orders-split${showDesktopPreview ? " orders-split--preview" : ""}`}>
         <div className="orders-split-list">
+          <div className="orders-list-toolbar">
+            <OrdersFilterButton
+              searchMode={searchMode}
+              onSearchModeChange={setSearchMode}
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+              sort={sort}
+              onSortChange={setSort}
+              dirty={filtersDirty}
+              onReset={() => {
+                setSearchMode("creator");
+                setDateRange("any");
+                setSort("recent");
+              }}
+            />
+          </div>
+
           {!loading && showPagination && (
             <OrdersPagination
               page={pageData.page}
@@ -78,7 +103,9 @@ export function UnplacedOrders() {
                 sessions={pageData.items}
                 loading={loading}
                 emptyMessage={
-                  query.trim() ? t("common.noSearchResults") : t("orders.emptyUnplaced")
+                  query.trim() || dateRange !== "any"
+                    ? t("common.noSearchResults")
+                    : t("orders.emptyUnplaced")
                 }
                 selectedId={preview.selectedId}
                 onSelect={preview.selectSession}

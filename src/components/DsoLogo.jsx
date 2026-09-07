@@ -70,7 +70,7 @@ const SHINE_PATHS = Array.from({ length: SHINE_SEGMENTS }, (_, index) => {
   };
 });
 
-/** Front-facing vinyl with DSO on the label. */
+/** Front-facing vinyl with DCO on the label. */
 export function DsoLogo({ className }) {
   const uid = useId().replace(/:/g, "");
   const discId = `dso-disc-${uid}`;
@@ -201,7 +201,7 @@ export function DsoLogo({ className }) {
         letterSpacing="0.03em"
       >
         <tspan fill="#fff">D</tspan>
-        <tspan fill="#c4b5fd">S</tspan>
+        <tspan fill="#c4b5fd">C</tspan>
         <tspan fill="#fff">O</tspan>
       </text>
     </svg>

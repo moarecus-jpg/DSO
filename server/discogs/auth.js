@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-export const DISCOGS_UA = "DSO/2.0 +http://localhost:5173";
+export const DISCOGS_UA = "DCO/2.0 +http://localhost:5173";
 
 export function discogsAppConfigured() {
   return Boolean(

@@ -22,11 +22,8 @@ export function HeaderAccount({ className = "", compact = false }) {
   if (compact) {
     return (
       <div className={`header-account-bar header-account-bar--compact ${className}`.trim()}>
-        <CommunitySwitcher compact />
         <PlacCartLink compact />
-        {isSeller && <PlacOrdersLink compact />}
         <PlacInboxLink compact />
-        {isSeller && <PlacShopLink compact />}
         <Link
           to="/settings"
           className="mobile-topbar-account-btn"

@@ -64,6 +64,7 @@ export default {
     mobileItems: "Itemi",
     mobilePlac: "Tržn.",
     mobileStatistics: "Stat.",
+    mobileMore: "Več",
     mobileProfile: "Profil",
     mainNav: "Glavna navigacija",
     back: "Nazaj",
@@ -73,7 +74,7 @@ export default {
     login: "Prijava",
     register: "Ustvari račun",
     registerSubtitle: "Ustvari svoj račun in začni naročati pri Discogs.",
-    loginSubtitle: "Prijavi se v svoj DSO račun.",
+    loginSubtitle: "Prijavi se v svoj DCO račun.",
     firstName: "Ime",
     lastName: "Priimek",
     username: "Uporabniško ime",
@@ -200,7 +201,14 @@ export default {
     filters: "Filtri naročil",
     filterButton: "Filter",
     filterScope: "Išči po",
+    filterDate: "Datum odprtja",
     filterReset: "Počisti filtre",
+    dateRange: {
+      any: "Kadarkoli",
+      today: "Danes",
+      week: "Zadnjih 7 dni",
+      month: "Ta mesec",
+    },
     paginationShowing: "Prikazano {{from}}–{{to}} od {{total}} naročil",
     paginationPrev: "Prejšnja stran",
     paginationNext: "Naslednja stran",
@@ -426,7 +434,7 @@ export default {
     shopOpenHint:
       "{{store}} nima deep-linka za košarico — vsak izdelek odpri v trgovini, ko si tam prijavljen.",
     removeFromOrder: "Odstrani iz naročila",
-    removeFromOrderHint: "Odstrani ta item samo iz naročila v DSO.",
+    removeFromOrderHint: "Odstrani ta item samo iz naročila v DCO.",
     removing: "Odstranjujem…",
     addAllToCart: "Ustvari Discogs košarico ({{count}})",
     addAllToCartShort: "Košarica ({{count}})",
@@ -532,7 +540,7 @@ export default {
     callbackError:
       "Discogs je vrnil napako ob potrditvi. Preveri, da je Callback URL v Developer nastavitvah točno:",
     genericError:
-      "Povezava z Discogs ni uspela. V Discogs Developer pri aplikaciji DSO dodaj Callback URL:",
+      "Povezava z Discogs ni uspela. V Discogs Developer pri aplikaciji DCO dodaj Callback URL:",
     genericErrorRetry: "Nato znova klikni Poveži Discogs.",
     noKeys:
       "Manjkata DISCOGS_CONSUMER_KEY in DISCOGS_CONSUMER_SECRET v .env datoteki.",
@@ -557,7 +565,7 @@ export default {
     passwordChanged: "Geslo posodobljeno.",
     notificationsTitle: "E-poštna obvestila",
     notificationsHint:
-      "Prejmi e-pošto, ko se v DSO kaj zgodi. Vsako obvestilo lahko vklopiš ali izklopiš.",
+      "Prejmi e-pošto, ko se v DCO kaj zgodi. Vsako obvestilo lahko vklopiš ali izklopiš.",
     notificationsNeedEmail:
       "Za vklop obvestil vnesi pravi e-poštni naslov. Na placeholder naslove ne moremo pošiljati.",
     currentPlaceholderEmail: "Trenutni placeholder:",
@@ -686,7 +694,7 @@ export default {
   },
   plac: {
     title: "Tržnica",
-    subtitle: "Skupinska tržnica za člane DSO",
+    subtitle: "Skupinska tržnica za člane DCO",
     browse: "Tržnica",
     mine: "Moji oglasi",
     sell: "Prodaj",

@@ -20,6 +20,7 @@ import { useLocale } from "../hooks/useLocale.jsx";
 import { sellerMywantsUrl } from "../../shared/discogsUrls.js";
 import { displayOrderTitle } from "../../shared/orderTitle.js";
 import { orderPageTitle } from "../../shared/orderShare.js";
+import { APP_TITLE } from "../../shared/brand.js";
 import { canReportItemIssue } from "../../shared/orderReview.js";
 import { getStoreConfig, isShopStore } from "../../shared/stores.js";
 import {
@@ -83,7 +84,7 @@ export function Session() {
     if (!session) return undefined;
     document.title = orderPageTitle(session);
     return () => {
-      document.title = "DSO — Discogs Slovenia Orders";
+      document.title = APP_TITLE;
     };
   }, [session]);
 
