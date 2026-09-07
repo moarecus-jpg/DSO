@@ -25,4 +25,5 @@ COPY --from=build /app/shared ./shared
 COPY --from=build /app/dist ./dist
 
 EXPOSE 3001
-CMD ["npm", "start"]
+# Start Node directly so Railway SIGTERM reaches the app (npm start intercepts it).
+CMD ["node", "server/index.js"]
