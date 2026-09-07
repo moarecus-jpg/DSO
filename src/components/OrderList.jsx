@@ -136,7 +136,10 @@ function OrderCardFooter({
             className="order-card-v2-action order-card-v2-action--wantlist"
             title={t("session.openWantlist")}
             aria-label={t("session.openWantlist")}
-            onClick={stopCardEvent}
+            onClick={(e) => {
+              // Keep card select from firing, but allow the link to open.
+              e.stopPropagation();
+            }}
           >
             <Heart size={15} strokeWidth={2.3} aria-hidden />
             <span>{t("orders.wantlist")}</span>
