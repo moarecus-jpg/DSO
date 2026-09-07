@@ -1,6 +1,7 @@
 import OAuth from "oauth";
 import dotenv from "dotenv";
 import { APP_SHORT_NAME } from "../../shared/brand.js";
+import { envPublicAppUrl } from "../appUrl.js";
 
 dotenv.config();
 
@@ -9,7 +10,7 @@ const ACCESS_URL = "https://api.discogs.com/oauth/access_token";
 const AUTHORIZE_URL = "https://www.discogs.com/oauth/authorize";
 
 function discogsUserAgent(contactUrl) {
-  const base = (contactUrl || process.env.CLIENT_URL || "http://localhost:5173")
+  const base = (contactUrl || envPublicAppUrl() || "http://localhost:5173")
     .trim()
     .replace(/\/$/, "");
   return `${APP_SHORT_NAME}/2.0 +${base}`;
@@ -23,7 +24,7 @@ export function discogsOAuthConfigured() {
 
 /** @deprecated Use appUrl.discogsCallbackUrl(req) */
 export function discogsCallbackUrl() {
-  const base = (process.env.CLIENT_URL || "http://localhost:5173").replace(/\/$/, "");
+  const base = envPublicAppUrl() || "http://localhost:5173";
   return `${base}/auth/discogs/callback`;
 }
 

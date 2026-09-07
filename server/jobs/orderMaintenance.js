@@ -11,6 +11,7 @@ import {
   notifyOrderClosed,
   notifyOrderNeedsAttention,
 } from "../email/notifications.js";
+import { envPublicAppUrl } from "../appUrl.js";
 import { refreshOpenOrdersAvailability } from "./availability.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -18,11 +19,7 @@ const START_DELAY_MS = 45_000;
 const AUTO_CLOSE_DAYS = 14;
 
 function publicBaseUrl() {
-  if (process.env.APP_BASE_URL) return process.env.APP_BASE_URL.replace(/\/$/, "");
-  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
-    return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
-  }
-  return `http://localhost:${process.env.PORT || 3001}`;
+  return envPublicAppUrl() || `http://localhost:${process.env.PORT || 3001}`;
 }
 
 async function runAutoClose() {

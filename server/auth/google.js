@@ -1,3 +1,5 @@
+import { envPublicAppUrl } from "../appUrl.js";
+
 const GOOGLE_AUTH = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO = "https://www.googleapis.com/oauth2/v2/userinfo";
@@ -55,8 +57,8 @@ export function googleConfigured() {
   return Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 }
 
-/** OAuth callback must match the Vite dev URL so session cookies stay on one origin. */
+/** OAuth callback must match the public app origin so session cookies stay on one origin. */
 export function googleCallbackUrl() {
-  const base = (process.env.CLIENT_URL || "http://localhost:5173").replace(/\/$/, "");
+  const base = envPublicAppUrl() || "http://localhost:5173";
   return `${base}/auth/google/callback`;
 }
