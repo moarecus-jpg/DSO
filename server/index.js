@@ -10,6 +10,7 @@ import authRoutes from "./routes/auth.js";
 import adminRoutes from "./routes/admin.js";
 import sessionRoutes from "./routes/sessions.js";
 import placRoutes from "./routes/plac.js";
+import communityRoutes from "./routes/communities.js";
 import { getDatabaseInfo, getGroupSessionShareMeta } from "./db.js";
 import { sessionStore } from "./sessionStore.js";
 import { appBaseUrl, discogsCallbackUrl } from "./appUrl.js";
@@ -85,6 +86,7 @@ app.use("/auth", authRoutes);
 app.use("/auth/admin", adminRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/plac", placRoutes);
+app.use("/api/communities", communityRoutes);
 
 if (serveClient) {
   const indexHtmlPath = path.join(distDir, "index.html");

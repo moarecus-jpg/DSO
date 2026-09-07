@@ -22,7 +22,10 @@ async function notifyUsers(users, { subject, text, html }) {
 }
 
 export async function notifyNewOrderOpened({ baseUrl, session, excludeUserId }) {
-  const users = listUsersForNewOrderNotifications(excludeUserId);
+  const users = listUsersForNewOrderNotifications(
+    excludeUserId,
+    session?.community_id
+  );
   if (!users.length) return;
 
   const title = displayOrderTitle(session);

@@ -20,7 +20,11 @@ import {
   updateLinkOrdererDisplayName,
   createGroupSession,
   findUserById,
+  getActiveCommunityForUser,
   getGroupSession,
+  getGroupSessionShareMeta,
+  ensureMembershipInSloveniaCommunity,
+  isCommunityMember,
   upsertGoogleUser,
   isSessionMember,
   joinSession,
@@ -34,6 +38,7 @@ import {
   reopenGroupSession,
   setGroupSessionStatus,
   transferGroupSessionOwner,
+  userHasAnyCommunity,
 } from "../db.js";
 import {
   fetchInventoryForReleaseIds,
@@ -276,6 +281,7 @@ function ensureRequestUser(req) {
     picture: null,
   });
   req.session.userId = user.id;
+  ensureMembershipInSloveniaCommunity(user.id);
   return user.id;
 }
 
@@ -285,6 +291,39 @@ function requireUser(req, res, next) {
   }
   next();
 }
+
+function requireCommunity(req, res, next) {
+  const userId = req.session.userId;
+  if (!userHasAnyCommunity(userId)) {
+    return res.status(403).json({
+      error: "Join or create a community to continue.",
+      code: "community_required",
+    });
+  }
+  next();
+}
+
+function activeCommunityId(req) {
+  return getActiveCommunityForUser(req.session.userId)?.id ?? null;
+}
+
+function requireSessionCommunityAccess(session, userId) {
+  if (!session?.community_id) return true;
+  return isCommunityMember(session.community_id, userId);
+}
+
+router.param("id", (req, res, next, id) => {
+  if (!req.session?.userId) return next();
+  if (String(id).startsWith("mock")) return next();
+  const session = getGroupSessionShareMeta(id);
+  if (!session) return next();
+  if (!requireSessionCommunityAccess(session, req.session.userId)) {
+    return res.status(403).json({
+      error: "This order belongs to another community.",
+    });
+  }
+  next();
+});
 
 function withOrderPermissions(session, userId) {
   const isAdmin = isOrderAdmin(session, userId);
@@ -349,7 +388,7 @@ async function ensureSellerAvatars(sessions) {
   return Promise.all(sessions.map((session) => ensureSellerAvatar(session)));
 }
 
-router.get("/", requireUser, async (req, res) => {
+router.get("/", requireUser, requireCommunity, async (req, res) => {
   const status = listStatus(req);
   if (useMockSessions(req)) {
     const sessions =
@@ -362,12 +401,15 @@ router.get("/", requireUser, async (req, res) => {
           : mockSessions.filter((s) => (s.status ?? "open") === status);
     return res.json({ sessions: await ensureSellerAvatars(sessions) });
   }
+  const communityId = activeCommunityId(req);
   const sessions =
-    status === "all" ? listAllGroupSessions() : listGroupSessions(status);
+    status === "all"
+      ? listAllGroupSessions(communityId)
+      : listGroupSessions(status, communityId);
   res.json({ sessions: await ensureSellerAvatars(sessions) });
 });
 
-router.get("/counts", requireUser, (req, res) => {
+router.get("/counts", requireUser, requireCommunity, (req, res) => {
   if (useMockSessions(req)) {
     const counts = { open: 0, closed: 0, unplaced: 0, canceled: 0 };
     for (const session of mockSessions) {
@@ -377,7 +419,7 @@ router.get("/counts", requireUser, (req, res) => {
     }
     return res.json({ counts });
   }
-  res.json({ counts: countGroupSessionsByStatus() });
+  res.json({ counts: countGroupSessionsByStatus(activeCommunityId(req)) });
 });
 
 function serializeOrderedItem(row) {
@@ -426,11 +468,11 @@ function mockUserOrderedItems(userId) {
   return items;
 }
 
-router.get("/my-items", requireUser, (req, res) => {
+router.get("/my-items", requireUser, requireCommunity, (req, res) => {
   if (useMockSessions(req)) {
     return res.json({ items: mockUserOrderedItems(req.session.userId) });
   }
-  const rows = listUserOrderedItems(req.session.userId);
+  const rows = listUserOrderedItems(req.session.userId, activeCommunityId(req));
   res.json({ items: rows.map(serializeOrderedItem) });
 });
 
@@ -459,15 +501,15 @@ function mockUserStatisticsRows(userId, status = "all") {
   return rows;
 }
 
-router.get("/my-statistics", requireUser, (req, res) => {
+router.get("/my-statistics", requireUser, requireCommunity, (req, res) => {
   const status = statisticsStatus(req);
   const rows = useMockSessions(req)
     ? mockUserStatisticsRows(req.session.userId, status)
-    : listUserStatisticsRows(req.session.userId, status);
+    : listUserStatisticsRows(req.session.userId, status, activeCommunityId(req));
   res.json(computeUserStatistics(rows));
 });
 
-router.post("/", requireUser, async (req, res) => {
+router.post("/", requireUser, requireCommunity, async (req, res) => {
   const store = normalizeStore(req.body.store);
   const raw = req.body.sellerUsername ?? req.body.seller ?? "";
 
@@ -515,11 +557,20 @@ router.post("/", requireUser, async (req, res) => {
       return res.status(401).json({ error: "Prijavi se v aplikacijo." });
   }
 
+  const communityId = activeCommunityId(req);
+  if (!communityId) {
+    return res.status(403).json({
+      error: "Join or create a community to continue.",
+      code: "community_required",
+    });
+  }
+
   const session = createGroupSession({
     sellerUsername: cleanSeller,
       createdBy: userId,
       sellerAvatarUrl,
       store,
+      communityId,
     });
 
     notifyNewOrderOpened({
@@ -969,6 +1020,11 @@ router.get("/:id", requireUser, async (req, res) => {
 
   let session = getGroupSession(req.params.id);
   if (!session) return res.status(404).json({ error: "Session not found" });
+  if (!requireSessionCommunityAccess(session, req.session.userId)) {
+    return res.status(403).json({
+      error: "This order belongs to another community.",
+    });
+  }
 
   joinSession(req.params.id, req.session.userId);
   session = await ensureSellerAvatar(getGroupSession(req.params.id));

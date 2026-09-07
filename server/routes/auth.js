@@ -10,6 +10,7 @@ import {
   isDeliverableEmail,
   listUsersForAssignment,
   publicUser,
+  publicUserWithCommunities,
   updateDiscogsAvatar,
   updateHideMyRecords,
   updateNotificationPrefs,
@@ -17,6 +18,7 @@ import {
   changeUserPassword,
   upsertGoogleUser,
   verifyLocalUser,
+  ensureMembershipInSloveniaCommunity,
 } from "../db.js";
 import {
   exchangeGoogleCode,
@@ -40,7 +42,7 @@ import { isAppAdmin } from "../auth/appAdmin.js";
 const router = Router();
 
 function withAdminFlag(user) {
-  const publicProfile = publicUser(user);
+  const publicProfile = publicUserWithCommunities(user);
   if (!publicProfile) return null;
   return { ...publicProfile, isAdmin: isAppAdmin(user.id) };
 }
@@ -78,7 +80,7 @@ router.get("/me", async (req, res) => {
   }
   let user = findUserById(req.session.userId);
   if (!user && useMockAuth()) {
-    return res.json({ user: publicUser(MOCK_USER) });
+    return res.json({ user: publicUserWithCommunities(MOCK_USER) });
   }
   user = await ensureUserDiscogsAvatar(user);
   res.json({ user: withAdminFlag(user) });
@@ -106,7 +108,7 @@ router.patch("/me/privacy", (req, res) => {
     return res.status(404).json({ error: "Uporabnik ni bil najden." });
   }
 
-  res.json({ user: publicUser(user) });
+  res.json({ user: publicUserWithCommunities(user) });
 });
 
 router.patch("/me/email", (req, res) => {
@@ -121,7 +123,7 @@ router.patch("/me/email", (req, res) => {
 
   try {
     const user = updateUserEmail(req.session.userId, raw);
-    res.json({ user: publicUser(user) });
+    res.json({ user: publicUserWithCommunities(user) });
   } catch (err) {
     res.status(400).json({ error: err.message ?? "E-pošte ni bilo mogoče shraniti." });
   }
@@ -177,7 +179,7 @@ router.patch("/me/notifications", (req, res) => {
   }
 
   const updated = updateNotificationPrefs(req.session.userId, prefs);
-  res.json({ user: publicUser(updated) });
+  res.json({ user: publicUserWithCommunities(updated) });
 });
 
 router.post("/forgot-password", async (req, res) => {
@@ -333,8 +335,9 @@ router.post("/mock-login", (req, res) => {
     token: "mock",
     tokenSecret: "mock",
   });
+  ensureMembershipInSloveniaCommunity(user.id);
   req.session.userId = user.id;
-  res.json({ user: publicUser(findUserById(user.id)) });
+  res.json({ user: withAdminFlag(findUserById(user.id)) });
 });
 
 router.get("/discogs", async (req, res) => {

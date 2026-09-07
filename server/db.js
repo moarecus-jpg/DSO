@@ -301,6 +301,131 @@ db.exec(`
     ON plac_orders (seller_id);
 `);
 
+for (const sql of [
+  "ALTER TABLE users ADD COLUMN active_community_id TEXT",
+  "ALTER TABLE group_sessions ADD COLUMN community_id TEXT",
+]) {
+  try {
+    db.exec(sql);
+  } catch {
+    /* column already exists */
+  }
+}
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS communities (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    slug TEXT NOT NULL UNIQUE,
+    created_by TEXT,
+    currency TEXT DEFAULT 'EUR',
+    city TEXT,
+    country TEXT,
+    invite_code TEXT NOT NULL UNIQUE,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (created_by) REFERENCES users(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS community_members (
+    community_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'member',
+    joined_at TEXT DEFAULT (datetime('now')),
+    PRIMARY KEY (community_id, user_id),
+    FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_community_members_user
+    ON community_members (user_id);
+
+  CREATE INDEX IF NOT EXISTS idx_group_sessions_community
+    ON group_sessions (community_id);
+
+  CREATE INDEX IF NOT EXISTS idx_communities_invite
+    ON communities (invite_code);
+`);
+
+const SLOVENIA_COMMUNITY_SLUG = "slovenia";
+const SLOVENIA_COMMUNITY_NAME = "Slovenian Community";
+const DEFAULT_COMMUNITY_ADMIN_USERNAMES = ["eraom"];
+
+function generateInviteCode() {
+  return randomBytes(5).toString("hex");
+}
+
+function normalizeCommunitySlug(value) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
+
+function isDefaultCommunityAdminUser(user) {
+  const names = [user?.username, user?.discogs_username]
+    .filter(Boolean)
+    .map((name) => name.trim().toLowerCase());
+  return names.some((name) => DEFAULT_COMMUNITY_ADMIN_USERNAMES.includes(name));
+}
+
+function migrateSlovenianCommunity() {
+  let community = db
+    .prepare("SELECT * FROM communities WHERE slug = ?")
+    .get(SLOVENIA_COMMUNITY_SLUG);
+
+  if (!community) {
+    const id = randomUUID();
+    const owner =
+      db
+        .prepare(
+          `SELECT id FROM users
+           WHERE lower(COALESCE(username, '')) IN (${DEFAULT_COMMUNITY_ADMIN_USERNAMES.map(() => "?").join(",")})
+              OR lower(COALESCE(discogs_username, '')) IN (${DEFAULT_COMMUNITY_ADMIN_USERNAMES.map(() => "?").join(",")})
+           ORDER BY created_at ASC
+           LIMIT 1`
+        )
+        .get(...DEFAULT_COMMUNITY_ADMIN_USERNAMES, ...DEFAULT_COMMUNITY_ADMIN_USERNAMES) ??
+      db.prepare("SELECT id FROM users ORDER BY created_at ASC LIMIT 1").get();
+
+    db.prepare(
+      `INSERT INTO communities (
+         id, name, slug, created_by, currency, city, country, invite_code
+       ) VALUES (?, ?, ?, ?, 'EUR', NULL, 'SI', ?)`
+    ).run(
+      id,
+      SLOVENIA_COMMUNITY_NAME,
+      SLOVENIA_COMMUNITY_SLUG,
+      owner?.id ?? null,
+      generateInviteCode()
+    );
+    community = db.prepare("SELECT * FROM communities WHERE id = ?").get(id);
+  }
+
+  db.prepare(
+    "UPDATE group_sessions SET community_id = ? WHERE community_id IS NULL"
+  ).run(community.id);
+
+  const users = db.prepare("SELECT id, username, discogs_username FROM users").all();
+  const insertMember = db.prepare(
+    `INSERT OR IGNORE INTO community_members (community_id, user_id, role)
+     VALUES (?, ?, ?)`
+  );
+  for (const user of users) {
+    let role = "member";
+    if (community.created_by && user.id === community.created_by) role = "owner";
+    else if (isDefaultCommunityAdminUser(user)) role = "admin";
+    insertMember.run(community.id, user.id, role);
+  }
+
+  db.prepare(
+    "UPDATE users SET active_community_id = ? WHERE active_community_id IS NULL"
+  ).run(community.id);
+}
+
+migrateSlovenianCommunity();
+
 const needsBackfill = db
   .prepare("SELECT 1 FROM group_sessions WHERE order_number IS NULL LIMIT 1")
   .get();
@@ -322,10 +447,21 @@ if (needsBackfill) {
   }
 }
 
-function nextOrderNumber() {
+function nextOrderNumber(communityId) {
+  if (!communityId) {
+    return (
+      db.prepare("SELECT COALESCE(MAX(order_number), 0) + 1 AS n FROM group_sessions").get()
+        ?.n ?? 1
+    );
+  }
   return (
-    db.prepare("SELECT COALESCE(MAX(order_number), 0) + 1 AS n FROM group_sessions").get()
-      ?.n ?? 1
+    db
+      .prepare(
+        `SELECT COALESCE(MAX(order_number), 0) + 1 AS n
+         FROM group_sessions
+         WHERE community_id = ?`
+      )
+      .get(communityId)?.n ?? 1
   );
 }
 
@@ -518,15 +654,20 @@ export function createGroupSession({
   createdBy,
   sellerAvatarUrl = null,
   store = "discogs",
+  communityId,
 }) {
+  if (!communityId) {
+    throw new Error("Community is required to create a group order.");
+  }
   const id = randomUUID();
-  const orderNumber = nextOrderNumber();
+  const orderNumber = nextOrderNumber(communityId);
   const title = formatOrderTitle(orderNumber, sellerUsername);
   const storeValue = normalizeStore(store);
   db.prepare(
     `INSERT INTO group_sessions (
-       id, title, seller_username, created_by, order_number, seller_avatar_url, store
-     ) VALUES (?, ?, ?, ?, ?, ?, ?)`
+       id, title, seller_username, created_by, order_number, seller_avatar_url, store,
+       community_id
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     id,
     title,
@@ -534,7 +675,8 @@ export function createGroupSession({
     createdBy,
     orderNumber,
     sellerAvatarUrl,
-    storeValue
+    storeValue,
+    communityId
   );
   db.prepare(
     "INSERT INTO session_members (session_id, user_id) VALUES (?, ?)"
@@ -772,17 +914,20 @@ const SESSION_LIST_COLUMNS = `gs.*, u.name as creator_name, u.username as creato
            )
         ) as last_activity_at`;
 
-export function listGroupSessions(status = "open") {
+export function listGroupSessions(status = "open", communityId) {
+  if (!communityId) return [];
+
   if (status === "unplaced") {
     return db
       .prepare(
         `SELECT ${SESSION_LIST_COLUMNS}
          FROM group_sessions gs
          JOIN users u ON u.id = gs.created_by
-         WHERE gs.status IN ('unplaced', 'auto_closed')
+         WHERE gs.community_id = ?
+           AND gs.status IN ('unplaced', 'auto_closed')
          ORDER BY gs.created_at DESC`
       )
-      .all()
+      .all(communityId)
       .map(withOrderTitle);
   }
 
@@ -791,34 +936,53 @@ export function listGroupSessions(status = "open") {
       `SELECT ${SESSION_LIST_COLUMNS}
        FROM group_sessions gs
        JOIN users u ON u.id = gs.created_by
-       WHERE gs.status = ?
+       WHERE gs.community_id = ?
+         AND gs.status = ?
        ORDER BY gs.created_at DESC`
     )
-    .all(status)
+    .all(communityId, status)
     .map(withOrderTitle);
 }
 
-export function listOpenGroupSessions() {
-  return listGroupSessions("open");
-}
-
-export function listAllGroupSessions() {
+export function listOpenGroupSessions(communityId) {
+  if (communityId) {
+    return listGroupSessions("open", communityId);
+  }
+  // Maintenance jobs: all communities
   return db
     .prepare(
       `SELECT ${SESSION_LIST_COLUMNS}
        FROM group_sessions gs
        JOIN users u ON u.id = gs.created_by
+       WHERE gs.status = 'open'
        ORDER BY gs.created_at DESC`
     )
     .all()
     .map(withOrderTitle);
 }
 
-export function countGroupSessionsByStatus() {
-  const rows = db
-    .prepare("SELECT status, COUNT(*) AS n FROM group_sessions GROUP BY status")
-    .all();
+export function listAllGroupSessions(communityId) {
+  if (!communityId) return [];
+  return db
+    .prepare(
+      `SELECT ${SESSION_LIST_COLUMNS}
+       FROM group_sessions gs
+       JOIN users u ON u.id = gs.created_by
+       WHERE gs.community_id = ?
+       ORDER BY gs.created_at DESC`
+    )
+    .all(communityId)
+    .map(withOrderTitle);
+}
+
+export function countGroupSessionsByStatus(communityId) {
   const counts = { open: 0, closed: 0, unplaced: 0, canceled: 0 };
+  if (!communityId) return counts;
+  const rows = db
+    .prepare(
+      "SELECT status, COUNT(*) AS n FROM group_sessions WHERE community_id = ? GROUP BY status"
+    )
+    .all(communityId);
   for (const row of rows) {
     if (row.status === "unplaced" || row.status === "auto_closed") {
       counts.unplaced += row.n;
@@ -1287,7 +1451,8 @@ export function updateLinkOrdererDisplayName(sessionId, linkId, ordererDisplayNa
   return getGroupSession(sessionId);
 }
 
-export function listUserOrderedItems(userId) {
+export function listUserOrderedItems(userId, communityId) {
+  if (!communityId) return [];
   return db
     .prepare(
       `SELECT sl.*, gs.id as session_id, gs.seller_username, gs.status as session_status,
@@ -1303,12 +1468,14 @@ export function listUserOrderedItems(userId) {
        LEFT JOIN session_members sm
          ON sm.session_id = sl.session_id AND sm.user_id = sl.user_id
        WHERE sl.user_id = ?
+         AND gs.community_id = ?
        ORDER BY gs.created_at DESC, sl.created_at DESC`
     )
-    .all(userId);
+    .all(userId, communityId);
 }
 
-export function listUserStatisticsRows(userId, status = "all") {
+export function listUserStatisticsRows(userId, status = "all", communityId) {
+  if (!communityId) return [];
   let statusClause = "";
   if (status === "open" || status === "closed") {
     statusClause = " AND gs.status = @status";
@@ -1324,10 +1491,11 @@ export function listUserStatisticsRows(userId, status = "all") {
               (SELECT COUNT(*) FROM session_links WHERE session_id = gs.id) as session_item_count
        FROM session_links sl
        JOIN group_sessions gs ON gs.id = sl.session_id
-       WHERE sl.user_id = @userId${statusClause}
+       WHERE sl.user_id = @userId
+         AND gs.community_id = @communityId${statusClause}
        ORDER BY sl.created_at DESC`
     )
-    .all({ userId, status });
+    .all({ userId, status, communityId });
 }
 
 export function updateMemberDisplayName(sessionId, memberUserId, displayName) {
@@ -1524,15 +1692,18 @@ function deliverableUserFilter(alias = "u") {
   return `lower(${alias}.email) NOT LIKE '%${SYNTHETIC_EMAIL_SUFFIX}'`;
 }
 
-export function listUsersForNewOrderNotifications(excludeUserId) {
+export function listUsersForNewOrderNotifications(excludeUserId, communityId) {
+  if (!communityId) return [];
   return db
     .prepare(
       `SELECT u.id, u.email, u.name, u.username FROM users u
-       WHERE u.notify_new_order = 1
+       JOIN community_members cm ON cm.user_id = u.id
+       WHERE cm.community_id = ?
+         AND u.notify_new_order = 1
          AND ${deliverableUserFilter()}
          AND u.id != ?`
     )
-    .all(excludeUserId ?? "");
+    .all(communityId, excludeUserId ?? "");
 }
 
 export function listSessionMembersForNotifications(sessionId, type, excludeUserId) {
@@ -1557,6 +1728,278 @@ export function listSessionMembersForNotifications(sessionId, type, excludeUserI
     .all(sessionId, excludeUserId ?? "");
 }
 
+export function publicCommunity(row, { includeInvite = false } = {}) {
+  if (!row) return null;
+  const base = {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    currency: row.currency ?? "EUR",
+    city: row.city ?? null,
+    country: row.country ?? null,
+    role: row.role ?? null,
+    memberCount: row.member_count ?? undefined,
+    createdAt: row.created_at,
+  };
+  if (includeInvite && row.invite_code) {
+    base.inviteCode = row.invite_code;
+  }
+  return base;
+}
+
+export function findCommunityById(id) {
+  if (!id) return null;
+  return db.prepare("SELECT * FROM communities WHERE id = ?").get(id);
+}
+
+export function findCommunityBySlug(slug) {
+  const normalized = normalizeCommunitySlug(slug);
+  if (!normalized) return null;
+  return db.prepare("SELECT * FROM communities WHERE slug = ?").get(normalized);
+}
+
+export function findCommunityByInviteCode(code) {
+  const trimmed = String(code ?? "").trim().toLowerCase();
+  if (!trimmed) return null;
+  return db
+    .prepare("SELECT * FROM communities WHERE lower(invite_code) = ?")
+    .get(trimmed);
+}
+
+export function userHasAnyCommunity(userId) {
+  if (!userId) return false;
+  return Boolean(
+    db
+      .prepare("SELECT 1 FROM community_members WHERE user_id = ? LIMIT 1")
+      .get(userId)
+  );
+}
+
+export function isCommunityMember(communityId, userId) {
+  if (!communityId || !userId) return false;
+  return Boolean(
+    db
+      .prepare(
+        "SELECT 1 FROM community_members WHERE community_id = ? AND user_id = ?"
+      )
+      .get(communityId, userId)
+  );
+}
+
+export function getCommunityMembership(communityId, userId) {
+  if (!communityId || !userId) return null;
+  return db
+    .prepare(
+      "SELECT * FROM community_members WHERE community_id = ? AND user_id = ?"
+    )
+    .get(communityId, userId);
+}
+
+function communityMemberCount(communityId) {
+  return (
+    db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM community_members WHERE community_id = ?"
+      )
+      .get(communityId)?.n ?? 0
+  );
+}
+
+export function listUserCommunities(userId) {
+  if (!userId) return [];
+  return db
+    .prepare(
+      `SELECT c.*, cm.role,
+              (SELECT COUNT(*) FROM community_members m WHERE m.community_id = c.id) AS member_count
+       FROM community_members cm
+       JOIN communities c ON c.id = cm.community_id
+       WHERE cm.user_id = ?
+       ORDER BY c.name COLLATE NOCASE ASC`
+    )
+    .all(userId);
+}
+
+export function getActiveCommunityForUser(userId) {
+  if (!userId) return null;
+  const user = findUserById(userId);
+  if (!user) return null;
+
+  if (user.active_community_id) {
+    const active = db
+      .prepare(
+        `SELECT c.*, cm.role,
+                (SELECT COUNT(*) FROM community_members m WHERE m.community_id = c.id) AS member_count
+         FROM communities c
+         JOIN community_members cm
+           ON cm.community_id = c.id AND cm.user_id = ?
+         WHERE c.id = ?`
+      )
+      .get(userId, user.active_community_id);
+    if (active) return active;
+  }
+
+  const first = listUserCommunities(userId)[0];
+  if (first) {
+    db.prepare("UPDATE users SET active_community_id = ? WHERE id = ?").run(
+      first.id,
+      userId
+    );
+    return first;
+  }
+  return null;
+}
+
+export function setActiveCommunity(userId, communityId) {
+  if (!isCommunityMember(communityId, userId)) {
+    throw new Error("You are not a member of this community.");
+  }
+  db.prepare("UPDATE users SET active_community_id = ? WHERE id = ?").run(
+    communityId,
+    userId
+  );
+  return getActiveCommunityForUser(userId);
+}
+
+export function addCommunityMember(communityId, userId, role = "member") {
+  db.prepare(
+    `INSERT INTO community_members (community_id, user_id, role)
+     VALUES (?, ?, ?)
+     ON CONFLICT(community_id, user_id) DO NOTHING`
+  ).run(communityId, userId, role);
+  return getCommunityMembership(communityId, userId);
+}
+
+export function ensureMembershipInSloveniaCommunity(userId) {
+  const community = findCommunityBySlug(SLOVENIA_COMMUNITY_SLUG);
+  if (!community || !userId) return null;
+  if (!isCommunityMember(community.id, userId)) {
+    const role = isDefaultCommunityAdminUser(findUserById(userId))
+      ? "admin"
+      : "member";
+    addCommunityMember(community.id, userId, role);
+  }
+  const user = findUserById(userId);
+  if (!user?.active_community_id) {
+    db.prepare("UPDATE users SET active_community_id = ? WHERE id = ?").run(
+      community.id,
+      userId
+    );
+  }
+  return getActiveCommunityForUser(userId);
+}
+
+export function createCommunity({
+  name,
+  slug,
+  createdBy,
+  currency = "EUR",
+  city = null,
+  country = null,
+}) {
+  const trimmedName = String(name ?? "").trim();
+  if (trimmedName.length < 2) {
+    throw new Error("Community name must be at least 2 characters.");
+  }
+  const normalizedSlug =
+    normalizeCommunitySlug(slug) || normalizeCommunitySlug(trimmedName);
+  if (!normalizedSlug || normalizedSlug.length < 2) {
+    throw new Error("Community slug must be at least 2 characters.");
+  }
+  if (findCommunityBySlug(normalizedSlug)) {
+    throw new Error("That community slug is already taken.");
+  }
+
+  const id = randomUUID();
+  let inviteCode = generateInviteCode();
+  while (findCommunityByInviteCode(inviteCode)) {
+    inviteCode = generateInviteCode();
+  }
+
+  const insert = db.transaction(() => {
+    db.prepare(
+      `INSERT INTO communities (
+         id, name, slug, created_by, currency, city, country, invite_code
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      id,
+      trimmedName,
+      normalizedSlug,
+      createdBy,
+      currency || "EUR",
+      city?.trim() || null,
+      country?.trim() || null,
+      inviteCode
+    );
+    db.prepare(
+      `INSERT INTO community_members (community_id, user_id, role)
+       VALUES (?, ?, 'owner')`
+    ).run(id, createdBy);
+    db.prepare("UPDATE users SET active_community_id = ? WHERE id = ?").run(
+      id,
+      createdBy
+    );
+  });
+  insert();
+
+  return getActiveCommunityForUser(createdBy);
+}
+
+export function joinCommunityByInviteCode(userId, code) {
+  const community = findCommunityByInviteCode(code);
+  if (!community) {
+    throw new Error("Invalid invite code.");
+  }
+  addCommunityMember(community.id, userId, "member");
+  db.prepare("UPDATE users SET active_community_id = ? WHERE id = ?").run(
+    community.id,
+    userId
+  );
+  return getActiveCommunityForUser(userId);
+}
+
+export function getCommunityPreviewByInviteCode(code) {
+  const community = findCommunityByInviteCode(code);
+  if (!community) return null;
+  return {
+    id: community.id,
+    name: community.name,
+    slug: community.slug,
+    city: community.city,
+    country: community.country,
+    memberCount: communityMemberCount(community.id),
+  };
+}
+
+export function regenerateCommunityInviteCode(communityId, userId) {
+  const membership = getCommunityMembership(communityId, userId);
+  if (!membership || !["owner", "admin"].includes(membership.role)) {
+    throw new Error("Only community owners or admins can regenerate the invite code.");
+  }
+  let inviteCode = generateInviteCode();
+  while (findCommunityByInviteCode(inviteCode)) {
+    inviteCode = generateInviteCode();
+  }
+  db.prepare("UPDATE communities SET invite_code = ? WHERE id = ?").run(
+    inviteCode,
+    communityId
+  );
+  return findCommunityById(communityId);
+}
+
+export function getCommunityForMember(communityId, userId) {
+  if (!isCommunityMember(communityId, userId)) return null;
+  return db
+    .prepare(
+      `SELECT c.*, cm.role,
+              (SELECT COUNT(*) FROM community_members m WHERE m.community_id = c.id) AS member_count
+       FROM communities c
+       JOIN community_members cm
+         ON cm.community_id = c.id AND cm.user_id = ?
+       WHERE c.id = ?`
+    )
+    .get(userId, communityId);
+}
+
 export function publicUser(user) {
   if (!user) return null;
   return {
@@ -1578,6 +2021,22 @@ export function publicUser(user) {
     notifyOrderClosed: Boolean(user.notify_order_closed),
     shopDiscountPercent: Number(user.shop_discount_percent) || 0,
     shopDiscountLabel: user.shop_discount_label ?? null,
+    activeCommunityId: user.active_community_id ?? null,
+  };
+}
+
+export function publicUserWithCommunities(user) {
+  const base = publicUser(user);
+  if (!base) return null;
+  const communities = listUserCommunities(user.id).map((row) =>
+    publicCommunity(row, { includeInvite: true })
+  );
+  const active = getActiveCommunityForUser(user.id);
+  return {
+    ...base,
+    activeCommunityId: active?.id ?? null,
+    activeCommunity: publicCommunity(active, { includeInvite: true }),
+    communities,
   };
 }
 

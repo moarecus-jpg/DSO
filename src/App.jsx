@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth.jsx";
 import { LocaleProvider, useLocale } from "./hooks/useLocale.jsx";
 import { PlacCartProvider } from "./hooks/usePlacCart.jsx";
@@ -22,6 +22,11 @@ import { Session } from "./pages/Session.jsx";
 import { Settings } from "./pages/Settings.jsx";
 import { AdminUsers } from "./pages/AdminUsers.jsx";
 import { MarketplaceBuyerPreview } from "./pages/MarketplaceBuyerPreview.jsx";
+import {
+  CommunitiesSetup,
+  CreateCommunity,
+  JoinCommunity,
+} from "./pages/Communities.jsx";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -31,15 +36,64 @@ function PrivateRoute({ children }) {
   return children;
 }
 
+function CommunityGate({ children }) {
+  const { user, loading } = useAuth();
+  const { t } = useLocale();
+  const location = useLocation();
+  if (loading) return <p className="muted center page">{t("common.loading")}</p>;
+  const hasCommunity = (user?.communities?.length ?? 0) > 0;
+  const onSetup =
+    location.pathname.startsWith("/communities") ||
+    location.pathname.startsWith("/join");
+  if (!hasCommunity && !onSetup) {
+    return <Navigate to="/join" replace />;
+  }
+  return children;
+}
+
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route
+        path="/join"
         element={
           <PrivateRoute>
-            <Layout />
+            <JoinCommunity />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/join/:code"
+        element={
+          <PrivateRoute>
+            <JoinCommunity />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/communities"
+        element={
+          <PrivateRoute>
+            <CommunitiesSetup />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/communities/create"
+        element={
+          <PrivateRoute>
+            <CreateCommunity />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        element={
+          <PrivateRoute>
+            <CommunityGate>
+              <Layout />
+            </CommunityGate>
           </PrivateRoute>
         }
       >

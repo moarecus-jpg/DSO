@@ -12000,3 +12000,171 @@ img.plac-user-avatar {
     min-height: min(70vh, 36rem);
   }
 }
+
+/* Community switcher + setup */
+.community-switcher {
+  position: relative;
+  z-index: 5;
+  width: 100%;
+}
+
+.community-switcher-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.55rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(244, 244, 245, 0.92);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.community-switcher-trigger:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.community-switcher-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.community-switcher-menu {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.65rem;
+  background: rgba(18, 18, 22, 0.98);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.community-switcher-option,
+.community-switcher-manage {
+  display: block;
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  border: 0;
+  border-radius: 0.4rem;
+  background: transparent;
+  color: rgba(244, 244, 245, 0.9);
+  font-size: 0.78rem;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.community-switcher-option:hover,
+.community-switcher-manage:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.community-switcher-option.is-active {
+  background: rgba(167, 139, 250, 0.18);
+  color: #fff;
+}
+
+.community-switcher-error {
+  margin: 0.25rem 0.35rem 0;
+  color: #fca5a5;
+  font-size: 0.72rem;
+}
+
+.mobile-topbar-community {
+  display: none;
+  flex: 1;
+  min-width: 0;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .mobile-topbar-community {
+    display: flex;
+  }
+
+  .mobile-topbar-community .community-switcher {
+    max-width: 11rem;
+  }
+
+  .sidebar-v2 .community-switcher {
+    display: none;
+  }
+}
+
+.community-setup-page .auth-card--wide {
+  max-width: 28rem;
+}
+
+.community-preview {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(244, 244, 245, 0.8);
+}
+
+.community-list {
+  list-style: none;
+  margin: 1rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.community-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.65rem;
+}
+
+.community-list li div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.community-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(167, 139, 250, 0.95);
+}
+
+.community-invite-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  padding: 0.85rem;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 0.65rem;
+}
+
+.community-invite-box code {
+  font-size: 0.95rem;
+  word-break: break-all;
+}
+
+.community-setup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}

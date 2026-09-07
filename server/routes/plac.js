@@ -25,6 +25,8 @@ import {
   updatePlacOrderStatus,
   updatePlacShopSettings,
   upsertGoogleUser,
+  ensureMembershipInSloveniaCommunity,
+  userHasAnyCommunity,
 } from "../db.js";
 import {
   mockFetchPlacReleaseDetails,
@@ -93,12 +95,23 @@ function ensureRequestUser(req) {
     picture: null,
   });
   req.session.userId = user.id;
+  ensureMembershipInSloveniaCommunity(user.id);
   return user.id;
 }
 
 function requireUser(req, res, next) {
   if (!ensureRequestUser(req)) {
     return res.status(401).json({ error: "Prijavi se v aplikacijo." });
+  }
+  next();
+}
+
+function requireCommunity(req, res, next) {
+  if (!userHasAnyCommunity(req.session.userId)) {
+    return res.status(403).json({
+      error: "Join or create a community to continue.",
+      code: "community_required",
+    });
   }
   next();
 }
@@ -183,12 +196,12 @@ async function createVinylPlacListing(userId, url, fields) {
   });
 }
 
-router.get("/sellers", requireUser, (req, res) => {
+router.get("/sellers", requireUser, requireCommunity, (req, res) => {
   const sellers = listPlacSellers({ query: req.query.q });
   res.json({ sellers });
 });
 
-router.get("/user/:userId", requireUser, (req, res) => {
+router.get("/user/:userId", requireUser, requireCommunity, (req, res) => {
   const seller = getPlacSeller(req.params.userId);
   if (!seller || !findUserById(req.params.userId)) {
     return res.status(404).json({ error: "Prodajalec ni bil najden." });
@@ -198,19 +211,19 @@ router.get("/user/:userId", requireUser, (req, res) => {
   queuePlacStyleBackfill(listings);
 });
 
-router.get("/", requireUser, (req, res) => {
+router.get("/", requireUser, requireCommunity, (req, res) => {
   const listings = listActivePlacListings({ query: req.query.q });
   res.json({ listings });
 });
 
-router.get("/mine", requireUser, (req, res) => {
+router.get("/mine", requireUser, requireCommunity, (req, res) => {
   const userId = ensureRequestUser(req);
   const listings = listPlacListingsByUser(userId);
   res.json({ listings });
   queuePlacStyleBackfill(listings);
 });
 
-router.get("/counts", requireUser, (req, res) => {
+router.get("/counts", requireUser, requireCommunity, (req, res) => {
   const userId = ensureRequestUser(req);
   res.json({
     mine: countActivePlacListingsByUser(userId),
@@ -219,13 +232,13 @@ router.get("/counts", requireUser, (req, res) => {
   });
 });
 
-router.get("/shop", requireUser, (req, res) => {
+router.get("/shop", requireUser, requireCommunity, (req, res) => {
   const userId = ensureRequestUser(req);
   const settings = getPlacShopSettings(userId);
   res.json({ settings });
 });
 
-router.patch("/shop", requireUser, (req, res) => {
+router.patch("/shop", requireUser, requireCommunity, (req, res) => {
   const userId = ensureRequestUser(req);
   const { discountPercent, discountLabel } = req.body ?? {};
   const settings = updatePlacShopSettings(userId, {
@@ -235,13 +248,13 @@ router.patch("/shop", requireUser, (req, res) => {
   res.json({ settings });
 });
 
-router.get("/inbox", requireUser, (req, res) => {
+router.get("/inbox", requireUser, requireCommunity, (req, res) => {
   const userId = ensureRequestUser(req);
   const threads = listPlacInboxThreads(userId);
   res.json({ threads, unread: countPlacInboxUnread(userId) });
 });
 
-router.get("/inbox/:threadId", requireUser, (req, res) => {
+router.get("/inbox/:threadId", requireUser, requireCommunity, (req, res) => {
   const userId = ensureRequestUser(req);
   const thread = getPlacThreadForUser(req.params.threadId, userId);
   if (!thread) {
@@ -251,7 +264,7 @@ router.get("/inbox/:threadId", requireUser, (req, res) => {
   res.json({ thread, messages });
 });
 
-router.post("/inbox/:threadId/messages", requireUser, (req, res) => {
+router.post("/inbox/:threadId/messages", requireUser, requireCommunity, (req, res) => {
   const userId = ensureRequestUser(req);
   const result = replyPlacThreadMessage({
     threadId: req.params.threadId,
@@ -267,7 +280,7 @@ router.post("/inbox/:threadId/messages", requireUser, (req, res) => {
   res.status(201).json(result);
 });
 
-router.post("/:id/messages", requireUser, (req, res) => {
+router.post("/:id/messages", requireUser, requireCommunity, (req, res) => {
   const buyerId = ensureRequestUser(req);
   const result = startPlacListingMessage({
     listingId: req.params.id,
@@ -286,13 +299,13 @@ router.post("/:id/messages", requireUser, (req, res) => {
   res.status(201).json(result);
 });
 
-router.get("/orders", requireUser, (req, res) => {
+router.get("/orders", requireUser, requireCommunity, (req, res) => {
   const userId = ensureRequestUser(req);
   const orders = listPlacOrdersForUser(userId);
   res.json({ orders });
 });
 
-router.post("/orders", requireUser, (req, res) => {
+router.post("/orders", requireUser, requireCommunity, (req, res) => {
   const buyerId = ensureRequestUser(req);
   const { sellerId, listingIds, note } = req.body ?? {};
 
@@ -320,7 +333,7 @@ router.post("/orders", requireUser, (req, res) => {
   res.status(201).json({ order });
 });
 
-router.patch("/orders/:id", requireUser, (req, res) => {
+router.patch("/orders/:id", requireUser, requireCommunity, (req, res) => {
   const userId = ensureRequestUser(req);
   const { status } = req.body ?? {};
   if (!status) {
@@ -334,7 +347,7 @@ router.patch("/orders/:id", requireUser, (req, res) => {
   res.json({ order });
 });
 
-router.post("/preview", requireUser, async (req, res) => {
+router.post("/preview", requireUser, requireCommunity, async (req, res) => {
   try {
     const { releaseUrl } = req.body ?? {};
     if (!releaseUrl?.trim()) {
@@ -354,7 +367,7 @@ router.post("/preview", requireUser, async (req, res) => {
   }
 });
 
-router.post("/preview-batch", requireUser, async (req, res) => {
+router.post("/preview-batch", requireUser, requireCommunity, async (req, res) => {
   try {
     const urls = Array.isArray(req.body?.releaseUrls) ? req.body.releaseUrls : [];
     const trimmed = urls.map((url) => url?.trim()).filter(Boolean);
@@ -397,7 +410,7 @@ router.post("/preview-batch", requireUser, async (req, res) => {
   }
 });
 
-router.post("/", requireUser, async (req, res) => {
+router.post("/", requireUser, requireCommunity, async (req, res) => {
   try {
     const userId = ensureRequestUser(req);
     const body = req.body ?? {};
@@ -468,7 +481,7 @@ router.post("/", requireUser, async (req, res) => {
   }
 });
 
-router.post("/batch", requireUser, async (req, res) => {
+router.post("/batch", requireUser, requireCommunity, async (req, res) => {
   try {
     const userId = ensureRequestUser(req);
     const body = req.body ?? {};
@@ -523,7 +536,7 @@ router.post("/batch", requireUser, async (req, res) => {
   }
 });
 
-router.get("/:id", requireUser, (req, res) => {
+router.get("/:id", requireUser, requireCommunity, (req, res) => {
   const userId = ensureRequestUser(req);
   const listing = getPlacListingById(req.params.id);
   if (!listing) {
@@ -536,7 +549,7 @@ router.get("/:id", requireUser, (req, res) => {
   res.json({ listing });
 });
 
-router.get("/:id/release", requireUser, async (req, res) => {
+router.get("/:id/release", requireUser, requireCommunity, async (req, res) => {
   try {
     const userId = ensureRequestUser(req);
     const listing = getPlacListingById(req.params.id);
@@ -576,7 +589,7 @@ router.get("/:id/release", requireUser, async (req, res) => {
   }
 });
 
-router.patch("/:id", requireUser, (req, res) => {
+router.patch("/:id", requireUser, requireCommunity, (req, res) => {
   const userId = ensureRequestUser(req);
   const existing = getPlacListingById(req.params.id);
   if (!existing || existing.userId !== userId) {
@@ -647,7 +660,7 @@ router.patch("/:id", requireUser, (req, res) => {
   res.json({ listing });
 });
 
-router.delete("/:id", requireUser, (req, res) => {
+router.delete("/:id", requireUser, requireCommunity, (req, res) => {
   const userId = ensureRequestUser(req);
   const ok = deletePlacListing(req.params.id, userId);
   if (!ok) {
