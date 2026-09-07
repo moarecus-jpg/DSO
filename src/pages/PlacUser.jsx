@@ -22,8 +22,8 @@ import { useLocale } from "../hooks/useLocale.jsx";
 import { usePlacGalleryView } from "../hooks/usePlacGalleryView.js";
 import { resolveUserAvatarUrl } from "../utils/userAvatarUrl.js";
 
-/** Dig column width below which filters become a drawer (accounts for sidebar). */
-const DIG_DRAWER_MAX = 1480;
+/** Dig width below which filters become a drawer — phones only; laptops keep side layout. */
+const DIG_DRAWER_MAX = 720;
 
 function sellerLabel(seller) {
   if (seller?.discogsUsername) return `@${seller.discogsUsername}`;

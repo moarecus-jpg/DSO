@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import { useLocale } from "../hooks/useLocale.jsx";
 
 export function PlacToolbarActions({ onSell, showSell = true }) {
@@ -8,8 +8,14 @@ export function PlacToolbarActions({ onSell, showSell = true }) {
 
   return (
     <div className="plac-toolbar-actions">
-      <button type="button" className="btn btn-primary plac-sell-btn" onClick={onSell} aria-label={t("plac.sell")}>
-        <Plus size={18} aria-hidden />
+      <button
+        type="button"
+        className="btn btn-primary plac-sell-btn"
+        onClick={onSell}
+        aria-label={t("plac.sell")}
+        title={t("plac.sell")}
+      >
+        <ShoppingBag size={18} aria-hidden />
         <span className="ui-label">{t("plac.sell")}</span>
       </button>
     </div>
