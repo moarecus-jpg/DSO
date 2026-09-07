@@ -882,7 +882,7 @@ export default {
     onboardingSubtitle:
       "Request to join an existing community, or enter an invite code to get started.",
     directoryTitle: "Communities",
-    directoryHint: "Browse communities and request access. Owners approve requests.",
+    directoryHint: "Browse listed communities and request access. Owners approve requests.",
     directoryEmpty: "No communities yet. Create one or join with an invite code.",
     joinTitle: "Join a community",
     joinSubtitle: "Request access from the list, or enter an invite code.",
@@ -925,5 +925,7 @@ export default {
     switchError: "Could not switch community.",
     active: "Active",
     memberCount: "{{count}} members",
+    listInDirectory: "List in directory",
+    listInDirectoryHint: "Allow new users to find this community and request to join.",
   },
 };

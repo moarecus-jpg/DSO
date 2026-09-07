@@ -366,6 +366,14 @@ db.exec(`
     ON community_join_requests (user_id, status);
 `);
 
+try {
+  db.exec("ALTER TABLE communities ADD COLUMN listed INTEGER NOT NULL DEFAULT 0");
+  // Existing communities should appear in the directory by default.
+  db.exec("UPDATE communities SET listed = 1");
+} catch {
+  /* column already exists */
+}
+
 const SLOVENIA_COMMUNITY_SLUG = "slovenia";
 const SLOVENIA_COMMUNITY_NAME = "Slovenian Community";
 const DEFAULT_COMMUNITY_ADMIN_USERNAMES = ["eraom"];
@@ -1762,6 +1770,7 @@ export function publicCommunity(row, { includeInvite = false } = {}) {
     createdAt: row.created_at,
     membership: row.membership ?? undefined,
     requestStatus: row.request_status ?? undefined,
+    listed: row.listed == null ? undefined : Boolean(row.listed),
   };
   if (includeInvite && row.invite_code) {
     base.inviteCode = row.invite_code;
@@ -1917,6 +1926,7 @@ export function createCommunity({
   currency = "EUR",
   city = null,
   country = null,
+  listed = false,
 }) {
   const trimmedName = String(name ?? "").trim();
   if (trimmedName.length < 2) {
@@ -1940,8 +1950,8 @@ export function createCommunity({
   const insert = db.transaction(() => {
     db.prepare(
       `INSERT INTO communities (
-         id, name, slug, created_by, currency, city, country, invite_code
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+         id, name, slug, created_by, currency, city, country, invite_code, listed
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       id,
       trimmedName,
@@ -1950,7 +1960,8 @@ export function createCommunity({
       currency || "EUR",
       city?.trim() || null,
       country?.trim() || null,
-      inviteCode
+      inviteCode,
+      listed ? 1 : 0
     );
     db.prepare(
       `INSERT INTO community_members (community_id, user_id, role)
@@ -1987,7 +1998,7 @@ export function joinCommunityByInviteCode(userId, code) {
 export function listCommunityDirectory(userId) {
   return db
     .prepare(
-      `SELECT c.id, c.name, c.slug, c.currency, c.city, c.country, c.created_at,
+      `SELECT c.id, c.name, c.slug, c.currency, c.city, c.country, c.created_at, c.listed,
               (SELECT COUNT(*) FROM community_members m WHERE m.community_id = c.id) AS member_count,
               CASE
                 WHEN EXISTS (
@@ -2001,9 +2012,30 @@ export function listCommunityDirectory(userId) {
                 ELSE 'none'
               END AS membership
        FROM communities c
+       WHERE c.listed = 1
+          OR EXISTS (
+            SELECT 1 FROM community_members cm
+            WHERE cm.community_id = c.id AND cm.user_id = ?
+          )
+          OR EXISTS (
+            SELECT 1 FROM community_join_requests r
+            WHERE r.community_id = c.id AND r.user_id = ? AND r.status = 'pending'
+          )
        ORDER BY c.name COLLATE NOCASE ASC`
     )
-    .all(userId, userId);
+    .all(userId, userId, userId, userId);
+}
+
+export function setCommunityListed(communityId, userId, listed) {
+  const membership = getCommunityMembership(communityId, userId);
+  if (!membership || !["owner", "admin"].includes(membership.role)) {
+    throw new Error("Only community owners or admins can change directory listing.");
+  }
+  db.prepare("UPDATE communities SET listed = ? WHERE id = ?").run(
+    listed ? 1 : 0,
+    communityId
+  );
+  return getCommunityForMember(communityId, userId);
 }
 
 export function requestCommunityJoin(communityId, userId) {

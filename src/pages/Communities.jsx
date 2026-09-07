@@ -266,6 +266,7 @@ export function CreateCommunity() {
   const [slug, setSlug] = useState("");
   const [city, setCity] = useState("");
   const [country, setCountry] = useState("");
+  const [listed, setListed] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const hasCommunities = (user?.communities?.length ?? 0) > 0;
@@ -277,7 +278,7 @@ export function CreateCommunity() {
     try {
       await api("/api/communities", {
         method: "POST",
-        body: JSON.stringify({ name, slug, city, country }),
+        body: JSON.stringify({ name, slug, city, country, listed }),
       });
       await refresh();
       navigate("/", { replace: true });
@@ -339,6 +340,18 @@ export function CreateCommunity() {
           </label>
         </div>
 
+        <label className="communities-listed-toggle">
+          <input
+            type="checkbox"
+            checked={listed}
+            onChange={(e) => setListed(e.target.checked)}
+          />
+          <span>
+            <strong>{t("communities.listInDirectory")}</strong>
+            <span className="muted fine">{t("communities.listInDirectoryHint")}</span>
+          </span>
+        </label>
+
         {error ? <p className="communities-form-error">{error}</p> : null}
 
         <div className="communities-card-actions">
@@ -365,10 +378,13 @@ export function CommunitiesSetup() {
   const [busyId, setBusyId] = useState(null);
   const [requests, setRequests] = useState([]);
   const [resolveBusyId, setResolveBusyId] = useState(null);
+  const [listingBusy, setListingBusy] = useState(false);
 
   const communities = user?.communities ?? [];
   const active = user?.activeCommunity ?? null;
   const canReview = communities.some((c) => c.role === "owner" || c.role === "admin");
+  const canManageActive =
+    active && (active.role === "owner" || active.role === "admin");
 
   const loadRequests = useCallback(async () => {
     if (!canReview) {
@@ -425,6 +441,20 @@ export function CommunitiesSetup() {
       await loadRequests();
     } finally {
       setResolveBusyId(null);
+    }
+  }
+
+  async function toggleListed(nextListed) {
+    if (!active?.id || listingBusy) return;
+    setListingBusy(true);
+    try {
+      await api(`/api/communities/${active.id}/listed`, {
+        method: "POST",
+        body: JSON.stringify({ listed: nextListed }),
+      });
+      await refresh();
+    } finally {
+      setListingBusy(false);
     }
   }
 
@@ -560,6 +590,21 @@ export function CommunitiesSetup() {
               {copied ? t("communities.copied") : t("communities.copyInvite")}
             </button>
           </div>
+
+          {canManageActive ? (
+            <label className="communities-listed-toggle communities-listed-toggle--manage">
+              <input
+                type="checkbox"
+                checked={Boolean(active.listed)}
+                disabled={listingBusy}
+                onChange={(e) => toggleListed(e.target.checked)}
+              />
+              <span>
+                <strong>{t("communities.listInDirectory")}</strong>
+                <span className="muted fine">{t("communities.listInDirectoryHint")}</span>
+              </span>
+            </label>
+          ) : null}
         </div>
       ) : null}
 

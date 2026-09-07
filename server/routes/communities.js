@@ -18,6 +18,7 @@ import {
   setActiveCommunity,
   upsertGoogleUser,
   ensureMembershipInSloveniaCommunity,
+  setCommunityListed,
 } from "../db.js";
 import { googleConfigured } from "../auth/google.js";
 import { MOCK_USER } from "../mock.js";
@@ -157,7 +158,7 @@ router.post("/join-requests/:requestId/resolve", requireUser, (req, res) => {
 });
 
 router.post("/", requireUser, (req, res) => {
-  const { name, slug, city, country, currency } = req.body ?? {};
+  const { name, slug, city, country, currency, listed } = req.body ?? {};
   try {
     const community = createCommunity({
       name,
@@ -166,6 +167,7 @@ router.post("/", requireUser, (req, res) => {
       city,
       country,
       currency: currency || "EUR",
+      listed: Boolean(listed),
     });
     const user = findUserById(req.session.userId);
     res.status(201).json({
@@ -174,6 +176,21 @@ router.post("/", requireUser, (req, res) => {
     });
   } catch (err) {
     res.status(400).json({ error: err.message ?? "Could not create community." });
+  }
+});
+
+router.post("/:id/listed", requireUser, (req, res) => {
+  const listed = Boolean(req.body?.listed);
+  try {
+    const community = setCommunityListed(req.params.id, req.session.userId, listed);
+    res.json({
+      community: publicCommunity(community, { includeInvite: true }),
+    });
+  } catch (err) {
+    const status = String(err.message || "").includes("Only community") ? 403 : 400;
+    res.status(status).json({
+      error: err.message ?? "Could not update directory listing.",
+    });
   }
 });
 

@@ -12354,6 +12354,39 @@ img.plac-user-avatar {
   max-width: 44rem;
 }
 
+.communities-listed-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-top: 1rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+}
+
+.communities-listed-toggle--manage {
+  margin-top: 1.1rem;
+}
+
+.communities-listed-toggle input {
+  margin-top: 0.2rem;
+  accent-color: #a78bfa;
+}
+
+.communities-listed-toggle span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.communities-listed-toggle strong {
+  color: #fff;
+  font-size: 0.9rem;
+}
+
 .communities-invite-row {
   display: flex;
   flex-wrap: wrap;
