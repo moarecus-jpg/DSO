@@ -57,38 +57,6 @@ function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route
-        path="/join"
-        element={
-          <PrivateRoute>
-            <JoinCommunity />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/join/:code"
-        element={
-          <PrivateRoute>
-            <JoinCommunity />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/communities"
-        element={
-          <PrivateRoute>
-            <CommunitiesSetup />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/communities/create"
-        element={
-          <PrivateRoute>
-            <CreateCommunity />
-          </PrivateRoute>
-        }
-      />
-      <Route
         element={
           <PrivateRoute>
             <CommunityGate>
@@ -116,6 +84,10 @@ function AppRoutes() {
         <Route path="/session/:id" element={<Session />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/join" element={<JoinCommunity />} />
+        <Route path="/join/:code" element={<JoinCommunity />} />
+        <Route path="/communities" element={<CommunitiesSetup />} />
+        <Route path="/communities/create" element={<CreateCommunity />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
