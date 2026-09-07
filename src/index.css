@@ -10524,13 +10524,16 @@ img.plac-user-avatar {
   .plac-dig-filters-toggle,
   .plac-page-header-nav .plac-sell-btn,
   .plac-toolbar-actions .plac-sell-btn {
-    min-width: 2.35rem;
-    padding-inline: 0.65rem;
+    min-width: 2.15rem;
+    width: 2.15rem;
+    height: 2.15rem;
+    min-height: 2.15rem;
+    padding: 0;
   }
 
   .plac-page-header-nav .plac-sell-btn,
   .plac-toolbar-actions .plac-sell-btn {
-    width: auto;
+    width: 2.15rem;
   }
 }
 
@@ -10685,12 +10688,21 @@ img.plac-user-avatar {
     flex-wrap: nowrap;
   }
 
+  .plac-page-header-end .plac-sell-btn {
+    min-height: 2.15rem;
+    height: 2.15rem;
+    padding: 0 0.85rem;
+  }
+
   .plac-page-header-back,
   .plac-dig-filters-toggle,
   .plac-page-header-nav .plac-sell-btn {
-    flex: 0 1 auto;
-    width: auto;
-    min-width: 2.35rem;
+    flex: 0 0 auto;
+    width: 2.15rem;
+    min-width: 2.15rem;
+    height: 2.15rem;
+    min-height: 2.15rem;
+    padding: 0;
   }
 
   .plac-page-header-controls {
@@ -10758,11 +10770,23 @@ img.plac-user-avatar {
 .plac-sell-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  justify-content: center;
+  gap: 0.4rem;
   flex-shrink: 0;
   position: relative;
   z-index: 1;
   isolation: isolate;
+  min-height: 2.15rem;
+  height: 2.15rem;
+  padding: 0 0.85rem;
+  border-radius: 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.28);
+}
+
+.plac-sell-btn:hover:not(:disabled) {
+  box-shadow: 0 8px 20px rgba(124, 58, 237, 0.34);
 }
 
 .plac-cart-link {
