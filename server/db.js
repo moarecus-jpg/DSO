@@ -344,6 +344,26 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_communities_invite
     ON communities (invite_code);
+
+  CREATE TABLE IF NOT EXISTS community_join_requests (
+    id TEXT PRIMARY KEY,
+    community_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at TEXT DEFAULT (datetime('now')),
+    resolved_at TEXT,
+    resolved_by TEXT,
+    UNIQUE (community_id, user_id),
+    FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (resolved_by) REFERENCES users(id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_community_join_requests_community
+    ON community_join_requests (community_id, status);
+
+  CREATE INDEX IF NOT EXISTS idx_community_join_requests_user
+    ON community_join_requests (user_id, status);
 `);
 
 const SLOVENIA_COMMUNITY_SLUG = "slovenia";
@@ -1740,6 +1760,8 @@ export function publicCommunity(row, { includeInvite = false } = {}) {
     role: row.role ?? null,
     memberCount: row.member_count ?? undefined,
     createdAt: row.created_at,
+    membership: row.membership ?? undefined,
+    requestStatus: row.request_status ?? undefined,
   };
   if (includeInvite && row.invite_code) {
     base.inviteCode = row.invite_code;
@@ -1950,11 +1972,144 @@ export function joinCommunityByInviteCode(userId, code) {
     throw new Error("Invalid invite code.");
   }
   addCommunityMember(community.id, userId, "member");
+  db.prepare(
+    `UPDATE community_join_requests
+     SET status = 'approved', resolved_at = datetime('now'), resolved_by = ?
+     WHERE community_id = ? AND user_id = ? AND status = 'pending'`
+  ).run(userId, community.id, userId);
   db.prepare("UPDATE users SET active_community_id = ? WHERE id = ?").run(
     community.id,
     userId
   );
   return getActiveCommunityForUser(userId);
+}
+
+export function listCommunityDirectory(userId) {
+  return db
+    .prepare(
+      `SELECT c.id, c.name, c.slug, c.currency, c.city, c.country, c.created_at,
+              (SELECT COUNT(*) FROM community_members m WHERE m.community_id = c.id) AS member_count,
+              CASE
+                WHEN EXISTS (
+                  SELECT 1 FROM community_members cm
+                  WHERE cm.community_id = c.id AND cm.user_id = ?
+                ) THEN 'member'
+                WHEN EXISTS (
+                  SELECT 1 FROM community_join_requests r
+                  WHERE r.community_id = c.id AND r.user_id = ? AND r.status = 'pending'
+                ) THEN 'pending'
+                ELSE 'none'
+              END AS membership
+       FROM communities c
+       ORDER BY c.name COLLATE NOCASE ASC`
+    )
+    .all(userId, userId);
+}
+
+export function requestCommunityJoin(communityId, userId) {
+  const community = findCommunityById(communityId);
+  if (!community) {
+    throw new Error("Community not found.");
+  }
+  if (isCommunityMember(communityId, userId)) {
+    throw new Error("You are already a member of this community.");
+  }
+  const existing = db
+    .prepare(
+      `SELECT * FROM community_join_requests
+       WHERE community_id = ? AND user_id = ?`
+    )
+    .get(communityId, userId);
+  if (existing?.status === "pending") {
+    return existing;
+  }
+
+  const id = existing?.id ?? randomUUID();
+  if (existing) {
+    db.prepare(
+      `UPDATE community_join_requests
+       SET status = 'pending', created_at = datetime('now'),
+           resolved_at = NULL, resolved_by = NULL
+       WHERE id = ?`
+    ).run(id);
+  } else {
+    db.prepare(
+      `INSERT INTO community_join_requests (id, community_id, user_id, status)
+       VALUES (?, ?, ?, 'pending')`
+    ).run(id, communityId, userId);
+  }
+  return db.prepare("SELECT * FROM community_join_requests WHERE id = ?").get(id);
+}
+
+export function listPendingJoinRequestsForCommunity(communityId, actorUserId) {
+  const membership = getCommunityMembership(communityId, actorUserId);
+  if (!membership || !["owner", "admin"].includes(membership.role)) {
+    throw new Error("Only community owners or admins can review join requests.");
+  }
+  return db
+    .prepare(
+      `SELECT r.id, r.community_id, r.user_id, r.status, r.created_at,
+              u.name as user_name, u.username as user_username, u.picture as user_picture
+       FROM community_join_requests r
+       JOIN users u ON u.id = r.user_id
+       WHERE r.community_id = ? AND r.status = 'pending'
+       ORDER BY r.created_at ASC`
+    )
+    .all(communityId);
+}
+
+export function listPendingJoinRequestsForUserCommunities(actorUserId) {
+  return db
+    .prepare(
+      `SELECT r.id, r.community_id, r.user_id, r.status, r.created_at,
+              c.name as community_name,
+              u.name as user_name, u.username as user_username, u.picture as user_picture
+       FROM community_join_requests r
+       JOIN communities c ON c.id = r.community_id
+       JOIN community_members cm
+         ON cm.community_id = r.community_id AND cm.user_id = ?
+       JOIN users u ON u.id = r.user_id
+       WHERE r.status = 'pending'
+         AND cm.role IN ('owner', 'admin')
+       ORDER BY r.created_at ASC`
+    )
+    .all(actorUserId);
+}
+
+export function resolveCommunityJoinRequest(requestId, actorUserId, decision) {
+  if (!["approved", "rejected"].includes(decision)) {
+    throw new Error("Invalid decision.");
+  }
+  const request = db
+    .prepare("SELECT * FROM community_join_requests WHERE id = ?")
+    .get(requestId);
+  if (!request || request.status !== "pending") {
+    throw new Error("Join request not found.");
+  }
+  const membership = getCommunityMembership(request.community_id, actorUserId);
+  if (!membership || !["owner", "admin"].includes(membership.role)) {
+    throw new Error("Only community owners or admins can review join requests.");
+  }
+
+  const apply = db.transaction(() => {
+    db.prepare(
+      `UPDATE community_join_requests
+       SET status = ?, resolved_at = datetime('now'), resolved_by = ?
+       WHERE id = ?`
+    ).run(decision, actorUserId, requestId);
+    if (decision === "approved") {
+      addCommunityMember(request.community_id, request.user_id, "member");
+      const user = findUserById(request.user_id);
+      if (!user?.active_community_id) {
+        db.prepare("UPDATE users SET active_community_id = ? WHERE id = ?").run(
+          request.community_id,
+          request.user_id
+        );
+      }
+    }
+  });
+  apply();
+  return db.prepare("SELECT * FROM community_join_requests WHERE id = ?").get(requestId);
 }
 
 export function getCommunityPreviewByInviteCode(code) {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -6,6 +6,7 @@ import {
   Copy,
   Link2,
   Plus,
+  UserPlus,
   Users,
 } from "lucide-react";
 import { api } from "../api.js";
@@ -33,16 +34,39 @@ function CommunitiesPageHeader({ title, subtitle, backTo }) {
   );
 }
 
+function communityLocation(community) {
+  return [community.city, community.country].filter(Boolean).join(", ");
+}
+
 export function JoinCommunity() {
   const { code: codeParam } = useParams();
   const { user, refresh } = useAuth();
   const { t } = useLocale();
   const navigate = useNavigate();
+  const [directory, setDirectory] = useState([]);
+  const [loadingDirectory, setLoadingDirectory] = useState(true);
   const [code, setCode] = useState(codeParam ?? "");
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [inviteBusy, setInviteBusy] = useState(false);
+  const [requestBusyId, setRequestBusyId] = useState(null);
   const hasCommunities = (user?.communities?.length ?? 0) > 0;
+
+  const loadDirectory = useCallback(async () => {
+    setLoadingDirectory(true);
+    try {
+      const data = await api("/api/communities/directory");
+      setDirectory(data.communities ?? []);
+    } catch {
+      setDirectory([]);
+    } finally {
+      setLoadingDirectory(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDirectory();
+  }, [loadDirectory]);
 
   useEffect(() => {
     if (codeParam) setCode(codeParam);
@@ -73,9 +97,9 @@ export function JoinCommunity() {
     };
   }, [code, t]);
 
-  async function onSubmit(e) {
+  async function onInviteSubmit(e) {
     e.preventDefault();
-    setBusy(true);
+    setInviteBusy(true);
     setError("");
     try {
       await api("/api/communities/join", {
@@ -86,15 +110,34 @@ export function JoinCommunity() {
       navigate("/", { replace: true });
     } catch (err) {
       setError(err.message ?? t("communities.joinError"));
-      setBusy(false);
+      setInviteBusy(false);
+    }
+  }
+
+  async function requestJoin(communityId) {
+    setRequestBusyId(communityId);
+    setError("");
+    try {
+      await api(`/api/communities/${communityId}/request`, { method: "POST" });
+      await loadDirectory();
+    } catch (err) {
+      setError(err.message ?? t("communities.requestError"));
+    } finally {
+      setRequestBusyId(null);
     }
   }
 
   return (
-    <div className="page page-settings page-communities">
+    <div className="page page-settings page-communities page-communities--onboarding">
       <CommunitiesPageHeader
-        title={t("communities.joinTitle")}
-        subtitle={t("communities.joinSubtitle")}
+        title={
+          hasCommunities ? t("communities.joinTitle") : t("communities.onboardingTitle")
+        }
+        subtitle={
+          hasCommunities
+            ? t("communities.joinSubtitle")
+            : t("communities.onboardingSubtitle")
+        }
         backTo={
           hasCommunities
             ? { to: "/communities", label: t("communities.manage") }
@@ -102,7 +145,68 @@ export function JoinCommunity() {
         }
       />
 
-      <form className="card settings-card communities-card" onSubmit={onSubmit}>
+      <div className="card settings-card communities-card">
+        <div className="communities-card-head">
+          <span className="communities-card-icon" aria-hidden>
+            <Users size={20} strokeWidth={2.1} />
+          </span>
+          <div>
+            <h2>{t("communities.directoryTitle")}</h2>
+            <p className="muted settings-privacy-hint">
+              {t("communities.directoryHint")}
+            </p>
+          </div>
+        </div>
+
+        {loadingDirectory ? (
+          <p className="muted">{t("common.loading")}</p>
+        ) : directory.length === 0 ? (
+          <p className="muted">{t("communities.directoryEmpty")}</p>
+        ) : (
+          <ul className="communities-directory-list">
+            {directory.map((community) => {
+              const location = communityLocation(community);
+              const membership = community.membership ?? "none";
+              return (
+                <li key={community.id} className="communities-directory-item">
+                  <div className="communities-list-meta">
+                    <strong>{community.name}</strong>
+                    <span className="muted fine">
+                      {t("communities.memberCount", {
+                        count: community.memberCount ?? 0,
+                      })}
+                      {location ? ` · ${location}` : null}
+                    </span>
+                  </div>
+                  {membership === "member" ? (
+                    <span className="communities-active-pill">
+                      {t("communities.alreadyMember")}
+                    </span>
+                  ) : membership === "pending" ? (
+                    <span className="communities-pending-pill">
+                      {t("communities.requestPending")}
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      disabled={requestBusyId === community.id}
+                      onClick={() => requestJoin(community.id)}
+                    >
+                      <UserPlus size={15} strokeWidth={2.2} aria-hidden />
+                      {requestBusyId === community.id
+                        ? t("common.loading")
+                        : t("communities.requestJoin")}
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+      <form className="card settings-card communities-card" onSubmit={onInviteSubmit}>
         <div className="communities-card-head">
           <span className="communities-card-icon" aria-hidden>
             <Link2 size={20} strokeWidth={2.1} />
@@ -119,7 +223,6 @@ export function JoinCommunity() {
             value={code}
             onChange={(e) => setCode(e.target.value)}
             autoComplete="off"
-            required
             placeholder={t("communities.invitePlaceholder")}
           />
         </label>
@@ -139,8 +242,12 @@ export function JoinCommunity() {
         {error ? <p className="communities-form-error">{error}</p> : null}
 
         <div className="communities-card-actions">
-          <button type="submit" className="btn btn-primary" disabled={busy || !code.trim()}>
-            {busy ? t("common.loading") : t("communities.joinCta")}
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={inviteBusy || !code.trim()}
+          >
+            {inviteBusy ? t("common.loading") : t("communities.joinWithCode")}
           </button>
           <Link to="/communities/create" className="btn btn-ghost">
             {t("communities.orCreate")}
@@ -256,9 +363,29 @@ export function CommunitiesSetup() {
   const { t } = useLocale();
   const [copied, setCopied] = useState(false);
   const [busyId, setBusyId] = useState(null);
+  const [requests, setRequests] = useState([]);
+  const [resolveBusyId, setResolveBusyId] = useState(null);
 
   const communities = user?.communities ?? [];
   const active = user?.activeCommunity ?? null;
+  const canReview = communities.some((c) => c.role === "owner" || c.role === "admin");
+
+  const loadRequests = useCallback(async () => {
+    if (!canReview) {
+      setRequests([]);
+      return;
+    }
+    try {
+      const data = await api("/api/communities/join-requests");
+      setRequests(data.requests ?? []);
+    } catch {
+      setRequests([]);
+    }
+  }, [canReview]);
+
+  useEffect(() => {
+    loadRequests();
+  }, [loadRequests]);
 
   if (!communities.length) {
     return <Navigate to="/join" replace />;
@@ -288,6 +415,19 @@ export function CommunitiesSetup() {
     }
   }
 
+  async function resolveRequest(requestId, decision) {
+    setResolveBusyId(requestId);
+    try {
+      await api(`/api/communities/join-requests/${requestId}/resolve`, {
+        method: "POST",
+        body: JSON.stringify({ decision }),
+      });
+      await loadRequests();
+    } finally {
+      setResolveBusyId(null);
+    }
+  }
+
   return (
     <div className="page page-settings page-communities">
       <CommunitiesPageHeader
@@ -295,6 +435,57 @@ export function CommunitiesSetup() {
         subtitle={t("communities.manageSubtitle")}
         backTo={{ to: "/", label: t("communities.backHome") }}
       />
+
+      {requests.length > 0 ? (
+        <div className="card settings-card communities-card">
+          <div className="communities-card-head">
+            <span className="communities-card-icon" aria-hidden>
+              <UserPlus size={20} strokeWidth={2.1} />
+            </span>
+            <div>
+              <h2>{t("communities.requestsTitle")}</h2>
+              <p className="muted settings-privacy-hint">
+                {t("communities.requestsHint")}
+              </p>
+            </div>
+          </div>
+          <ul className="communities-list">
+            {requests.map((request) => (
+              <li key={request.id} className="communities-list-item">
+                <div className="communities-list-meta">
+                  <strong>
+                    {request.user_name ||
+                      (request.user_username
+                        ? `@${request.user_username}`
+                        : t("common.unknown"))}
+                  </strong>
+                  <span className="muted fine">
+                    {t("communities.requestFor", { name: request.community_name })}
+                  </span>
+                </div>
+                <div className="communities-request-actions">
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    disabled={resolveBusyId === request.id}
+                    onClick={() => resolveRequest(request.id, "approved")}
+                  >
+                    {t("communities.approve")}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    disabled={resolveBusyId === request.id}
+                    onClick={() => resolveRequest(request.id, "rejected")}
+                  >
+                    {t("communities.reject")}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="card settings-card communities-card">
         <div className="communities-card-head">
@@ -361,7 +552,11 @@ export function CommunitiesSetup() {
           <div className="communities-invite-row">
             <code className="communities-invite-code">{active.inviteCode}</code>
             <button type="button" className="btn btn-ghost" onClick={copyInvite}>
-              {copied ? <Check size={16} strokeWidth={2.2} aria-hidden /> : <Copy size={16} strokeWidth={2.2} aria-hidden />}
+              {copied ? (
+                <Check size={16} strokeWidth={2.2} aria-hidden />
+              ) : (
+                <Copy size={16} strokeWidth={2.2} aria-hidden />
+              )}
               {copied ? t("communities.copied") : t("communities.copyInvite")}
             </button>
           </div>

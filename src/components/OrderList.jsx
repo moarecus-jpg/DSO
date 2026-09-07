@@ -2,14 +2,21 @@ import { Link } from "react-router-dom";
 import {
   AlertTriangle,
   Calendar,
+  CheckSquare,
   Disc3,
+  Heart,
   MessageSquare,
+  Square,
   UserRound,
   Users,
 } from "lucide-react";
 import { displayOrderTitle } from "../../shared/orderTitle.js";
 import { needsAttention } from "../../shared/orderDashboard.js";
+import { sellerMywantsUrl } from "../../shared/discogsUrls.js";
+import { isShopStore } from "../../shared/stores.js";
+import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
+import { useSellerChecklist } from "../hooks/useSellerChecklist.js";
 import { OrderStoreAvatar } from "./OrderStoreAvatar.jsx";
 import { StatusPill } from "./StatusPill.jsx";
 
@@ -24,7 +31,7 @@ function formatOrderDate(createdAt, localeTag) {
   });
 }
 
-function OrderCardContent({ s, title, dateLabel, creatorLabel, t }) {
+function OrderCardBody({ s, title, dateLabel, creatorLabel, t }) {
   const itemCount = s.link_count ?? 0;
   const noteCount = s.note_count ?? 0;
   const attention = needsAttention(s);
@@ -83,6 +90,46 @@ function OrderCardContent({ s, title, dateLabel, creatorLabel, t }) {
   );
 }
 
+function OrderCardActions({ s, checked, onToggleChecked, wantlistUrl, t }) {
+  return (
+    <div
+      className="order-card-v2-actions"
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        className={`order-card-v2-action${checked ? " is-checked" : ""}`}
+        aria-pressed={checked}
+        title={checked ? t("orders.uncheckSeller") : t("orders.checkSeller")}
+        aria-label={checked ? t("orders.uncheckSeller") : t("orders.checkSeller")}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onToggleChecked(s.seller_username);
+        }}
+      >
+        {checked ? <CheckSquare size={15} strokeWidth={2.2} /> : <Square size={15} strokeWidth={2.2} />}
+        <span>{checked ? t("orders.checked") : t("orders.check")}</span>
+      </button>
+      {wantlistUrl ? (
+        <a
+          href={wantlistUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="order-card-v2-action"
+          title={t("session.openWantlist")}
+          aria-label={t("session.openWantlist")}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Heart size={15} strokeWidth={2.2} />
+          <span>{t("orders.wantlist")}</span>
+        </a>
+      ) : null}
+    </div>
+  );
+}
+
 export function OrderList({
   sessions,
   loading,
@@ -92,6 +139,8 @@ export function OrderList({
   previewMode = false,
 }) {
   const { t, localeTag } = useLocale();
+  const { user } = useAuth();
+  const { isChecked, toggleChecked } = useSellerChecklist();
 
   if (loading) {
     return <p className="orders-loading">{t("common.loadingOrders")}</p>;
@@ -115,38 +164,67 @@ export function OrderList({
           s.creator_name ??
           (s.creator_username ? `@${s.creator_username}` : null);
         const selected = selectedId === s.id;
-        const className = `order-card-v2${selected ? " order-card-v2--selected" : ""}`;
+        const checked = isChecked(s.seller_username);
+        const wantlistUrl =
+          !isShopStore(s.store) && s.seller_username
+            ? sellerMywantsUrl(s.seller_username, user?.discogsUsername)
+            : null;
+        const className = [
+          "order-card-v2",
+          selected ? "order-card-v2--selected" : "",
+          checked ? "order-card-v2--checked" : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
+
+        const body = (
+          <OrderCardBody
+            s={s}
+            title={title}
+            dateLabel={dateLabel}
+            creatorLabel={creatorLabel}
+            t={t}
+          />
+        );
+        const actions = (
+          <OrderCardActions
+            s={s}
+            checked={checked}
+            onToggleChecked={toggleChecked}
+            wantlistUrl={wantlistUrl}
+            t={t}
+          />
+        );
 
         if (previewMode && onSelect) {
           return (
-            <button
+            <div
               key={s.id}
-              type="button"
               className={className}
+              role="button"
+              tabIndex={0}
               aria-pressed={selected}
               onClick={() => onSelect(s)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onSelect(s);
+                }
+              }}
             >
-              <OrderCardContent
-                s={s}
-                title={title}
-                dateLabel={dateLabel}
-                creatorLabel={creatorLabel}
-                t={t}
-              />
-            </button>
+              <div className="order-card-v2-main">{body}</div>
+              {actions}
+            </div>
           );
         }
 
         return (
-          <Link key={s.id} to={`/session/${s.id}`} className={className}>
-            <OrderCardContent
-              s={s}
-              title={title}
-              dateLabel={dateLabel}
-              creatorLabel={creatorLabel}
-              t={t}
-            />
-          </Link>
+          <div key={s.id} className={className}>
+            <Link to={`/session/${s.id}`} className="order-card-v2-main">
+              {body}
+            </Link>
+            {actions}
+          </div>
         );
       })}
     </div>

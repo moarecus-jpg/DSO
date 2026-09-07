@@ -6729,6 +6729,21 @@ img.header-account-avatar {
   transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s, background 0.25s;
 }
 
+.order-card-v2-main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.95rem;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.order-card-v2-main:hover {
+  color: inherit;
+  text-decoration: none;
+}
+
 .order-card-v2:hover {
   border-color: rgba(139, 92, 246, 0.4);
   background: #1a1822;
@@ -6741,6 +6756,57 @@ img.header-account-avatar {
   border-color: rgba(167, 139, 250, 0.7);
   background: #1c1828;
   box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.35), 0 12px 32px rgba(124, 58, 237, 0.18);
+}
+
+.order-card-v2--checked {
+  border-color: rgba(52, 211, 153, 0.35);
+}
+
+.order-card-v2--checked:not(.order-card-v2--selected) {
+  background: #141a18;
+}
+
+.order-card-v2-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: auto;
+}
+
+.order-card-v2-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 1.85rem;
+  padding: 0.28rem 0.55rem;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(244, 244, 245, 0.88);
+  font-size: 0.72rem;
+  font-weight: 650;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.order-card-v2-action:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  text-decoration: none;
+}
+
+.order-card-v2-action.is-checked {
+  border-color: rgba(52, 211, 153, 0.4);
+  background: rgba(52, 211, 153, 0.12);
+  color: #6ee7b7;
+}
+
+.orders-split--preview .order-card-v2-action span {
+  display: none;
 }
 
 .order-card-v2-top {
@@ -12208,6 +12274,48 @@ img.plac-user-avatar {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.communities-pending-pill {
+  flex: 0 0 auto;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(251, 191, 36, 0.14);
+  color: #fbbf24;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.communities-directory-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.communities-directory-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.communities-request-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.page-communities--onboarding {
+  max-width: 44rem;
 }
 
 .communities-invite-row {

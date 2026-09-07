@@ -6,10 +6,15 @@ import {
   getCommunityForMember,
   getCommunityPreviewByInviteCode,
   joinCommunityByInviteCode,
+  listCommunityDirectory,
+  listPendingJoinRequestsForCommunity,
+  listPendingJoinRequestsForUserCommunities,
   listUserCommunities,
   publicCommunity,
   publicUserWithCommunities,
   regenerateCommunityInviteCode,
+  requestCommunityJoin,
+  resolveCommunityJoinRequest,
   setActiveCommunity,
   upsertGoogleUser,
   ensureMembershipInSloveniaCommunity,
@@ -63,6 +68,22 @@ router.get("/", requireUser, (req, res) => {
   });
 });
 
+router.get("/directory", requireUser, (req, res) => {
+  const communities = listCommunityDirectory(req.session.userId).map((row) =>
+    publicCommunity(row)
+  );
+  res.json({ communities });
+});
+
+router.get("/join-requests", requireUser, (req, res) => {
+  try {
+    const requests = listPendingJoinRequestsForUserCommunities(req.session.userId);
+    res.json({ requests });
+  } catch (err) {
+    res.status(403).json({ error: err.message ?? "Could not load join requests." });
+  }
+});
+
 router.get("/preview/:code", requireUser, (req, res) => {
   const preview = getCommunityPreviewByInviteCode(req.params.code);
   if (!preview) {
@@ -82,6 +103,56 @@ router.post("/join", requireUser, (req, res) => {
     });
   } catch (err) {
     res.status(400).json({ error: err.message ?? "Could not join community." });
+  }
+});
+
+router.post("/:id/request", requireUser, (req, res) => {
+  try {
+    const request = requestCommunityJoin(req.params.id, req.session.userId);
+    res.status(201).json({
+      request: {
+        id: request.id,
+        communityId: request.community_id,
+        status: request.status,
+        createdAt: request.created_at,
+      },
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message ?? "Could not request to join." });
+  }
+});
+
+router.get("/:id/join-requests", requireUser, (req, res) => {
+  try {
+    const requests = listPendingJoinRequestsForCommunity(
+      req.params.id,
+      req.session.userId
+    );
+    res.json({ requests });
+  } catch (err) {
+    res.status(403).json({ error: err.message ?? "Could not load join requests." });
+  }
+});
+
+router.post("/join-requests/:requestId/resolve", requireUser, (req, res) => {
+  const decision = req.body?.decision;
+  try {
+    const request = resolveCommunityJoinRequest(
+      req.params.requestId,
+      req.session.userId,
+      decision
+    );
+    res.json({
+      request: {
+        id: request.id,
+        communityId: request.community_id,
+        userId: request.user_id,
+        status: request.status,
+      },
+    });
+  } catch (err) {
+    const status = String(err.message || "").includes("Only community") ? 403 : 400;
+    res.status(status).json({ error: err.message ?? "Could not resolve request." });
   }
 });
 
