@@ -31,9 +31,12 @@ function formatOrderDate(createdAt, localeTag) {
   });
 }
 
-function OrderCardBody({ s, title, dateLabel, creatorLabel, t }) {
-  const itemCount = s.link_count ?? 0;
-  const noteCount = s.note_count ?? 0;
+function stopCardEvent(e) {
+  e.preventDefault();
+  e.stopPropagation();
+}
+
+function OrderCardMain({ s, title, dateLabel, creatorLabel, t }) {
   const attention = needsAttention(s);
 
   return (
@@ -72,7 +75,23 @@ function OrderCardBody({ s, title, dateLabel, creatorLabel, t }) {
           </p>
         )}
       </div>
-      <div className="order-card-v2-footer">
+    </>
+  );
+}
+
+function OrderCardFooter({
+  s,
+  t,
+  checked,
+  onToggleChecked,
+  wantlistUrl,
+}) {
+  const itemCount = s.link_count ?? 0;
+  const noteCount = s.note_count ?? 0;
+
+  return (
+    <div className="order-card-v2-footer">
+      <div className="order-card-v2-meta-row">
         <span className="order-card-v2-meta" title={t("orders.previewMembers")}>
           <Users size={15} aria-hidden />
           {s.member_count ?? 1}
@@ -86,46 +105,44 @@ function OrderCardBody({ s, title, dateLabel, creatorLabel, t }) {
           {noteCount}
         </span>
       </div>
-    </>
-  );
-}
-
-function OrderCardActions({ s, checked, onToggleChecked, wantlistUrl, t }) {
-  return (
-    <div
-      className="order-card-v2-actions"
-      onClick={(e) => e.stopPropagation()}
-      onKeyDown={(e) => e.stopPropagation()}
-    >
-      <button
-        type="button"
-        className={`order-card-v2-action${checked ? " is-checked" : ""}`}
-        aria-pressed={checked}
-        title={checked ? t("orders.uncheckSeller") : t("orders.checkSeller")}
-        aria-label={checked ? t("orders.uncheckSeller") : t("orders.checkSeller")}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onToggleChecked(s.seller_username);
-        }}
+      <div
+        className="order-card-v2-actions"
+        onClick={stopCardEvent}
+        onKeyDown={stopCardEvent}
       >
-        {checked ? <CheckSquare size={15} strokeWidth={2.2} /> : <Square size={15} strokeWidth={2.2} />}
-        <span>{checked ? t("orders.checked") : t("orders.check")}</span>
-      </button>
-      {wantlistUrl ? (
-        <a
-          href={wantlistUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="order-card-v2-action"
-          title={t("session.openWantlist")}
-          aria-label={t("session.openWantlist")}
-          onClick={(e) => e.stopPropagation()}
+        <button
+          type="button"
+          className={`order-card-v2-action${checked ? " is-checked" : ""}`}
+          aria-pressed={checked}
+          title={checked ? t("orders.uncheckSeller") : t("orders.checkSeller")}
+          aria-label={checked ? t("orders.uncheckSeller") : t("orders.checkSeller")}
+          onClick={(e) => {
+            stopCardEvent(e);
+            onToggleChecked(s.seller_username);
+          }}
         >
-          <Heart size={15} strokeWidth={2.2} />
-          <span>{t("orders.wantlist")}</span>
-        </a>
-      ) : null}
+          {checked ? (
+            <CheckSquare size={15} strokeWidth={2.3} aria-hidden />
+          ) : (
+            <Square size={15} strokeWidth={2.3} aria-hidden />
+          )}
+          <span>{checked ? t("orders.checked") : t("orders.check")}</span>
+        </button>
+        {wantlistUrl ? (
+          <a
+            href={wantlistUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="order-card-v2-action order-card-v2-action--wantlist"
+            title={t("session.openWantlist")}
+            aria-label={t("session.openWantlist")}
+            onClick={stopCardEvent}
+          >
+            <Heart size={15} strokeWidth={2.3} aria-hidden />
+            <span>{t("orders.wantlist")}</span>
+          </a>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -177,8 +194,8 @@ export function OrderList({
           .filter(Boolean)
           .join(" ");
 
-        const body = (
-          <OrderCardBody
+        const main = (
+          <OrderCardMain
             s={s}
             title={title}
             dateLabel={dateLabel}
@@ -186,13 +203,13 @@ export function OrderList({
             t={t}
           />
         );
-        const actions = (
-          <OrderCardActions
+        const footer = (
+          <OrderCardFooter
             s={s}
+            t={t}
             checked={checked}
             onToggleChecked={toggleChecked}
             wantlistUrl={wantlistUrl}
-            t={t}
           />
         );
 
@@ -212,8 +229,8 @@ export function OrderList({
                 }
               }}
             >
-              <div className="order-card-v2-main">{body}</div>
-              {actions}
+              {main}
+              {footer}
             </div>
           );
         }
@@ -221,9 +238,9 @@ export function OrderList({
         return (
           <div key={s.id} className={className}>
             <Link to={`/session/${s.id}`} className="order-card-v2-main">
-              {body}
+              {main}
             </Link>
-            {actions}
+            {footer}
           </div>
         );
       })}

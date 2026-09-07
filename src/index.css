@@ -6735,6 +6735,7 @@ img.header-account-avatar {
   flex-direction: column;
   gap: 0.95rem;
   min-width: 0;
+  min-height: 100%;
   color: inherit;
   text-decoration: none;
 }
@@ -6759,7 +6760,7 @@ img.header-account-avatar {
 }
 
 .order-card-v2--checked {
-  border-color: rgba(52, 211, 153, 0.35);
+  border-color: rgba(52, 211, 153, 0.45);
 }
 
 .order-card-v2--checked:not(.order-card-v2--selected) {
@@ -6768,24 +6769,26 @@ img.header-account-avatar {
 
 .order-card-v2-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.4rem;
-  margin-top: auto;
+  margin-left: auto;
+  flex: 0 0 auto;
 }
 
 .order-card-v2-action {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  min-height: 1.85rem;
-  padding: 0.28rem 0.55rem;
-  border-radius: 0.55rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(244, 244, 245, 0.88);
-  font-size: 0.72rem;
-  font-weight: 650;
+  min-height: 2rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.1);
+  color: #f4f4f5;
+  font-size: 0.75rem;
+  font-weight: 700;
   line-height: 1;
   text-decoration: none;
   cursor: pointer;
@@ -6793,16 +6796,33 @@ img.header-account-avatar {
 }
 
 .order-card-v2-action:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.45);
   color: #fff;
   text-decoration: none;
 }
 
 .order-card-v2-action.is-checked {
-  border-color: rgba(52, 211, 153, 0.4);
-  background: rgba(52, 211, 153, 0.12);
+  border-color: rgba(52, 211, 153, 0.65);
+  background: rgba(52, 211, 153, 0.22);
   color: #6ee7b7;
+}
+
+.order-card-v2-action--wantlist {
+  border-color: rgba(244, 114, 182, 0.45);
+  background: rgba(244, 114, 182, 0.14);
+  color: #f9a8d4;
+}
+
+.order-card-v2-action--wantlist:hover {
+  border-color: rgba(244, 114, 182, 0.7);
+  background: rgba(244, 114, 182, 0.22);
+  color: #fbcfe8;
+}
+
+.orders-split--preview .order-card-v2-action {
+  min-height: 1.75rem;
+  padding: 0.28rem 0.45rem;
 }
 
 .orders-split--preview .order-card-v2-action span {
@@ -6857,10 +6877,20 @@ img.header-account-avatar {
 .order-card-v2-footer {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 0.75rem;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: 0.65rem;
   margin-top: auto;
   padding-top: 0.15rem;
+  min-width: 0;
+}
+
+.order-card-v2-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .order-card-v2-meta {
@@ -6873,6 +6903,12 @@ img.header-account-avatar {
 
 .orders-split--preview .order-card-v2-meta {
   flex-shrink: 0;
+}
+
+.orders-split--preview .order-card-v2-footer {
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  padding-top: 0.05rem;
 }
 
 .order-card-v2-alert {
