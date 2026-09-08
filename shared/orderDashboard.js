@@ -128,7 +128,8 @@ export function sortSessions(sessions, sort = "recent") {
     if (sort === "members") {
       return (b.member_count ?? 0) - (a.member_count ?? 0);
     }
-    return lastActivityTs(b) - lastActivityTs(a);
+    // "recent" = recently opened (matches card date + sort label)
+    return sessionTimestamp(b.created_at) - sessionTimestamp(a.created_at);
   });
   return copy;
 }
