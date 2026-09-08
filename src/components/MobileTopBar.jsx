@@ -22,7 +22,6 @@ export function MobileTopBar() {
         <Link to="/" className="mobile-topbar-brand" title={APP_TITLE}>
           <BrandMark variant="icon" />
         </Link>
-        <CommunitySwitcher compact />
       </div>
 
       <div className="mobile-topbar-actions">
@@ -30,19 +29,22 @@ export function MobileTopBar() {
         <PlacCartLink compact />
         <PlacInboxLink compact />
         {user ? (
-          <Link
-            to="/settings"
-            className="mobile-topbar-account-btn"
-            aria-label={user.name}
-            title={user.name}
-          >
-            <UserAvatar
-              name={user.name}
-              avatarUrl={user.discogsConnected ? user.discogsAvatarUrl : user.picture}
-              className="mobile-topbar-account-avatar"
-              size={30}
-            />
-          </Link>
+          <div className="mobile-topbar-profile">
+            <CommunitySwitcher compact />
+            <Link
+              to="/settings"
+              className="mobile-topbar-account-btn"
+              aria-label={user.name}
+              title={user.name}
+            >
+              <UserAvatar
+                name={user.name}
+                avatarUrl={user.discogsConnected ? user.discogsAvatarUrl : user.picture}
+                className="mobile-topbar-account-avatar"
+                size={30}
+              />
+            </Link>
+          </div>
         ) : null}
       </div>
     </header>

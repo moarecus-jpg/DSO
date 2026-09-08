@@ -19,24 +19,35 @@ export function HeaderAccount({ className = "", compact = false }) {
 
   if (!user) return null;
 
+  const communityName =
+    user.activeCommunity?.name ?? user.communities?.[0]?.name ?? null;
+  const profileMeta = communityName
+    ? communityName
+    : user.isAdmin
+      ? t("nav.admin")
+      : t("settings.title");
+
   if (compact) {
     return (
       <div className={`header-account-bar header-account-bar--compact ${className}`.trim()}>
         <PlacCartLink compact />
         <PlacInboxLink compact />
-        <Link
-          to="/settings"
-          className="mobile-topbar-account-btn"
-          aria-label={user.name}
-          title={user.name}
-        >
-          <UserAvatar
-            name={user.name}
-            avatarUrl={user.discogsConnected ? user.discogsAvatarUrl : user.picture}
-            className="mobile-topbar-account-avatar"
-            size={30}
-          />
-        </Link>
+        <div className="header-account header-account--profile">
+          <CommunitySwitcher compact />
+          <Link
+            to="/settings"
+            className="mobile-topbar-account-btn"
+            aria-label={user.name}
+            title={user.name}
+          >
+            <UserAvatar
+              name={user.name}
+              avatarUrl={user.discogsConnected ? user.discogsAvatarUrl : user.picture}
+              className="mobile-topbar-account-avatar"
+              size={30}
+            />
+          </Link>
+        </div>
       </div>
     );
   }
@@ -47,12 +58,12 @@ export function HeaderAccount({ className = "", compact = false }) {
 
   return (
     <div className={`header-account-bar ${className}`.trim()}>
-      <CommunitySwitcher />
       <PlacCartLink compact />
       {isSeller && <PlacOrdersLink compact />}
       <PlacInboxLink compact />
       {isSeller && <PlacShopLink compact />}
-      <div className="header-account">
+      <div className="header-account header-account--profile">
+        <CommunitySwitcher />
         <Link to="/settings" className="header-account-card">
           <UserAvatar
             name={user.name}
@@ -62,8 +73,8 @@ export function HeaderAccount({ className = "", compact = false }) {
           />
           <div className="header-account-text">
             <p className="header-account-name">{user.name}</p>
-            <p className="header-account-meta">
-              {user.isAdmin ? t("nav.admin") : t("settings.title")}
+            <p className="header-account-meta" title={profileMeta}>
+              {profileMeta}
             </p>
           </div>
           <ChevronDown size={16} className="header-account-chevron" aria-hidden />

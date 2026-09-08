@@ -5682,6 +5682,52 @@ body.modal-open .order-sticky-backdrop {
   flex-shrink: 0;
 }
 
+.header-account--profile {
+  align-items: center;
+  padding: 0.15rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.header-account--profile .community-switcher {
+  max-width: none;
+  flex: 0 0 auto;
+}
+
+.header-account--profile .community-switcher-name,
+.header-account--profile .community-switcher-trigger > svg:last-of-type {
+  display: none;
+}
+
+.header-account--profile .community-switcher-trigger {
+  width: 2.15rem;
+  height: 2.15rem;
+  min-height: 2.15rem;
+  padding: 0;
+  justify-content: center;
+  gap: 0;
+  border: 0;
+  border-radius: 0.65rem;
+  background: transparent;
+}
+
+.header-account--profile .community-switcher-trigger:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.header-account--profile .header-account-card {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  max-width: 12rem;
+}
+
+.header-account--profile .header-account-logout {
+  border: 0;
+  background: transparent;
+}
+
 .header-account-avatar {
   display: grid;
   place-items: center;
@@ -8002,16 +8048,45 @@ a.order-preview-item-title:hover {
     height: 2rem;
   }
 
-  .mobile-topbar .community-switcher--compact {
-    flex: 1 1 auto;
-    min-width: 0;
-    max-width: 8.5rem;
+  .mobile-topbar-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.15rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
   }
 
-  .mobile-topbar .community-switcher-trigger {
+  .mobile-topbar-profile .community-switcher--compact {
+    flex: 0 0 auto;
+    max-width: none;
+  }
+
+  .mobile-topbar-profile .community-switcher-name,
+  .mobile-topbar-profile .community-switcher-trigger > svg:last-of-type {
+    display: none;
+  }
+
+  .mobile-topbar-profile .community-switcher-trigger {
+    width: 2.1rem;
+    height: 2.1rem;
     min-height: 2.1rem;
-    padding: 0.3rem 0.5rem;
-    font-size: 0.72rem;
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+  }
+
+  .mobile-topbar-profile .community-switcher-trigger:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .mobile-topbar-profile .mobile-topbar-account-btn {
+    border: 0;
+    background: transparent;
   }
 
   .mobile-topbar-actions {
@@ -10575,17 +10650,21 @@ img.plac-user-avatar {
     font-size: 0.8rem;
   }
 
-  .header-account-bar .community-switcher {
+  .header-account-bar .community-switcher,
+  .header-account--profile .community-switcher {
     max-width: none;
     flex: 0 0 auto;
   }
 
   .header-account-bar .community-switcher-name,
-  .header-account-bar .community-switcher-trigger > svg:last-of-type {
+  .header-account-bar .community-switcher-trigger > svg:last-of-type,
+  .header-account--profile .community-switcher-name,
+  .header-account--profile .community-switcher-trigger > svg:last-of-type {
     display: none;
   }
 
-  .header-account-bar .community-switcher-trigger {
+  .header-account-bar .community-switcher-trigger,
+  .header-account--profile .community-switcher-trigger {
     width: calc(2.15rem * var(--ui-scale, 1));
     height: calc(2.15rem * var(--ui-scale, 1));
     min-height: calc(2.15rem * var(--ui-scale, 1));
@@ -10593,6 +10672,11 @@ img.plac-user-avatar {
     justify-content: center;
     gap: 0;
     border-radius: 0.65rem;
+  }
+
+  .header-account--profile {
+    padding: 0.1rem;
+    border-radius: 999px;
   }
 
   .orders-search-wrap {
