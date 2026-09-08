@@ -4,7 +4,7 @@ export const RECENT_DAYS = 7;
 export const ORDERS_PAGE_SIZE = 4;
 
 export const ORDER_CHIPS = ["all", "open", "waiting", "recent", "attention"];
-export const ORDER_SORTS = ["recent", "oldest", "items", "members"];
+export const ORDER_SORTS = ["recent", "activity", "oldest", "items", "members"];
 
 export function sessionTimestamp(value) {
   if (!value) return 0;
@@ -121,6 +121,9 @@ export function sortSessions(sessions, sort = "recent") {
   copy.sort((a, b) => {
     if (sort === "oldest") {
       return sessionTimestamp(a.created_at) - sessionTimestamp(b.created_at);
+    }
+    if (sort === "activity") {
+      return lastActivityTs(b) - lastActivityTs(a);
     }
     if (sort === "items") {
       return (b.link_count ?? 0) - (a.link_count ?? 0);

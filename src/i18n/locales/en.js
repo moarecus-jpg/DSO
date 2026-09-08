@@ -230,6 +230,7 @@ export default {
     sortLabel: "Sort by",
     sort: {
       recent: "Recently opened",
+      activity: "Last activity",
       oldest: "Oldest first",
       items: "Most items",
       members: "Most members",

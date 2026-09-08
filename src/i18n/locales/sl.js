@@ -231,6 +231,7 @@ export default {
     sortLabel: "Razvrsti",
     sort: {
       recent: "Nazadnje odprta",
+      activity: "Zadnja aktivnost",
       oldest: "Najstarejša",
       items: "Največ itemov",
       members: "Največ članov",
