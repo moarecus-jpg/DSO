@@ -330,6 +330,27 @@ function normalizeDecksPriceText(raw) {
     .trim();
 }
 
+function decksExportToEuFactor() {
+  const raw = process.env.DECKS_EXPORT_TO_EU_FACTOR;
+  if (raw != null && String(raw).trim() !== "") {
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? n : 1;
+  }
+  // Railway (and similar non-EU hosts) see Decks export prices; EU shop UI is ~×1.22.
+  if (process.env.RAILWAY_ENVIRONMENT || process.env.DECKS_ASSUME_EXPORT_PRICES === "1") {
+    return 1.22;
+  }
+  return 1;
+}
+
+function applyDecksGeoPrice(exportValue) {
+  const value = Number(exportValue);
+  if (!Number.isFinite(value) || value <= 0) return null;
+  const factor = decksExportToEuFactor();
+  const eu = Math.round(value * factor * 100) / 100;
+  return { exportValue: value, factor, value: eu };
+}
+
 function metaFromDecksRpc(parsed, note, rpc) {
   const code = parsed.code || parsed.productId;
   const audio = rpc?.audio?.json ?? {};
@@ -338,33 +359,30 @@ function metaFromDecksRpc(parsed, note, rpc) {
   const domPriceRaw = normalizeDecksPriceText(rpc?.domPrice);
   const chosenRaw = rpcPriceRaw || domPriceRaw;
   const numeric = Number(chosenRaw);
-  const parsedPrice =
-    Number.isFinite(numeric) && numeric > 0
-      ? toEurPrice(numeric, "EUR")
-      : { value: null, currency: "EUR" };
+  const geo =
+    Number.isFinite(numeric) && numeric > 0 ? applyDecksGeoPrice(numeric) : null;
 
-  // Railway / non-EU datacenter IPs get Decks "export" prices (e.g. 27.30),
-  // while EU shoppers see VAT-inclusive prices (e.g. 33.31). Never persist
-  // server-scraped Decks prices there — client bookmarklet sync is required.
-  const dropGeoPrice =
-    Boolean(process.env.RAILWAY_ENVIRONMENT) ||
-    process.env.DECKS_CLIENT_PRICES === "1";
+  // Optional escape hatch: force client bookmarklet only.
+  if (process.env.DECKS_CLIENT_PRICES === "1") {
+    console.info(
+      `[shops] decks client-prices mode — skip server price for ${code}`
+    );
+  }
 
-  const price = dropGeoPrice
-    ? { value: null, currency: "EUR" }
-    : parsedPrice;
+  const priceValue =
+    process.env.DECKS_CLIENT_PRICES === "1" ? null : geo?.value ?? null;
 
-  if (price.value == null && !dropGeoPrice) {
+  if (priceValue == null && process.env.DECKS_CLIENT_PRICES !== "1") {
     throw new Error(
       `Decks price unavailable for ${code} (cf/rpc). Retry availability refresh.`
     );
   }
-  if (parsedPrice.value != null && dropGeoPrice) {
+  if (geo && geo.factor !== 1) {
     console.info(
-      `[shops] decks skip geo price ${code}=${parsedPrice.value} (use client EU sync)`
+      `[shops] decks price ${code}: export ${geo.exportValue} × ${geo.factor} → EU ${geo.value}`
     );
-  } else if (price.value != null) {
-    console.info(`[shops] decks price ${code} = ${price.value}`);
+  } else if (priceValue != null) {
+    console.info(`[shops] decks price ${code} = ${priceValue}`);
   }
 
   const artist = audio.artist?.trim() || null;
@@ -382,8 +400,8 @@ function metaFromDecksRpc(parsed, note, rpc) {
     artist: resolvedArtist,
     title: resolvedTitle,
     itemDescription,
-    priceValue: price.value,
-    priceCurrency: price.currency ?? "EUR",
+    priceValue,
+    priceCurrency: "EUR",
     mediaCondition: null,
     sleeveCondition: null,
     label: buildLabel(resolvedArtist, resolvedTitle, note),

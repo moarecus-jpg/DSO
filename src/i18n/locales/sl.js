@@ -366,13 +366,13 @@ export default {
     refreshingAvailability: "Preverjam {{count}} itemov…",
     refreshAvailabilityHint:
       "Preveri, ali so listingi še naprodaj. Discogs dovoli približno en klic na sekundo, zato večja naročila trajajo dlje. Odprta naročila se avtomatsko preverijo tudi 1× na dan.",
-    decksSyncPrices: "Sinhroniziraj Decks cene",
+    decksSyncPrices: "Natančne Decks cene",
     decksSyncPricesPreparing: "Pripravljam…",
     decksSyncPricesHint:
-      "Strežnik vidi Decks export cene; prave EU cene preberi v svojem brskalniku na decks.de.",
-    decksSyncModalTitle: "Sinhroniziraj EU cene z Decks",
+      "Opcijsko: preberi točne cene v brskalniku. Sicer strežnik sam pretvori Decks export → EU (~×1.22).",
+    decksSyncModalTitle: "Natančne EU cene z Decks (opcijsko)",
     decksSyncWhy:
-      "DCO strežnik je zunaj EU in z Decks dobi nižje export cene (npr. €27.30 namesto €33.31). Cene je treba prebrati v tvojem brskalniku, medtem ko si na decks.de.",
+      "Cene se sicer posodobijo same (export × 1.22). Ta sync je samo, če želiš točno vrednost z decks.de v svojem brskalniku.",
     decksSyncStep1: "Povleci spodnji gumb med zaznamke (vsakič znova — token se spremeni).",
     decksSyncStep2: "Odpri https://www.decks.de/ v istem brskalniku.",
     decksSyncStep3: "Klikni zaznamek — počakaj na preusmeritev nazaj v DCO.",

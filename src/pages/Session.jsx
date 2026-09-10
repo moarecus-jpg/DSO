@@ -117,22 +117,18 @@ export function Session() {
       .catch(console.error);
   }, [searchParams, setSearchParams, t]);
 
-  // Shop orders: fill missing prices on open. Decks EU prices must be synced
-  // from the user's browser (Railway sees export/US prices) — skip auto scrape.
+  // Shop orders: fill/fix prices on open. Decks always re-scrapes once
+  // (Railway sees export prices; server converts to EU ≈ ×1.22).
   useEffect(() => {
     if (!session || loading) return;
     if (autoPriceRefreshForId.current === session.id) return;
     if (!isOpenSession(session.status)) return;
     if (!isShopStore(session.store)) return;
     const storeId = normalizeStore(session.store);
-    if (storeId === "decks") {
-      autoPriceRefreshForId.current = session.id;
-      return;
-    }
     const missingPrice = (session.links ?? []).some(
       (link) => link.price_value == null && link.priceValue == null
     );
-    if (!missingPrice) {
+    if (!missingPrice && storeId !== "decks") {
       autoPriceRefreshForId.current = session.id;
       return;
     }
