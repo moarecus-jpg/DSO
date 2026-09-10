@@ -3,7 +3,7 @@ import {
   parseShopRecordUrl,
 } from "../../shared/parseShopUrl.js";
 import { getStoreConfig, normalizeStore } from "../../shared/stores.js";
-import { toEurPrice } from "../../shared/currency.js";
+import { nativePrice } from "../../shared/currency.js";
 import {
   browserFetchAvailable,
   fetchDecksMetaBatchWithBrowser,
@@ -75,13 +75,17 @@ function parseJsonLdProducts(html) {
 function priceFromJsonLd(product, storeId = null) {
   const offers = product?.offers;
   const offer = Array.isArray(offers) ? offers[0] : offers;
-  if (offer?.price == null) return { value: null, currency: "EUR" };
-  let cur = String(offer.priceCurrency ?? "EUR").toUpperCase();
+  if (offer?.price == null) {
+    return nativePrice(null, getStoreConfig(storeId).currency ?? "EUR");
+  }
+  let cur = String(offer.priceCurrency ?? "").toUpperCase();
+  const storeCur = (getStoreConfig(storeId).currency ?? "EUR").toUpperCase();
   // EU shops sometimes label local EUR amounts as USD when Accept-Language is en-US.
-  // Applying our rough USD→EUR rate then stores wrong "EUR" values (e.g. 29.35→27.30).
-  const euShops = new Set(["decks", "hhv", "deejay", "juno", "yoyaku"]);
-  if (euShops.has(storeId) && cur === "USD") cur = "EUR";
-  return toEurPrice(Number(offer.price), cur);
+  const eurShops = new Set(["decks", "hhv", "deejay", "yoyaku"]);
+  if (eurShops.has(storeId) && cur === "USD") cur = "EUR";
+  if (!cur) cur = storeCur;
+  // Keep native currency; settle/totals convert to EUR.
+  return nativePrice(Number(offer.price), cur);
 }
 
 function availabilityFromJsonLd(product) {
@@ -270,7 +274,12 @@ function metaFromHtml(html, parsed, note, storeId) {
   }
 
   if (price.value == null) {
-    const priceText = firstMatch(html, [
+    const pound = firstMatch(html, [
+      /(?:£|GBP)\s*([\d.,]+)/i,
+      /([\d.,]+)\s*£/,
+      /itemprop=["']price["'][^>]*content=["']([^"']+)["']/i,
+    ]);
+    const euro = firstMatch(html, [
       /itemprop=["']price["'][^>]*content=["']([^"']+)["']/i,
       /content=["']([^"']+)["'][^>]*itemprop=["']price["']/i,
       /"price"\s*:\s*"?(€?\s*[\d.,]+)"?/i,
@@ -278,12 +287,23 @@ function metaFromHtml(html, parsed, note, storeId) {
       /([\d.,]+)\s*€/i,
       /class=["'][^"']*price[^"']*["'][^>]*>\s*€?\s*([\d.,]+)/i,
     ]);
+    const storeCur = (getStoreConfig(storeId).currency ?? "EUR").toUpperCase();
+    const preferPound = storeCur === "GBP";
+    const priceText = preferPound ? pound || euro : euro || pound;
     if (priceText) {
       const numeric = Number(
         String(priceText).replace(/[^\d.,]/g, "").replace(",", ".")
       );
       if (Number.isFinite(numeric)) {
-        price = toEurPrice(numeric, "EUR");
+        const cur =
+          preferPound && pound
+            ? "GBP"
+            : !preferPound && euro
+              ? "EUR"
+              : pound && !euro
+                ? "GBP"
+                : storeCur;
+        price = nativePrice(numeric, cur);
       }
     }
   }
@@ -530,7 +550,7 @@ export function mockResolveShopRecordFromUrl(url, note, store) {
     title: fallback.title,
     itemDescription: `${fallback.artist ?? "Demo Artist"} — ${fallback.title}`,
     priceValue: 19.99,
-    priceCurrency: "EUR",
+    priceCurrency: config.currency ?? "EUR",
     mediaCondition: null,
     sleeveCondition: null,
     label: buildLabel(fallback.artist ?? "Demo Artist", fallback.title, note),

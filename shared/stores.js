@@ -5,7 +5,7 @@ export const STORE_DECKS = "decks";
 export const STORE_DEEJAY = "deejay";
 export const STORE_JUNO = "juno";
 
-/** @typedef {{ id: string, label: string, kind: 'marketplace' | 'shop', sellerUsername?: string, shopUrl?: string, hostIncludes?: string[], exampleUrl?: string, urlHint?: string, logoDomain?: string, logoUrl?: string }} StoreConfig */
+/** @typedef {{ id: string, label: string, kind: 'marketplace' | 'shop', sellerUsername?: string, shopUrl?: string, hostIncludes?: string[], exampleUrl?: string, urlHint?: string, logoDomain?: string, logoUrl?: string, currency?: string }} StoreConfig */
 
 function shopLogoUrl(domain) {
   return `https://www.google.com/s2/favicons?sz=128&domain=${encodeURIComponent(domain)}`;
@@ -19,6 +19,7 @@ export const STORES = {
     kind: "marketplace",
     logoDomain: "discogs.com",
     logoUrl: shopLogoUrl("discogs.com"),
+    currency: "EUR",
   },
   [STORE_HHV]: {
     id: STORE_HHV,
@@ -32,6 +33,7 @@ export const STORES = {
     urlHint: "hhv.de/…/item/…",
     logoDomain: "hhv.de",
     logoUrl: shopLogoUrl("hhv.de"),
+    currency: "EUR",
   },
   [STORE_YOYAKU]: {
     id: STORE_YOYAKU,
@@ -44,6 +46,7 @@ export const STORES = {
     urlHint: "yoyaku.io/release/…",
     logoDomain: "yoyaku.io",
     logoUrl: shopLogoUrl("yoyaku.io"),
+    currency: "EUR",
   },
   [STORE_DECKS]: {
     id: STORE_DECKS,
@@ -56,6 +59,7 @@ export const STORES = {
     urlHint: "decks.de/track/… or /m/…",
     logoDomain: "decks.de",
     logoUrl: shopLogoUrl("decks.de"),
+    currency: "EUR",
   },
   [STORE_DEEJAY]: {
     id: STORE_DEEJAY,
@@ -68,6 +72,7 @@ export const STORES = {
     urlHint: "deejay.de/…__123456",
     logoDomain: "deejay.de",
     logoUrl: shopLogoUrl("deejay.de"),
+    currency: "EUR",
   },
   [STORE_JUNO]: {
     id: STORE_JUNO,
@@ -81,6 +86,7 @@ export const STORES = {
     urlHint: "juno.co.uk/products/…/…-01",
     logoDomain: "juno.co.uk",
     logoUrl: shopLogoUrl("juno.co.uk"),
+    currency: "GBP",
   },
 };
 export const SHOP_STORE_IDS = Object.values(STORES)
@@ -102,6 +108,11 @@ export function normalizeStore(store) {
 
 export function getStoreConfig(store) {
   return STORES[normalizeStore(store)];
+}
+
+/** Default listing currency for a store (items may still override). */
+export function getStoreCurrency(store) {
+  return getStoreConfig(store).currency ?? "EUR";
 }
 
 export function isShopStore(store) {
