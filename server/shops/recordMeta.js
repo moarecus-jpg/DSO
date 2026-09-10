@@ -6,6 +6,7 @@ import { getStoreConfig, normalizeStore } from "../../shared/stores.js";
 import { toEurPrice } from "../../shared/currency.js";
 import {
   browserFetchAvailable,
+  fetchDecksMetaWithBrowser,
   fetchHtmlWithBrowser,
   looksLikeBotWall,
 } from "./browserFetch.js";
@@ -313,6 +314,60 @@ function metaFromHtml(html, parsed, note, storeId) {
   };
 }
 
+async function resolveDecksFromRpc(parsed, note) {
+  const code = parsed.code || parsed.productId;
+  if (!code || !browserFetchAvailable()) {
+    const fallback = fallbackTitle(parsed, "decks");
+    return {
+      listingId: parsed.listingId ?? null,
+      releaseId: null,
+      artist: fallback.artist,
+      title: fallback.title,
+      itemDescription:
+        [fallback.artist, fallback.title].filter(Boolean).join(" — ") ||
+        fallback.title,
+      priceValue: null,
+      priceCurrency: "EUR",
+      mediaCondition: null,
+      sleeveCondition: null,
+      label: buildLabel(fallback.artist, fallback.title, note),
+      availability: "available",
+    };
+  }
+
+  console.info(`[shops] decks RPC via browser for ${code}`);
+  const rpc = await fetchDecksMetaWithBrowser(code);
+  const audio = rpc?.audio?.json ?? {};
+  const priceRaw = rpc?.price?.json?.price;
+  const numeric = Number(String(priceRaw ?? "").replace(",", "."));
+  const price = Number.isFinite(numeric)
+    ? toEurPrice(numeric, "EUR")
+    : { value: null, currency: "EUR" };
+
+  const artist = audio.artist?.trim() || null;
+  const title = audio.titel?.trim() || audio.title?.trim() || null;
+  const fallback = fallbackTitle(parsed, "decks");
+  const resolvedArtist = artist ?? fallback.artist;
+  const resolvedTitle = title ?? fallback.title;
+  const itemDescription =
+    [resolvedArtist, resolvedTitle].filter(Boolean).join(" — ") ||
+    resolvedTitle;
+
+  return {
+    listingId: parsed.listingId ?? null,
+    releaseId: null,
+    artist: resolvedArtist,
+    title: resolvedTitle,
+    itemDescription,
+    priceValue: price.value,
+    priceCurrency: price.currency ?? "EUR",
+    mediaCondition: null,
+    sleeveCondition: null,
+    label: buildLabel(resolvedArtist, resolvedTitle, note),
+    availability: "available",
+  };
+}
+
 export async function resolveShopRecordFromUrl(url, note, store) {
   const storeId = normalizeStore(store);
   const config = getStoreConfig(storeId);
@@ -328,6 +383,9 @@ export async function resolveShopRecordFromUrl(url, note, store) {
   }
 
   try {
+    if (storeId === "decks") {
+      return await resolveDecksFromRpc(parsed, note);
+    }
     const html = await fetchShopHtml(parsed.canonicalUrl);
     return metaFromHtml(html, parsed, note, storeId);
   } catch (err) {

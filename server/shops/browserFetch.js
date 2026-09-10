@@ -13,6 +13,7 @@ const DEFAULT_ARGS = [
   "--disable-gpu",
   "--disable-extensions",
   "--disable-background-networking",
+  "--disable-blink-features=AutomationControlled",
   "--font-render-hinting=none",
 ];
 
@@ -155,6 +156,9 @@ async function renderOnce(url, launchConfig) {
     await page.setExtraHTTPHeaders({
       "Accept-Language": "en-US,en;q=0.9,de;q=0.8",
     });
+    await page.evaluateOnNewDocument(() => {
+      Object.defineProperty(navigator, "webdriver", { get: () => undefined });
+    });
 
     await page.goto(url, {
       waitUntil: "domcontentloaded",
@@ -239,6 +243,97 @@ export function fetchHtmlWithBrowser(url) {
 
       // Final retry with the last known config.
       return await renderOnce(url, launchConfig);
+    }
+  };
+
+  const queued = browserQueue.then(run, run);
+  browserQueue = queued.then(
+    () => undefined,
+    () => undefined
+  );
+  return queued;
+}
+
+/**
+ * Decks product HTML is behind Cloudflare; price/meta live on same-origin RPC
+ * endpoints that work after a browser session is established.
+ */
+export function fetchDecksMetaWithBrowser(deckscode) {
+  const code = String(deckscode ?? "").trim();
+  if (!code) {
+    return Promise.reject(new Error("Missing decks code"));
+  }
+
+  const run = async () => {
+    let launchConfig = await resolveLaunchConfig();
+    if (!loggedLaunchConfig) {
+      loggedLaunchConfig = true;
+      console.info(
+        `[shops] browser launch via ${launchConfig.source}: ${launchConfig.executablePath}`
+      );
+    }
+
+    const userDataDir = path.join(
+      os.tmpdir(),
+      `dco-chrome-decks-${process.pid}-${Date.now()}`
+    );
+
+    const browser = await puppeteer.launch({
+      executablePath: launchConfig.executablePath,
+      headless: launchConfig.headless,
+      args: [...launchConfig.args, `--user-data-dir=${userDataDir}`],
+    });
+
+    try {
+      const page = await browser.newPage();
+      await page.setViewport({ width: 1280, height: 900 });
+      await page.setUserAgent(
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      );
+      await page.setExtraHTTPHeaders({
+        "Accept-Language": "en-US,en;q=0.9,de;q=0.8",
+      });
+      await page.evaluateOnNewDocument(() => {
+        Object.defineProperty(navigator, "webdriver", { get: () => undefined });
+      });
+
+      // Warm Cloudflare session on the public homepage.
+      await page.goto("https://www.decks.de/", {
+        waitUntil: "domcontentloaded",
+        timeout: BROWSER_TIMEOUT_MS,
+      });
+      await new Promise((resolve) => setTimeout(resolve, CHALLENGE_WAIT_MS));
+
+      const meta = await page.evaluate(async (id) => {
+        const fetchJson = async (path) => {
+          const res = await fetch(path, {
+            credentials: "same-origin",
+            headers: {
+              Accept: "application/json, text/javascript, */*",
+              "X-Requested-With": "XMLHttpRequest",
+            },
+          });
+          const text = await res.text();
+          try {
+            return { ok: res.ok, status: res.status, json: JSON.parse(text) };
+          } catch {
+            return { ok: false, status: res.status, json: null, text: text.slice(0, 120) };
+          }
+        };
+
+        const price = await fetchJson(`/decks/rpc/getPrice.php?id=${encodeURIComponent(id)}`);
+        const audio = await fetchJson(`/decks/rpc/getAudio.php?id=${encodeURIComponent(id)}`);
+        return { price, audio };
+      }, code);
+
+      return meta;
+    } finally {
+      await browser.close().catch(() => {});
+      try {
+        fs.rmSync(userDataDir, { recursive: true, force: true });
+      } catch {
+        /* ignore */
+      }
     }
   };
 
