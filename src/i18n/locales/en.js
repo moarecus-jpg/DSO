@@ -361,6 +361,22 @@ export default {
     refreshingAvailability: "Checking {{count}} items…",
     refreshAvailabilityHint:
       "Checks whether listings are still for sale. Discogs allows about one request per second, so larger orders take longer. Open orders are also checked once a day automatically.",
+    decksSyncPrices: "Sync Decks prices",
+    decksSyncPricesPreparing: "Preparing…",
+    decksSyncPricesHint:
+      "The server sees Decks export prices; read real EU prices in your browser on decks.de.",
+    decksSyncModalTitle: "Sync EU prices from Decks",
+    decksSyncWhy:
+      "The DCO server is outside the EU and gets lower Decks export prices (e.g. €27.30 instead of €33.31). Prices must be read in your browser while you are on decks.de.",
+    decksSyncStep1: "Drag the button below onto your bookmarks bar.",
+    decksSyncStep2: "Open decks.de (you can already be logged in).",
+    decksSyncStep3: "Click the bookmark — prices are sent back to this order.",
+    decksSyncDragHint: "Drag this button to bookmarks — don’t click it here:",
+    decksSyncBookmarkLabel: "Decks prices · {{count}}",
+    decksSyncBookmarkTitle: "Drag to bookmarks: sync {{count}} Decks prices",
+    decksSyncDontClick:
+      "Clicking the button here does nothing useful — it must run on decks.de.",
+    decksSyncOpenShop: "Open decks.de",
     confirmRemoveItem: "Remove this item from the order?",
     orderNotes: "Order notes",
     orderNotesPlaceholder: "Write a comment for the group…",

@@ -38,6 +38,7 @@ import {
   reopenGroupSession,
   setGroupSessionStatus,
   transferGroupSessionOwner,
+  updateSessionLinkAvailability,
   userHasAnyCommunity,
 } from "../db.js";
 import {
@@ -89,6 +90,15 @@ import { isAppAdmin } from "../auth/appAdmin.js";
 import { publicErrorMessage } from "../utils/publicError.js";
 import { appBaseUrl } from "../appUrl.js";
 import { refreshSessionAvailability } from "../jobs/availability.js";
+import { appBaseUrl } from "../appUrl.js";
+import {
+  createDecksPriceToken,
+  consumeDecksPriceToken,
+} from "../decksPriceTokens.js";
+import {
+  buildDecksPriceSyncBookmarklet,
+  collectDecksPriceTargets,
+} from "../../shared/decksPriceSync.js";
 import {
   notifyNewOrderOpened,
   notifyOrderClosed,
@@ -1069,6 +1079,110 @@ router.post("/:id/availability/refresh", requireUser, async (req, res) => {
       error: "Razpoložljivosti ni bilo mogoče osvežiti.",
     });
   }
+});
+
+/** Prepare one-time Decks EU price sync bookmarklet (server IP sees export prices). */
+router.post("/:id/decks-prices/prepare", requireUser, (req, res) => {
+  const session = getGroupSession(req.params.id);
+  if (!session) return res.status(404).json({ error: "Session not found" });
+  if (!requireSessionCommunityAccess(session, req.session.userId)) {
+    return res.status(403).json({
+      error: "This order belongs to another community.",
+    });
+  }
+  if (normalizeStore(session.store) !== "decks") {
+    return res.status(400).json({ error: "Samo za Decks naročila." });
+  }
+  if (session.status !== "open") {
+    return res.status(400).json({ error: "Naročilo ni odprto." });
+  }
+
+  const targets = collectDecksPriceTargets(session.links);
+  if (!targets.length) {
+    return res.status(400).json({ error: "Ni Decks artiklov za sync." });
+  }
+
+  const codes = targets.map((t) => t.code);
+  const token = createDecksPriceToken(session.id, codes);
+  const base = appBaseUrl(req);
+  const applyUrl = `${base}/api/sessions/${session.id}/decks-prices`;
+  const returnUrl = `${base}/sessions/${session.id}`;
+  const bookmarklet = buildDecksPriceSyncBookmarklet({
+    applyUrl,
+    token,
+    codes,
+    returnUrl,
+  });
+
+  res.json({
+    token,
+    applyUrl,
+    bookmarklet,
+    count: codes.length,
+    codes,
+  });
+});
+
+/** Apply Decks prices from bookmarklet on decks.de (token auth + CORS). */
+function setDecksPriceCors(res, origin) {
+  const allowed = new Set([
+    "https://www.decks.de",
+    "https://decks.de",
+  ]);
+  if (origin && allowed.has(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+  }
+}
+
+router.options("/:id/decks-prices", (req, res) => {
+  setDecksPriceCors(res, req.get("Origin"));
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Max-Age", "86400");
+  res.status(204).end();
+});
+
+router.post("/:id/decks-prices", (req, res) => {
+  setDecksPriceCors(res, req.get("Origin"));
+
+  const session = getGroupSession(req.params.id);
+  if (!session) return res.status(404).json({ error: "Session not found" });
+  if (normalizeStore(session.store) !== "decks") {
+    return res.status(400).json({ error: "Samo za Decks naročila." });
+  }
+  if (session.status !== "open") {
+    return res.status(400).json({ error: "Naročilo ni odprto." });
+  }
+
+  const token = String(req.body?.token ?? "");
+  const prices = req.body?.prices;
+  if (!token || !prices || typeof prices !== "object") {
+    return res.status(400).json({ error: "Manjka token ali prices." });
+  }
+
+  const row = consumeDecksPriceToken(token, session.id);
+  if (!row) {
+    return res.status(403).json({
+      error: "Token ni veljaven ali je potekel. Pripravi sync znova v DCO.",
+    });
+  }
+
+  const targets = collectDecksPriceTargets(session.links);
+  let updated = 0;
+  for (const target of targets) {
+    if (!row.codes.has(target.code)) continue;
+    const raw = prices[target.code];
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value <= 0) continue;
+    updateSessionLinkAvailability(target.linkId, {
+      priceValue: Math.round(value * 100) / 100,
+      priceCurrency: "EUR",
+    });
+    updated += 1;
+  }
+
+  res.json({ ok: true, updated });
 });
 
 router.patch("/:id/members/:userId/settle", requireUser, (req, res) => {

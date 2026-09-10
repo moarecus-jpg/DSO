@@ -338,15 +338,33 @@ function metaFromDecksRpc(parsed, note, rpc) {
   const domPriceRaw = normalizeDecksPriceText(rpc?.domPrice);
   const chosenRaw = rpcPriceRaw || domPriceRaw;
   const numeric = Number(chosenRaw);
-  const price =
+  const parsedPrice =
     Number.isFinite(numeric) && numeric > 0
       ? toEurPrice(numeric, "EUR")
       : { value: null, currency: "EUR" };
 
-  if (price.value == null) {
+  // Railway / non-EU datacenter IPs get Decks "export" prices (e.g. 27.30),
+  // while EU shoppers see VAT-inclusive prices (e.g. 33.31). Never persist
+  // server-scraped Decks prices there — client bookmarklet sync is required.
+  const dropGeoPrice =
+    Boolean(process.env.RAILWAY_ENVIRONMENT) ||
+    process.env.DECKS_CLIENT_PRICES === "1";
+
+  const price = dropGeoPrice
+    ? { value: null, currency: "EUR" }
+    : parsedPrice;
+
+  if (price.value == null && !dropGeoPrice) {
     throw new Error(
       `Decks price unavailable for ${code} (cf/rpc). Retry availability refresh.`
     );
+  }
+  if (parsedPrice.value != null && dropGeoPrice) {
+    console.info(
+      `[shops] decks skip geo price ${code}=${parsedPrice.value} (use client EU sync)`
+    );
+  } else if (price.value != null) {
+    console.info(`[shops] decks price ${code} = ${price.value}`);
   }
 
   const artist = audio.artist?.trim() || null;
@@ -396,9 +414,7 @@ async function resolveDecksFromRpc(parsed, note) {
 
   console.info(`[shops] decks meta via browser for ${code}`);
   const rpc = await fetchDecksMetaWithBrowser(code, parsed.canonicalUrl);
-  const meta = metaFromDecksRpc(parsed, note, rpc);
-  console.info(`[shops] decks price ${code} = ${meta.priceValue}`);
-  return meta;
+  return metaFromDecksRpc(parsed, note, rpc);
 }
 
 /** Resolve many Decks links in one warmed browser (order availability refresh). */
@@ -428,7 +444,6 @@ export async function resolveDecksLinksBatch(links) {
       const rpc = rpcByCode.get(row.code);
       if (!rpc) throw new Error(`No RPC payload for ${row.code}`);
       const meta = metaFromDecksRpc(row.parsed, row.link.note ?? null, rpc);
-      console.info(`[shops] decks price ${row.code} = ${meta.priceValue}`);
       out.set(row.link.id, meta);
     } catch (err) {
       console.warn(

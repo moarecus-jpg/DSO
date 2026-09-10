@@ -6,6 +6,7 @@ import { AppSelect } from "../components/AppSelect.jsx";
 import { CloseOrderDialog } from "../components/CloseOrderDialog.jsx";
 import { DiscogsAddAllToCartButton } from "../components/DiscogsAddAllToCartButton.jsx";
 import { ShopAddAllToCartButton } from "../components/ShopAddAllToCartButton.jsx";
+import { DecksSyncPricesButton } from "../components/DecksSyncPricesButton.jsx";
 import { MemberChips } from "../components/MemberChips.jsx";
 import { OrderStoreAvatar } from "../components/OrderStoreAvatar.jsx";
 import { OrderStickyFooter } from "../components/OrderStickyFooter.jsx";
@@ -23,7 +24,7 @@ import { displayOrderTitle } from "../../shared/orderTitle.js";
 import { orderPageTitle } from "../../shared/orderShare.js";
 import { APP_TITLE } from "../../shared/brand.js";
 import { canReportItemIssue } from "../../shared/orderReview.js";
-import { getStoreConfig, isShopStore } from "../../shared/stores.js";
+import { getStoreConfig, isShopStore, normalizeStore } from "../../shared/stores.js";
 import { shopCartSupports } from "../../shared/shopCart.js";
 import {
   isArchivedSession,
@@ -100,18 +101,22 @@ export function Session() {
     }
   }, [searchParams, setSearchParams]);
 
-  // Shop orders: fill missing prices on open. Decks always re-scrapes once —
-  // earlier scrapes sometimes stored wrong codes/prices that aren't null.
+  // Shop orders: fill missing prices on open. Decks EU prices must be synced
+  // from the user's browser (Railway sees export/US prices) — skip auto scrape.
   useEffect(() => {
     if (!session || loading) return;
     if (autoPriceRefreshForId.current === session.id) return;
     if (!isOpenSession(session.status)) return;
     if (!isShopStore(session.store)) return;
-    const storeId = String(session.store || "").toLowerCase();
+    const storeId = normalizeStore(session.store);
+    if (storeId === "decks") {
+      autoPriceRefreshForId.current = session.id;
+      return;
+    }
     const missingPrice = (session.links ?? []).some(
       (link) => link.price_value == null && link.priceValue == null
     );
-    if (!missingPrice && storeId !== "decks") {
+    if (!missingPrice) {
       autoPriceRefreshForId.current = session.id;
       return;
     }
@@ -663,6 +668,13 @@ export function Session() {
               <Heart size={18} />
               {t("session.openWantlist")}
             </a>
+          )}
+          {isOpen && normalizeStore(session.store) === "decks" && (
+            <DecksSyncPricesButton
+              sessionId={session.id}
+              disabled={recordCount === 0}
+              className="btn btn-ghost"
+            />
           )}
           {isOpen && (
             <button

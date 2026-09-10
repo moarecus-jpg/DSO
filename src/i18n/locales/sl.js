@@ -366,6 +366,22 @@ export default {
     refreshingAvailability: "Preverjam {{count}} itemov…",
     refreshAvailabilityHint:
       "Preveri, ali so listingi še naprodaj. Discogs dovoli približno en klic na sekundo, zato večja naročila trajajo dlje. Odprta naročila se avtomatsko preverijo tudi 1× na dan.",
+    decksSyncPrices: "Sinhroniziraj Decks cene",
+    decksSyncPricesPreparing: "Pripravljam…",
+    decksSyncPricesHint:
+      "Strežnik vidi Decks export cene; prave EU cene preberi v svojem brskalniku na decks.de.",
+    decksSyncModalTitle: "Sinhroniziraj EU cene z Decks",
+    decksSyncWhy:
+      "DCO strežnik je zunaj EU in z Decks dobi nižje export cene (npr. €27.30 namesto €33.31). Cene je treba prebrati v tvojem brskalniku, medtem ko si na decks.de.",
+    decksSyncStep1: "Povleci spodnji gumb med zaznamke brskalnika.",
+    decksSyncStep2: "Odpri decks.de (lahko si že prijavljen).",
+    decksSyncStep3: "Klikni zaznamek — cene se pošljejo nazaj v to naročilo.",
+    decksSyncDragHint: "Ta gumb povleci med zaznamke — tukaj ga ne klikaj:",
+    decksSyncBookmarkLabel: "Decks cene · {{count}}",
+    decksSyncBookmarkTitle: "Povleci med zaznamke: sinhroniziraj {{count}} Decks cen",
+    decksSyncDontClick:
+      "Če gumb klikneš tukaj, se ne bo zgodilo nič uporabnega — mora teči na decks.de.",
+    decksSyncOpenShop: "Odpri decks.de",
     confirmRemoveItem: "Odstraniti ta item iz naročila?",
     orderNotes: "Opombe naročila",
     orderNotesPlaceholder: "Napiši komentar za skupino…",
