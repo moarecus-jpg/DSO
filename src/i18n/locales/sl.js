@@ -447,6 +447,25 @@ export default {
     addAllToCartPopupBlocked:
       "Pojavno okno je blokirano. Dovoli pojavna okna za to stran in poskusi znova.",
     addAllToCartFailed: "Itemov ni bilo mogoče dodati v Discogs košarico. Poskusi znova.",
+    hhvCartCreate: "Ustvari HHV košarico ({{count}})",
+    hhvCartCreateShort: "HHV košarica ({{count}})",
+    hhvCartHint:
+      "HHV ne dovoli, da app napolni košarico kot Discogs. Uporabi kratka navodila v oknu.",
+    hhvCartModalTitle: "Dodaj artikle v HHV košarico",
+    hhvCartWhy:
+      "Za razliko od Discogs HHV zunanjim appom ne dovoli polnjenja košarice. Potreben je enkratni zaznamek.",
+    hhvCartStep1:
+      "V brskalniku vklopi vrstico zaznamkov (Chrome: Ctrl+Shift+B).",
+    hhvCartStep2:
+      "Povleci vijolični gumb spodaj v vrstico zaznamkov ({{count}} artiklov).",
+    hhvCartStep3:
+      "Odpri HHV, ostani prijavljen, nato enkrat klikni ta zaznamek — artikli se dodajo in odpre se košarica.",
+    hhvCartDragHint: "Ta gumb povleci med zaznamke — tukaj ga ne klikaj:",
+    hhvCartBookmarkLabel: "HHV košarica · {{count}}",
+    hhvCartBookmarkTitle: "Povleci med zaznamke: dodaj {{count}} artiklov na HHV",
+    hhvCartDontClick:
+      "Tukaj ne klikaj. Povleci gumb med zaznamke, odpri hhv.de, nato klikni zaznamek.",
+    hhvCartOpenHhv: "Odpri HHV",
     hiddenItem: "Skrit item",
     hiddenItemPlaceholder: "Ta udeleženec je skril svoje izbire v nastavitvah.",
     recordOne: "1 plato",

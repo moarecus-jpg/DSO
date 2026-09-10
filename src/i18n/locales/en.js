@@ -441,6 +441,25 @@ export default {
     addAllToCartPopupBlocked:
       "Pop-up was blocked. Allow pop-ups for this site and try again.",
     addAllToCartFailed: "Could not add items to the Discogs cart. Try again.",
+    hhvCartCreate: "Create an HHV cart ({{count}})",
+    hhvCartCreateShort: "HHV cart ({{count}})",
+    hhvCartHint:
+      "HHV does not allow adding to cart from this app the Discogs way. Use the short helper steps instead.",
+    hhvCartModalTitle: "Add items to your HHV cart",
+    hhvCartWhy:
+      "Unlike Discogs, HHV blocks outside apps from filling your cart. You only need a one-time bookmark.",
+    hhvCartStep1:
+      "Make sure the bookmarks bar is visible in your browser (Chrome: Ctrl+Shift+B).",
+    hhvCartStep2:
+      "Drag the purple button below onto your bookmarks bar ({{count}} items).",
+    hhvCartStep3:
+      "Open HHV, stay logged in, then click that bookmark once — items are added and the cart opens.",
+    hhvCartDragHint: "Drag this button to your bookmarks bar — don’t just click it here:",
+    hhvCartBookmarkLabel: "HHV cart · {{count}}",
+    hhvCartBookmarkTitle: "Drag to bookmarks: add {{count}} items on HHV",
+    hhvCartDontClick:
+      "Don’t click it here. Drag this button to your bookmarks bar, open hhv.de, then click the bookmark.",
+    hhvCartOpenHhv: "Open HHV",
     hiddenItem: "Hidden item",
     hiddenItemPlaceholder: "This participant hid their picks in settings.",
     recordOne: "1 record",

@@ -5,6 +5,7 @@ import { AddRecordModal } from "../components/AddRecordModal.jsx";
 import { AppSelect } from "../components/AppSelect.jsx";
 import { CloseOrderDialog } from "../components/CloseOrderDialog.jsx";
 import { DiscogsAddAllToCartButton } from "../components/DiscogsAddAllToCartButton.jsx";
+import { HhvAddAllToCartButton } from "../components/HhvAddAllToCartButton.jsx";
 import { MemberChips } from "../components/MemberChips.jsx";
 import { OrderStoreAvatar } from "../components/OrderStoreAvatar.jsx";
 import { OrderStickyFooter } from "../components/OrderStickyFooter.jsx";
@@ -22,7 +23,7 @@ import { displayOrderTitle } from "../../shared/orderTitle.js";
 import { orderPageTitle } from "../../shared/orderShare.js";
 import { APP_TITLE } from "../../shared/brand.js";
 import { canReportItemIssue } from "../../shared/orderReview.js";
-import { getStoreConfig, isShopStore } from "../../shared/stores.js";
+import { getStoreConfig, isShopStore, STORE_HHV } from "../../shared/stores.js";
 import {
   isArchivedSession,
   isOpenSession,
@@ -559,13 +560,22 @@ export function Session() {
     ) : null;
 
   const footerCartAction =
-    session.canAddAllToCart && recordCount > 0 && !isShop ? (
-      <DiscogsAddAllToCartButton
-        links={session.links}
-        disabled={isArchived}
-        variant="outline"
-        className="order-sticky-footer-action-btn order-sticky-footer-action-btn--secondary"
-      />
+    session.canAddAllToCart && recordCount > 0 ? (
+      !isShop ? (
+        <DiscogsAddAllToCartButton
+          links={session.links}
+          disabled={isArchived}
+          variant="outline"
+          className="order-sticky-footer-action-btn order-sticky-footer-action-btn--secondary"
+        />
+      ) : session.store === STORE_HHV ? (
+        <HhvAddAllToCartButton
+          links={session.links}
+          disabled={isArchived}
+          variant="outline"
+          className="order-sticky-footer-action-btn order-sticky-footer-action-btn--secondary"
+        />
+      ) : null
     ) : null;
 
   const footerActions =
