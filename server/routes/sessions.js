@@ -92,7 +92,7 @@ import { appBaseUrl } from "../appUrl.js";
 import { refreshSessionAvailability } from "../jobs/availability.js";
 import {
   createDecksPriceToken,
-  consumeDecksPriceToken,
+  verifyDecksPriceToken,
 } from "../decksPriceTokens.js";
 import {
   buildDecksPriceSyncBookmarklet,
@@ -1080,7 +1080,7 @@ router.post("/:id/availability/refresh", requireUser, async (req, res) => {
   }
 });
 
-/** Prepare one-time Decks EU price sync bookmarklet (server IP sees export prices). */
+/** Prepare Decks EU price sync bookmarklet (server IP sees export prices). */
 router.post("/:id/decks-prices/prepare", requireUser, (req, res) => {
   const session = getGroupSession(req.params.id);
   if (!session) return res.status(404).json({ error: "Session not found" });
@@ -1106,10 +1106,11 @@ router.post("/:id/decks-prices/prepare", requireUser, (req, res) => {
   const base = appBaseUrl(req);
   const applyUrl = `${base}/api/sessions/${session.id}/decks-prices`;
   const returnUrl = `${base}/sessions/${session.id}`;
+  const bookmarkItems = targets.map((t) => ({ code: t.code, url: t.url }));
   const bookmarklet = buildDecksPriceSyncBookmarklet({
     applyUrl,
     token,
-    codes,
+    items: bookmarkItems,
     returnUrl,
   });
 
@@ -1122,49 +1123,49 @@ router.post("/:id/decks-prices/prepare", requireUser, (req, res) => {
   });
 });
 
-/** Apply Decks prices from bookmarklet on decks.de (token auth + CORS). */
-function setDecksPriceCors(res, origin) {
-  const allowed = new Set([
-    "https://www.decks.de",
-    "https://decks.de",
-  ]);
-  if (origin && allowed.has(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Vary", "Origin");
-  }
-}
-
-router.options("/:id/decks-prices", (req, res) => {
-  setDecksPriceCors(res, req.get("Origin"));
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  res.setHeader("Access-Control-Max-Age", "86400");
-  res.status(204).end();
-});
-
+/**
+ * Apply Decks prices from bookmarklet.
+ * Prefer form POST (no CORS); JSON still accepted.
+ */
 router.post("/:id/decks-prices", (req, res) => {
-  setDecksPriceCors(res, req.get("Origin"));
+  const wantsHtml =
+    String(req.headers.accept || "").includes("text/html") ||
+    typeof req.body?.prices === "string";
 
   const session = getGroupSession(req.params.id);
-  if (!session) return res.status(404).json({ error: "Session not found" });
+  if (!session) {
+    if (wantsHtml) return res.status(404).send("Session not found");
+    return res.status(404).json({ error: "Session not found" });
+  }
   if (normalizeStore(session.store) !== "decks") {
+    if (wantsHtml) return res.status(400).send("Samo za Decks naročila.");
     return res.status(400).json({ error: "Samo za Decks naročila." });
   }
   if (session.status !== "open") {
+    if (wantsHtml) return res.status(400).send("Naročilo ni odprto.");
     return res.status(400).json({ error: "Naročilo ni odprto." });
   }
 
   const token = String(req.body?.token ?? "");
-  const prices = req.body?.prices;
+  let prices = req.body?.prices;
+  if (typeof prices === "string") {
+    try {
+      prices = JSON.parse(prices);
+    } catch {
+      prices = null;
+    }
+  }
   if (!token || !prices || typeof prices !== "object") {
+    if (wantsHtml) return res.status(400).send("Manjka token ali prices.");
     return res.status(400).json({ error: "Manjka token ali prices." });
   }
 
-  const row = consumeDecksPriceToken(token, session.id);
+  const row = verifyDecksPriceToken(token, session.id);
   if (!row) {
-    return res.status(403).json({
-      error: "Token ni veljaven ali je potekel. Pripravi sync znova v DCO.",
-    });
+    const msg =
+      "Token ni veljaven ali je potekel. V DCO znova klikni Sinhroniziraj Decks cene.";
+    if (wantsHtml) return res.status(403).send(msg);
+    return res.status(403).json({ error: msg });
   }
 
   const targets = collectDecksPriceTargets(session.links);
@@ -1181,7 +1182,25 @@ router.post("/:id/decks-prices", (req, res) => {
     updated += 1;
   }
 
-  res.json({ ok: true, updated });
+  console.info(
+    `[decks-prices] session ${session.id}: updated ${updated}/${targets.length}`
+  );
+
+  const base = appBaseUrl(req);
+  const returnUrlRaw = String(req.body?.returnUrl || "").trim();
+  const safeReturn =
+    returnUrlRaw.startsWith(base + "/sessions/") ||
+    returnUrlRaw.startsWith("/sessions/")
+      ? returnUrlRaw.startsWith("http")
+        ? returnUrlRaw
+        : `${base}${returnUrlRaw}`
+      : `${base}/sessions/${session.id}`;
+
+  if (wantsHtml) {
+    const sep = safeReturn.includes("?") ? "&" : "?";
+    return res.redirect(303, `${safeReturn}${sep}decksPricesSynced=${updated}`);
+  }
+  return res.json({ ok: true, updated });
 });
 
 router.patch("/:id/members/:userId/settle", requireUser, (req, res) => {

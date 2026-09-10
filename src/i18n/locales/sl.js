@@ -373,9 +373,12 @@ export default {
     decksSyncModalTitle: "Sinhroniziraj EU cene z Decks",
     decksSyncWhy:
       "DCO strežnik je zunaj EU in z Decks dobi nižje export cene (npr. €27.30 namesto €33.31). Cene je treba prebrati v tvojem brskalniku, medtem ko si na decks.de.",
-    decksSyncStep1: "Povleci spodnji gumb med zaznamke brskalnika.",
-    decksSyncStep2: "Odpri decks.de (lahko si že prijavljen).",
-    decksSyncStep3: "Klikni zaznamek — cene se pošljejo nazaj v to naročilo.",
+    decksSyncStep1: "Povleci spodnji gumb med zaznamke (vsakič znova — token se spremeni).",
+    decksSyncStep2: "Odpri https://www.decks.de/ v istem brskalniku.",
+    decksSyncStep3: "Klikni zaznamek — počakaj na preusmeritev nazaj v DCO.",
+    decksSyncSuccess: "Decks cene posodobljene ({{count}}).",
+    decksSyncNone:
+      "Sync ni posodobil nobene cene. Znova pripravi sync v DCO in poženi zaznamek na decks.de.",
     decksSyncDragHint: "Ta gumb povleci med zaznamke — tukaj ga ne klikaj:",
     decksSyncBookmarkLabel: "Decks cene · {{count}}",
     decksSyncBookmarkTitle: "Povleci med zaznamke: sinhroniziraj {{count}} Decks cen",

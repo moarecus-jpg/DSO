@@ -101,6 +101,22 @@ export function Session() {
     }
   }, [searchParams, setSearchParams]);
 
+  useEffect(() => {
+    const synced = searchParams.get("decksPricesSynced");
+    if (synced == null) return;
+    setSearchParams({}, { replace: true });
+    loadSession()
+      .then(() => {
+        const n = Number(synced);
+        if (Number.isFinite(n) && n > 0) {
+          alert(t("session.decksSyncSuccess", { count: n }));
+        } else {
+          alert(t("session.decksSyncNone"));
+        }
+      })
+      .catch(console.error);
+  }, [searchParams, setSearchParams, t]);
+
   // Shop orders: fill missing prices on open. Decks EU prices must be synced
   // from the user's browser (Railway sees export/US prices) — skip auto scrape.
   useEffect(() => {

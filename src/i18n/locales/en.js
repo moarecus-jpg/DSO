@@ -368,9 +368,12 @@ export default {
     decksSyncModalTitle: "Sync EU prices from Decks",
     decksSyncWhy:
       "The DCO server is outside the EU and gets lower Decks export prices (e.g. €27.30 instead of €33.31). Prices must be read in your browser while you are on decks.de.",
-    decksSyncStep1: "Drag the button below onto your bookmarks bar.",
-    decksSyncStep2: "Open decks.de (you can already be logged in).",
-    decksSyncStep3: "Click the bookmark — prices are sent back to this order.",
+    decksSyncStep1: "Drag the button below onto your bookmarks bar (do this each time — the token changes).",
+    decksSyncStep2: "Open https://www.decks.de/ in the same browser.",
+    decksSyncStep3: "Click the bookmark — wait to be redirected back to DCO.",
+    decksSyncSuccess: "Decks prices updated ({{count}}).",
+    decksSyncNone:
+      "Sync did not update any prices. Prepare sync again in DCO and run the bookmark on decks.de.",
     decksSyncDragHint: "Drag this button to bookmarks — don’t click it here:",
     decksSyncBookmarkLabel: "Decks prices · {{count}}",
     decksSyncBookmarkTitle: "Drag to bookmarks: sync {{count}} Decks prices",
