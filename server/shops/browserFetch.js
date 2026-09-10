@@ -255,8 +255,8 @@ export function fetchHtmlWithBrowser(url) {
 }
 
 /**
- * Decks product HTML is behind Cloudflare; after warming a session we:
- * 1) open the product URL and read #t-price
+ * Decks product HTML is behind Cloudflare. Warm the homepage first, then:
+ * 1) open the product URL and read #t-price / basket EUR
  * 2) fall back to getPrice.php / getAudio.php RPC
  */
 export function fetchDecksMetaWithBrowser(deckscode, productUrl = null) {
@@ -298,6 +298,13 @@ export function fetchDecksMetaWithBrowser(deckscode, productUrl = null) {
         Object.defineProperty(navigator, "webdriver", { get: () => undefined });
       });
 
+      // Warm Cloudflare cookies — product URL alone often stays on the challenge.
+      await page.goto("https://www.decks.de/", {
+        waitUntil: "domcontentloaded",
+        timeout: BROWSER_TIMEOUT_MS,
+      });
+      await new Promise((resolve) => setTimeout(resolve, CHALLENGE_WAIT_MS + 2_000));
+
       const startUrl =
         productUrl ||
         `https://www.decks.de/track/item/${encodeURIComponent(code)}`;
@@ -308,15 +315,21 @@ export function fetchDecksMetaWithBrowser(deckscode, productUrl = null) {
       });
       await new Promise((resolve) => setTimeout(resolve, CHALLENGE_WAIT_MS));
 
-      // Wait for the player price widget when the product shell loads.
+      // Wait for the player / basket price once the product shell loads.
       await page
         .waitForFunction(
           () => {
-            const el = document.querySelector("#t-price");
-            const text = el?.textContent?.trim() || "";
-            return /\d/.test(text);
+            const tPrice = document.querySelector("#t-price")?.textContent || "";
+            const tNetto =
+              document.querySelector("#t-pricenetto")?.textContent || "";
+            const body = document.body?.innerText || "";
+            return (
+              /\d/.test(tPrice) ||
+              /\d/.test(tNetto) ||
+              /\d+[.,]\d{2}\s*EUR/i.test(body)
+            );
           },
-          { timeout: 12_000 }
+          { timeout: 18_000 }
         )
         .catch(() => {});
 
@@ -342,20 +355,39 @@ export function fetchDecksMetaWithBrowser(deckscode, productUrl = null) {
           }
         };
 
-        const domPrice =
-          document.querySelector("#t-price")?.textContent?.trim() ||
-          document.querySelector("#t-pricenetto")?.textContent?.trim() ||
-          null;
+        const clean = (raw) =>
+          String(raw ?? "")
+            .replace(/\*/g, "")
+            .replace(/EUR/gi, "")
+            .replace(/€/g, "")
+            .trim();
 
-        const price = await fetchJson(
+        const tPrice = clean(document.querySelector("#t-price")?.textContent);
+        const tNetto = clean(
+          document.querySelector("#t-pricenetto")?.textContent
+        );
+        const bodyMatch = (document.body?.innerText || "").match(
+          /(\d+[.,]\d{2})\s*EUR/i
+        );
+        const basketPrice = clean(bodyMatch?.[1] || "");
+
+        let price = await fetchJson(
           `/decks/rpc/getPrice.php?id=${encodeURIComponent(id)}`
         );
+        // Challenge sometimes clears after the product shell renders — retry once.
+        if (!price?.ok || !price?.json?.price) {
+          await new Promise((r) => setTimeout(r, 2500));
+          price = await fetchJson(
+            `/decks/rpc/getPrice.php?id=${encodeURIComponent(id)}`
+          );
+        }
+
         const audio = await fetchJson(
           `/decks/rpc/getAudio.php?id=${encodeURIComponent(id)}`
         );
 
         return {
-          domPrice,
+          domPrice: tPrice || tNetto || basketPrice || null,
           pageTitle: document.title || null,
           finalUrl: location.href,
           price,

@@ -339,19 +339,30 @@ async function resolveDecksFromRpc(parsed, note) {
   const rpc = await fetchDecksMetaWithBrowser(code, parsed.canonicalUrl);
   const audio = rpc?.audio?.json ?? {};
 
-  const domPriceRaw = String(rpc?.domPrice ?? "")
-    .replace(/\*/g, "")
-    .trim();
-  const rpcPriceRaw = rpc?.price?.json?.price;
-  const chosenRaw = domPriceRaw || rpcPriceRaw;
-  const numeric = Number(
-    String(chosenRaw ?? "")
+  const normalizePriceText = (raw) =>
+    String(raw ?? "")
+      .replace(/\*/g, "")
+      .replace(/EUR/gi, "")
+      .replace(/€/g, "")
       .replace(/[^\d.,]/g, "")
       .replace(",", ".")
-  );
-  const price = Number.isFinite(numeric)
+      .trim();
+
+  // Prefer RPC (same source as the shop basket); DOM/basket text is fallback.
+  const rpcPriceRaw = normalizePriceText(rpc?.price?.json?.price);
+  const domPriceRaw = normalizePriceText(rpc?.domPrice);
+  const chosenRaw = rpcPriceRaw || domPriceRaw;
+  const numeric = Number(chosenRaw);
+  const price = Number.isFinite(numeric) && numeric > 0
     ? toEurPrice(numeric, "EUR")
     : { value: null, currency: "EUR" };
+
+  if (price.value == null) {
+    throw new Error(
+      `Decks price unavailable for ${code} (cf/rpc). Retry availability refresh.`
+    );
+  }
+  console.info(`[shops] decks price ${code} = ${price.value}`);
 
   const artist = audio.artist?.trim() || null;
   const title = audio.titel?.trim() || audio.title?.trim() || null;
