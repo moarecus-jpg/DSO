@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { ExternalLink, ShoppingCart, X } from "lucide-react";
 import { useLocale } from "../hooks/useLocale.jsx";
 import {
@@ -41,36 +42,15 @@ export function HhvAddAllToCartButton({
   const btnClass =
     variant === "outline" ? "" : "btn btn-ghost discogs-add-all-to-cart";
 
-  return (
-    <>
-      <button
-        type="button"
-        className={`${btnClass} ${className}`.trim()}
-        onClick={() => setOpen(true)}
-        disabled={disabled}
-        title={t("items.hhvCartHint")}
-        aria-label={label}
-      >
-        <ShoppingCart size={18} strokeWidth={2.25} aria-hidden />
-        <span className="order-sticky-footer-action-label order-sticky-footer-action-label--long">
-          {label}
-        </span>
-        <span
-          className="order-sticky-footer-action-label order-sticky-footer-action-label--short"
-          aria-hidden
-        >
-          {shortLabel}
-        </span>
-      </button>
-
-      {open ? (
+  const dialog = open
+    ? createPortal(
         <div
           className="modal-overlay"
           role="presentation"
           onClick={() => setOpen(false)}
         >
           <div
-            className="modal modal-hhv-cart"
+            className="modal card modal-hhv-cart"
             role="dialog"
             aria-modal="true"
             aria-labelledby="hhv-cart-title"
@@ -80,11 +60,11 @@ export function HhvAddAllToCartButton({
               <h2 id="hhv-cart-title">{t("items.hhvCartModalTitle")}</h2>
               <button
                 type="button"
-                className="btn btn-ghost btn-sm"
+                className="modal-close"
                 onClick={() => setOpen(false)}
                 aria-label={t("common.close")}
               >
-                <X size={18} aria-hidden />
+                <X size={20} />
               </button>
             </div>
             <div className="modal-body">
@@ -129,8 +109,33 @@ export function HhvAddAllToCartButton({
               </button>
             </div>
           </div>
-        </div>
-      ) : null}
+        </div>,
+        document.body
+      )
+    : null;
+
+  return (
+    <>
+      <button
+        type="button"
+        className={`${btnClass} ${className}`.trim()}
+        onClick={() => setOpen(true)}
+        disabled={disabled}
+        title={t("items.hhvCartHint")}
+        aria-label={label}
+      >
+        <ShoppingCart size={18} strokeWidth={2.25} aria-hidden />
+        <span className="order-sticky-footer-action-label order-sticky-footer-action-label--long">
+          {label}
+        </span>
+        <span
+          className="order-sticky-footer-action-label order-sticky-footer-action-label--short"
+          aria-hidden
+        >
+          {shortLabel}
+        </span>
+      </button>
+      {dialog}
     </>
   );
 }
