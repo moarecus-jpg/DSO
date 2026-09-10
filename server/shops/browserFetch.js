@@ -255,14 +255,21 @@ export function fetchHtmlWithBrowser(url) {
 }
 
 /**
- * Decks product HTML is behind Cloudflare. Warm the homepage first, then:
- * 1) open the product URL and read #t-price / basket EUR
- * 2) fall back to getPrice.php / getAudio.php RPC
+ * Decks product HTML is behind Cloudflare. Warm once, then resolve many codes
+ * via same-origin getPrice/getAudio (+ optional product-page DOM for the first).
+ * @param {{ code: string, productUrl?: string|null }[]} items
+ * @returns {Promise<Map<string, object>>}
  */
-export function fetchDecksMetaWithBrowser(deckscode, productUrl = null) {
-  const code = String(deckscode ?? "").trim();
-  if (!code) {
-    return Promise.reject(new Error("Missing decks code"));
+export function fetchDecksMetaBatchWithBrowser(items) {
+  const list = (Array.isArray(items) ? items : [])
+    .map((item) => ({
+      code: String(item?.code ?? "").trim(),
+      productUrl: item?.productUrl || null,
+    }))
+    .filter((item) => item.code);
+
+  if (!list.length) {
+    return Promise.resolve(new Map());
   }
 
   const run = async () => {
@@ -285,55 +292,51 @@ export function fetchDecksMetaWithBrowser(deckscode, productUrl = null) {
       args: [...launchConfig.args, `--user-data-dir=${userDataDir}`],
     });
 
+    const byCode = new Map();
+
     try {
       const page = await browser.newPage();
       await page.setViewport({ width: 1280, height: 900 });
       await page.setUserAgent(
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
       );
+      // de-DE keeps Decks prices in EUR (en-US JSON-LD often labels EUR amounts as USD).
       await page.setExtraHTTPHeaders({
-        "Accept-Language": "en-US,en;q=0.9,de;q=0.8",
+        "Accept-Language": "de-DE,de;q=0.9,en;q=0.5",
       });
       await page.evaluateOnNewDocument(() => {
         Object.defineProperty(navigator, "webdriver", { get: () => undefined });
       });
 
-      // Warm Cloudflare cookies — product URL alone often stays on the challenge.
       await page.goto("https://www.decks.de/", {
         waitUntil: "domcontentloaded",
         timeout: BROWSER_TIMEOUT_MS,
       });
       await new Promise((resolve) => setTimeout(resolve, CHALLENGE_WAIT_MS + 2_000));
 
+      // Open first product page so #t-price / basket widgets + CF session settle.
+      const first = list[0];
       const startUrl =
-        productUrl ||
-        `https://www.decks.de/track/item/${encodeURIComponent(code)}`;
-
+        first.productUrl ||
+        `https://www.decks.de/track/item/${encodeURIComponent(first.code)}`;
       await page.goto(startUrl, {
         waitUntil: "domcontentloaded",
         timeout: BROWSER_TIMEOUT_MS,
       });
       await new Promise((resolve) => setTimeout(resolve, CHALLENGE_WAIT_MS));
-
-      // Wait for the player / basket price once the product shell loads.
       await page
         .waitForFunction(
           () => {
             const tPrice = document.querySelector("#t-price")?.textContent || "";
-            const tNetto =
-              document.querySelector("#t-pricenetto")?.textContent || "";
             const body = document.body?.innerText || "";
-            return (
-              /\d/.test(tPrice) ||
-              /\d/.test(tNetto) ||
-              /\d+[.,]\d{2}\s*EUR/i.test(body)
-            );
+            return /\d/.test(tPrice) || /\d+[.,]\d{2}\s*EUR/i.test(body);
           },
           { timeout: 18_000 }
         )
         .catch(() => {});
 
-      const meta = await page.evaluate(async (id) => {
+      const codes = list.map((item) => item.code);
+      const batch = await page.evaluate(async (ids) => {
         const fetchJson = async (path) => {
           const res = await fetch(path, {
             credentials: "same-origin",
@@ -370,32 +373,38 @@ export function fetchDecksMetaWithBrowser(deckscode, productUrl = null) {
           /(\d+[.,]\d{2})\s*EUR/i
         );
         const basketPrice = clean(bodyMatch?.[1] || "");
+        const firstDom = tPrice || tNetto || basketPrice || null;
 
-        let price = await fetchJson(
-          `/decks/rpc/getPrice.php?id=${encodeURIComponent(id)}`
-        );
-        // Challenge sometimes clears after the product shell renders — retry once.
-        if (!price?.ok || !price?.json?.price) {
-          await new Promise((r) => setTimeout(r, 2500));
-          price = await fetchJson(
+        const out = {};
+        for (let i = 0; i < ids.length; i += 1) {
+          const id = ids[i];
+          let price = await fetchJson(
             `/decks/rpc/getPrice.php?id=${encodeURIComponent(id)}`
           );
+          if (!price?.ok || !price?.json?.price) {
+            await new Promise((r) => setTimeout(r, 1500));
+            price = await fetchJson(
+              `/decks/rpc/getPrice.php?id=${encodeURIComponent(id)}`
+            );
+          }
+          const audio = await fetchJson(
+            `/decks/rpc/getAudio.php?id=${encodeURIComponent(id)}`
+          );
+          out[id] = {
+            domPrice: i === 0 ? firstDom : null,
+            pageTitle: document.title || null,
+            finalUrl: location.href,
+            price,
+            audio,
+          };
         }
+        return out;
+      }, codes);
 
-        const audio = await fetchJson(
-          `/decks/rpc/getAudio.php?id=${encodeURIComponent(id)}`
-        );
-
-        return {
-          domPrice: tPrice || tNetto || basketPrice || null,
-          pageTitle: document.title || null,
-          finalUrl: location.href,
-          price,
-          audio,
-        };
-      }, code);
-
-      return meta;
+      for (const code of codes) {
+        if (batch?.[code]) byCode.set(code, batch[code]);
+      }
+      return byCode;
     } finally {
       await browser.close().catch(() => {});
       try {
@@ -412,6 +421,21 @@ export function fetchDecksMetaWithBrowser(deckscode, productUrl = null) {
     () => undefined
   );
   return queued;
+}
+
+/**
+ * Single-code helper (add-link path). Prefer batch for order refresh.
+ */
+export function fetchDecksMetaWithBrowser(deckscode, productUrl = null) {
+  const code = String(deckscode ?? "").trim();
+  if (!code) {
+    return Promise.reject(new Error("Missing decks code"));
+  }
+  return fetchDecksMetaBatchWithBrowser([{ code, productUrl }]).then((map) => {
+    const meta = map.get(code);
+    if (!meta) throw new Error(`Decks meta missing for ${code}`);
+    return meta;
+  });
 }
 
 export async function logBrowserStatus() {

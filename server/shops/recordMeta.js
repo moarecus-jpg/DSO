@@ -6,6 +6,7 @@ import { getStoreConfig, normalizeStore } from "../../shared/stores.js";
 import { toEurPrice } from "../../shared/currency.js";
 import {
   browserFetchAvailable,
+  fetchDecksMetaBatchWithBrowser,
   fetchDecksMetaWithBrowser,
   fetchHtmlWithBrowser,
   looksLikeBotWall,
@@ -71,11 +72,16 @@ function parseJsonLdProducts(html) {
   return products;
 }
 
-function priceFromJsonLd(product) {
+function priceFromJsonLd(product, storeId = null) {
   const offers = product?.offers;
   const offer = Array.isArray(offers) ? offers[0] : offers;
   if (offer?.price == null) return { value: null, currency: "EUR" };
-  return toEurPrice(Number(offer.price), offer.priceCurrency ?? "EUR");
+  let cur = String(offer.priceCurrency ?? "EUR").toUpperCase();
+  // EU shops sometimes label local EUR amounts as USD when Accept-Language is en-US.
+  // Applying our rough USD→EUR rate then stores wrong "EUR" values (e.g. 29.35→27.30).
+  const euShops = new Set(["decks", "hhv", "deejay", "juno", "yoyaku"]);
+  if (euShops.has(storeId) && cur === "USD") cur = "EUR";
+  return toEurPrice(Number(offer.price), cur);
 }
 
 function availabilityFromJsonLd(product) {
@@ -167,7 +173,7 @@ async function fetchShopHtmlPlain(url) {
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         Accept:
           "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9,de;q=0.8,fr;q=0.7",
+        "Accept-Language": "de-DE,de;q=0.9,en;q=0.5",
         "Cache-Control": "no-cache",
       },
       redirect: "follow",
@@ -248,7 +254,7 @@ function metaFromHtml(html, parsed, note, storeId) {
     const split = splitArtistTitle(product.name, storeId);
     artist = split.artist;
     title = split.title ?? cleanTitleNoise(product.name, storeId);
-    price = priceFromJsonLd(product);
+    price = priceFromJsonLd(product, storeId);
     availability = availabilityFromJsonLd(product);
   }
 
@@ -314,55 +320,34 @@ function metaFromHtml(html, parsed, note, storeId) {
   };
 }
 
-async function resolveDecksFromRpc(parsed, note) {
-  const code = parsed.code || parsed.productId;
-  if (!code || !browserFetchAvailable()) {
-    const fallback = fallbackTitle(parsed, "decks");
-    return {
-      listingId: parsed.listingId ?? null,
-      releaseId: null,
-      artist: fallback.artist,
-      title: fallback.title,
-      itemDescription:
-        [fallback.artist, fallback.title].filter(Boolean).join(" — ") ||
-        fallback.title,
-      priceValue: null,
-      priceCurrency: "EUR",
-      mediaCondition: null,
-      sleeveCondition: null,
-      label: buildLabel(fallback.artist, fallback.title, note),
-      availability: "available",
-    };
-  }
+function normalizeDecksPriceText(raw) {
+  return String(raw ?? "")
+    .replace(/\*/g, "")
+    .replace(/EUR/gi, "")
+    .replace(/€/g, "")
+    .replace(/[^\d.,]/g, "")
+    .replace(",", ".")
+    .trim();
+}
 
-  console.info(`[shops] decks meta via browser for ${code}`);
-  const rpc = await fetchDecksMetaWithBrowser(code, parsed.canonicalUrl);
+function metaFromDecksRpc(parsed, note, rpc) {
+  const code = parsed.code || parsed.productId;
   const audio = rpc?.audio?.json ?? {};
 
-  const normalizePriceText = (raw) =>
-    String(raw ?? "")
-      .replace(/\*/g, "")
-      .replace(/EUR/gi, "")
-      .replace(/€/g, "")
-      .replace(/[^\d.,]/g, "")
-      .replace(",", ".")
-      .trim();
-
-  // Prefer RPC (same source as the shop basket); DOM/basket text is fallback.
-  const rpcPriceRaw = normalizePriceText(rpc?.price?.json?.price);
-  const domPriceRaw = normalizePriceText(rpc?.domPrice);
+  const rpcPriceRaw = normalizeDecksPriceText(rpc?.price?.json?.price);
+  const domPriceRaw = normalizeDecksPriceText(rpc?.domPrice);
   const chosenRaw = rpcPriceRaw || domPriceRaw;
   const numeric = Number(chosenRaw);
-  const price = Number.isFinite(numeric) && numeric > 0
-    ? toEurPrice(numeric, "EUR")
-    : { value: null, currency: "EUR" };
+  const price =
+    Number.isFinite(numeric) && numeric > 0
+      ? toEurPrice(numeric, "EUR")
+      : { value: null, currency: "EUR" };
 
   if (price.value == null) {
     throw new Error(
       `Decks price unavailable for ${code} (cf/rpc). Retry availability refresh.`
     );
   }
-  console.info(`[shops] decks price ${code} = ${price.value}`);
 
   const artist = audio.artist?.trim() || null;
   const title = audio.titel?.trim() || audio.title?.trim() || null;
@@ -388,6 +373,73 @@ async function resolveDecksFromRpc(parsed, note) {
   };
 }
 
+async function resolveDecksFromRpc(parsed, note) {
+  const code = parsed.code || parsed.productId;
+  if (!code || !browserFetchAvailable()) {
+    const fallback = fallbackTitle(parsed, "decks");
+    return {
+      listingId: parsed.listingId ?? null,
+      releaseId: null,
+      artist: fallback.artist,
+      title: fallback.title,
+      itemDescription:
+        [fallback.artist, fallback.title].filter(Boolean).join(" — ") ||
+        fallback.title,
+      priceValue: null,
+      priceCurrency: "EUR",
+      mediaCondition: null,
+      sleeveCondition: null,
+      label: buildLabel(fallback.artist, fallback.title, note),
+      availability: "available",
+    };
+  }
+
+  console.info(`[shops] decks meta via browser for ${code}`);
+  const rpc = await fetchDecksMetaWithBrowser(code, parsed.canonicalUrl);
+  const meta = metaFromDecksRpc(parsed, note, rpc);
+  console.info(`[shops] decks price ${code} = ${meta.priceValue}`);
+  return meta;
+}
+
+/** Resolve many Decks links in one warmed browser (order availability refresh). */
+export async function resolveDecksLinksBatch(links) {
+  if (!browserFetchAvailable()) {
+    throw new Error("Decks browser scrape unavailable");
+  }
+
+  const prepared = [];
+  for (const link of links ?? []) {
+    const parsed = parseShopRecordUrl(link.url, "decks");
+    if (!parsed.valid) continue;
+    const code = parsed.code || parsed.productId;
+    if (!code) continue;
+    prepared.push({ link, parsed, code, productUrl: parsed.canonicalUrl });
+  }
+  if (!prepared.length) return new Map();
+
+  console.info(`[shops] decks batch meta for ${prepared.length} item(s)`);
+  const rpcByCode = await fetchDecksMetaBatchWithBrowser(
+    prepared.map((row) => ({ code: row.code, productUrl: row.productUrl }))
+  );
+
+  const out = new Map();
+  for (const row of prepared) {
+    try {
+      const rpc = rpcByCode.get(row.code);
+      if (!rpc) throw new Error(`No RPC payload for ${row.code}`);
+      const meta = metaFromDecksRpc(row.parsed, row.link.note ?? null, rpc);
+      console.info(`[shops] decks price ${row.code} = ${meta.priceValue}`);
+      out.set(row.link.id, meta);
+    } catch (err) {
+      console.warn(
+        `[shops] decks batch skip ${row.link.id}/${row.code}:`,
+        err?.message ?? err
+      );
+    }
+  }
+  return out;
+}
+
 export async function resolveShopRecordFromUrl(url, note, store) {
   const storeId = normalizeStore(store);
   const config = getStoreConfig(storeId);
@@ -409,6 +461,8 @@ export async function resolveShopRecordFromUrl(url, note, store) {
     const html = await fetchShopHtml(parsed.canonicalUrl);
     return metaFromHtml(html, parsed, note, storeId);
   } catch (err) {
+    // Decks: don't return null prices — callers would keep stale USD-converted values.
+    if (storeId === "decks") throw err;
     console.warn(`[${storeId}] metadata fetch failed:`, err?.message ?? err);
     const fallback = fallbackTitle(parsed, storeId);
     return {

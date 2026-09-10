@@ -5,8 +5,11 @@ import {
   updateSessionLinkAvailability,
 } from "../db.js";
 import { resolveRecordFromUrl } from "../discogs/recordMeta.js";
-import { resolveShopRecordFromUrl } from "../shops/recordMeta.js";
-import { isShopStore } from "../../shared/stores.js";
+import {
+  resolveDecksLinksBatch,
+  resolveShopRecordFromUrl,
+} from "../shops/recordMeta.js";
+import { isShopStore, normalizeStore } from "../../shared/stores.js";
 import { isLinkUnavailable } from "../../shared/orderTotals.js";
 
 const SHOP_CONCURRENCY = 1;
@@ -49,26 +52,34 @@ async function resolveMeta(link, session) {
   });
 }
 
+function applyMetaToLink(link, meta, wasUnavailable, becameUnavailableIds) {
+  const unavailable = listingUnavailable(meta);
+  const fields = {
+    artist: meta.artist,
+    title: meta.title,
+    itemDescription: meta.itemDescription,
+    label: meta.label,
+    mediaCondition: meta.mediaCondition,
+    sleeveCondition: meta.sleeveCondition,
+    listingId: meta.listingId,
+    releaseId: meta.releaseId,
+    availability: unavailable ? "unavailable" : "available",
+    availabilityNote: unavailable ? "Listing is no longer for sale." : null,
+  };
+  // Never write null prices — that keeps stale USD→EUR leftovers via `??` in db.js.
+  if (meta.priceValue != null && Number.isFinite(Number(meta.priceValue))) {
+    fields.priceValue = meta.priceValue;
+    fields.priceCurrency = meta.priceCurrency ?? "EUR";
+  }
+  updateSessionLinkAvailability(link.id, fields);
+  if (unavailable && !wasUnavailable) becameUnavailableIds.push(link.id);
+}
+
 async function refreshOneLink(session, link, becameUnavailableIds) {
   const wasUnavailable = isLinkUnavailable(link);
   try {
     const meta = await resolveMeta(link, session);
-    const unavailable = listingUnavailable(meta);
-    updateSessionLinkAvailability(link.id, {
-      artist: meta.artist,
-      title: meta.title,
-      itemDescription: meta.itemDescription,
-      label: meta.label,
-      priceValue: meta.priceValue,
-      priceCurrency: meta.priceCurrency,
-      mediaCondition: meta.mediaCondition,
-      sleeveCondition: meta.sleeveCondition,
-      listingId: meta.listingId,
-      releaseId: meta.releaseId,
-      availability: unavailable ? "unavailable" : "available",
-      availabilityNote: unavailable ? "Listing is no longer for sale." : null,
-    });
-    if (unavailable && !wasUnavailable) becameUnavailableIds.push(link.id);
+    applyMetaToLink(link, meta, wasUnavailable, becameUnavailableIds);
   } catch (err) {
     if (isNotFoundError(err)) {
       updateSessionLinkAvailability(link.id, {
@@ -79,6 +90,27 @@ async function refreshOneLink(session, link, becameUnavailableIds) {
     } else {
       console.warn(`[availability] skip ${link.id}:`, err?.message ?? err);
     }
+  }
+}
+
+async function refreshDecksLinks(session, links, becameUnavailableIds) {
+  try {
+    const metas = await resolveDecksLinksBatch(links);
+    for (const link of links) {
+      const meta = metas.get(link.id);
+      if (!meta) {
+        console.warn(`[availability] decks missing meta for ${link.id}`);
+        continue;
+      }
+      const wasUnavailable = isLinkUnavailable(link);
+      applyMetaToLink(link, meta, wasUnavailable, becameUnavailableIds);
+    }
+  } catch (err) {
+    console.warn(`[availability] decks batch failed:`, err?.message ?? err);
+    // Fall back to per-link so a partial outage can still update some rows.
+    await mapPool(links, 1, (link) =>
+      refreshOneLink(session, link, becameUnavailableIds)
+    );
   }
 }
 
@@ -93,11 +125,16 @@ async function refreshSessionLinks(session, { onlyMissingPrice = false } = {}) {
   if (!links.length) {
     return { session: getGroupSession(session.id), becameUnavailable: [] };
   }
-  const concurrency = isShopStore(session.store) ? SHOP_CONCURRENCY : 1;
 
-  await mapPool(links, concurrency, (link) =>
-    refreshOneLink(session, link, becameUnavailableIds)
-  );
+  const storeId = normalizeStore(session.store);
+  if (storeId === "decks") {
+    await refreshDecksLinks(session, links, becameUnavailableIds);
+  } else {
+    const concurrency = isShopStore(session.store) ? SHOP_CONCURRENCY : 1;
+    await mapPool(links, concurrency, (link) =>
+      refreshOneLink(session, link, becameUnavailableIds)
+    );
+  }
 
   updateSessionAvailabilityCheckedAt(session.id);
   const updated = getGroupSession(session.id);
@@ -124,7 +161,8 @@ export async function refreshSessionAvailability(
   return refreshSessionLinks(session, { onlyMissingPrice });
 }
 
-/** Fill prices for open shop orders that still have null price_value. */
+/** Fill prices for open shop orders that still have null price_value.
+ *  Decks: always re-scrape open orders — stale rows often hold USD×0.93 leftovers. */
 export async function backfillMissingShopPrices() {
   const sessions = listOpenGroupSessions();
   let refreshed = 0;
@@ -134,15 +172,18 @@ export async function backfillMissingShopPrices() {
     if (!isShopStore(summary.store)) continue;
     const session = getGroupSession(summary.id);
     if (!session) continue;
+    const storeId = normalizeStore(session.store);
+    const isDecks = storeId === "decks";
     const missingBefore = (session.links ?? []).filter(
       (link) => link.price_value == null || !Number.isFinite(Number(link.price_value))
     ).length;
-    if (!missingBefore) continue;
+    if (!isDecks && !missingBefore) continue;
+    if (isDecks && !(session.links ?? []).length) continue;
 
     try {
       const result = await refreshSessionAvailability(session, {
         force: true,
-        onlyMissingPrice: true,
+        onlyMissingPrice: !isDecks,
       });
       refreshed += 1;
       const stillMissing = (result.session?.links ?? []).filter(
@@ -151,7 +192,9 @@ export async function backfillMissingShopPrices() {
       ).length;
       filled += Math.max(0, missingBefore - stillMissing);
       console.info(
-        `[availability] shop price backfill ${session.id}: ${missingBefore - stillMissing}/${missingBefore} filled`
+        `[availability] shop price backfill ${session.id}: ${
+          isDecks ? "decks full refresh" : `${missingBefore - stillMissing}/${missingBefore} filled`
+        }`
       );
     } catch (err) {
       console.warn(
