@@ -335,11 +335,20 @@ async function resolveDecksFromRpc(parsed, note) {
     };
   }
 
-  console.info(`[shops] decks RPC via browser for ${code}`);
-  const rpc = await fetchDecksMetaWithBrowser(code);
+  console.info(`[shops] decks meta via browser for ${code}`);
+  const rpc = await fetchDecksMetaWithBrowser(code, parsed.canonicalUrl);
   const audio = rpc?.audio?.json ?? {};
-  const priceRaw = rpc?.price?.json?.price;
-  const numeric = Number(String(priceRaw ?? "").replace(",", "."));
+
+  const domPriceRaw = String(rpc?.domPrice ?? "")
+    .replace(/\*/g, "")
+    .trim();
+  const rpcPriceRaw = rpc?.price?.json?.price;
+  const chosenRaw = domPriceRaw || rpcPriceRaw;
+  const numeric = Number(
+    String(chosenRaw ?? "")
+      .replace(/[^\d.,]/g, "")
+      .replace(",", ".")
+  );
   const price = Number.isFinite(numeric)
     ? toEurPrice(numeric, "EUR")
     : { value: null, currency: "EUR" };

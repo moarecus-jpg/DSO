@@ -73,8 +73,14 @@ export function collectShopCartTargets(links, store) {
     if (storeId === STORE_DECKS) {
       const code = parsed.valid
         ? parsed.code || parsed.productId
-        : href.match(/\/(?:track|m)\/[^/]+\/([^/?#]+)/i)?.[1];
-      if (code) items.push({ kind: "decks", code: String(code), url: link.url });
+        : href
+            .replace(/\/+$/, "")
+            .split("/")
+            .filter(Boolean)
+            .pop();
+      if (code && /\/(?:track|m)\//i.test(href)) {
+        items.push({ kind: "decks", code: String(code), url: link.url });
+      }
       continue;
     }
 

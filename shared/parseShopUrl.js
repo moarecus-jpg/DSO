@@ -109,13 +109,19 @@ export function parseDecksRecordUrl(url) {
     const u = new URL(href);
     if (!u.hostname.includes("decks.de")) return { valid: false };
 
-    // /track/artist-title/code  or  /m/artist-title/code
-    const match = u.pathname.match(/^\/(track|m)\/([^/]+)\/([^/?#]+)/i);
-    if (!match) return { valid: false };
+    const parts = u.pathname
+      .replace(/\/+$/, "")
+      .split("/")
+      .filter(Boolean)
+      .map((p) => decodeURIComponent(p));
 
-    const kind = match[1].toLowerCase();
-    const slug = decodeURIComponent(match[2]);
-    const code = decodeURIComponent(match[3]);
+    // /track/...slug.../code  or  /m/...slug.../code  (slug may contain extra segments)
+    if (parts.length < 3) return { valid: false };
+    const kind = parts[0].toLowerCase();
+    if (kind !== "track" && kind !== "m") return { valid: false };
+
+    const code = parts[parts.length - 1];
+    const slug = parts.slice(1, -1).join("-");
     if (!slug || !code) return { valid: false };
 
     return {
@@ -125,7 +131,7 @@ export function parseDecksRecordUrl(url) {
       listingId: stableListingId(code),
       slug,
       code,
-      canonicalUrl: `https://www.decks.de/${kind}/${slug}/${code}`,
+      canonicalUrl: `https://www.decks.de/${kind}/${parts.slice(1).join("/")}`,
     };
   } catch {
     return { valid: false };

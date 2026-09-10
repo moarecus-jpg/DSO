@@ -100,16 +100,18 @@ export function Session() {
     }
   }, [searchParams, setSearchParams]);
 
-  // Shop orders added before browser scrape: fill missing prices when opening the order.
+  // Shop orders: fill missing prices on open. Decks always re-scrapes once —
+  // earlier scrapes sometimes stored wrong codes/prices that aren't null.
   useEffect(() => {
     if (!session || loading) return;
     if (autoPriceRefreshForId.current === session.id) return;
     if (!isOpenSession(session.status)) return;
     if (!isShopStore(session.store)) return;
+    const storeId = String(session.store || "").toLowerCase();
     const missingPrice = (session.links ?? []).some(
       (link) => link.price_value == null && link.priceValue == null
     );
-    if (!missingPrice) {
+    if (!missingPrice && storeId !== "decks") {
       autoPriceRefreshForId.current = session.id;
       return;
     }

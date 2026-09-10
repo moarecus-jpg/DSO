@@ -255,10 +255,11 @@ export function fetchHtmlWithBrowser(url) {
 }
 
 /**
- * Decks product HTML is behind Cloudflare; price/meta live on same-origin RPC
- * endpoints that work after a browser session is established.
+ * Decks product HTML is behind Cloudflare; after warming a session we:
+ * 1) open the product URL and read #t-price
+ * 2) fall back to getPrice.php / getAudio.php RPC
  */
-export function fetchDecksMetaWithBrowser(deckscode) {
+export function fetchDecksMetaWithBrowser(deckscode, productUrl = null) {
   const code = String(deckscode ?? "").trim();
   if (!code) {
     return Promise.reject(new Error("Missing decks code"));
@@ -297,12 +298,27 @@ export function fetchDecksMetaWithBrowser(deckscode) {
         Object.defineProperty(navigator, "webdriver", { get: () => undefined });
       });
 
-      // Warm Cloudflare session on the public homepage.
-      await page.goto("https://www.decks.de/", {
+      const startUrl =
+        productUrl ||
+        `https://www.decks.de/track/item/${encodeURIComponent(code)}`;
+
+      await page.goto(startUrl, {
         waitUntil: "domcontentloaded",
         timeout: BROWSER_TIMEOUT_MS,
       });
       await new Promise((resolve) => setTimeout(resolve, CHALLENGE_WAIT_MS));
+
+      // Wait for the player price widget when the product shell loads.
+      await page
+        .waitForFunction(
+          () => {
+            const el = document.querySelector("#t-price");
+            const text = el?.textContent?.trim() || "";
+            return /\d/.test(text);
+          },
+          { timeout: 12_000 }
+        )
+        .catch(() => {});
 
       const meta = await page.evaluate(async (id) => {
         const fetchJson = async (path) => {
@@ -317,13 +333,34 @@ export function fetchDecksMetaWithBrowser(deckscode) {
           try {
             return { ok: res.ok, status: res.status, json: JSON.parse(text) };
           } catch {
-            return { ok: false, status: res.status, json: null, text: text.slice(0, 120) };
+            return {
+              ok: false,
+              status: res.status,
+              json: null,
+              text: text.slice(0, 120),
+            };
           }
         };
 
-        const price = await fetchJson(`/decks/rpc/getPrice.php?id=${encodeURIComponent(id)}`);
-        const audio = await fetchJson(`/decks/rpc/getAudio.php?id=${encodeURIComponent(id)}`);
-        return { price, audio };
+        const domPrice =
+          document.querySelector("#t-price")?.textContent?.trim() ||
+          document.querySelector("#t-pricenetto")?.textContent?.trim() ||
+          null;
+
+        const price = await fetchJson(
+          `/decks/rpc/getPrice.php?id=${encodeURIComponent(id)}`
+        );
+        const audio = await fetchJson(
+          `/decks/rpc/getAudio.php?id=${encodeURIComponent(id)}`
+        );
+
+        return {
+          domPrice,
+          pageTitle: document.title || null,
+          finalUrl: location.href,
+          price,
+          audio,
+        };
       }, code);
 
       return meta;
