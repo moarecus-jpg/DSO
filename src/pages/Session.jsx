@@ -532,13 +532,18 @@ export function Session() {
     session.created_by &&
     !ownerOptions.some((option) => option.value === session.created_by)
   ) {
+    const handle = session.creator_discogs_username
+      ? `@${session.creator_discogs_username}`
+      : session.creator_username
+        ? `@${session.creator_username}`
+        : null;
+    const name = session.creator_name ?? handle;
     ownerOptions.unshift({
       value: session.created_by,
       label:
-        session.creator_name ??
-        (session.creator_username
-          ? `@${session.creator_username}`
-          : session.created_by),
+        name && handle && name !== handle
+          ? `${name} (${handle})`
+          : name || t("session.unknownOwner"),
     });
   }
 

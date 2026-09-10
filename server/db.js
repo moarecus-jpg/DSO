@@ -721,7 +721,15 @@ export function createGroupSession({
 
 export function getGroupSession(id) {
   const session = db
-    .prepare("SELECT * FROM group_sessions WHERE id = ?")
+    .prepare(
+      `SELECT gs.*,
+              u.name as creator_name,
+              u.username as creator_username,
+              u.discogs_username as creator_discogs_username
+       FROM group_sessions gs
+       LEFT JOIN users u ON u.id = gs.created_by
+       WHERE gs.id = ?`
+    )
     .get(id);
   if (!session) return null;
 
@@ -740,6 +748,23 @@ export function getGroupSession(id) {
        ORDER BY sm.joined_at ASC`
     )
     .all(id);
+
+  // Keep the current owner selectable even if they have no items on the order.
+  if (
+    session.created_by &&
+    !members.some((member) => member.id === session.created_by)
+  ) {
+    const owner = db
+      .prepare(
+        `SELECT u.id, u.name as account_name, u.name as name,
+                NULL as display_name, u.email, u.picture, u.discogs_username,
+                NULL as joined_at, NULL as settled_at
+         FROM users u
+         WHERE u.id = ?`
+      )
+      .get(session.created_by);
+    if (owner) members.unshift(owner);
+  }
 
   const links = db
     .prepare(

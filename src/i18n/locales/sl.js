@@ -354,6 +354,7 @@ export default {
     ownerLabel: "Odpravitelj",
     ownerHint:
       "Odpravitelj lahko zaključi naročilo, doda vse v košarico in prenese lastništvo.",
+    unknownOwner: "Neznan odpravitelj",
     transferOwner: "Prenesi",
     transferring: "Prenašam…",
     statusLabel: "Status naročila",

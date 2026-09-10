@@ -340,7 +340,7 @@ function withOrderPermissions(session, userId) {
     canManageMembers: isAdmin,
     canManageShipping: isCreator || isAdmin,
     canManageOrder: isAdmin,
-    canAddAllToCart: isCreator,
+    canAddAllToCart: isCreator || isAdmin,
     canReopen: isReopenableSession(session.status) && (isCreator || isAdmin),
     canChangeStatus: appAdmin,
   };

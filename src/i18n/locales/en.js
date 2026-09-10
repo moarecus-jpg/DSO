@@ -350,6 +350,7 @@ export default {
     reopening: "Reopening…",
     ownerLabel: "Order owner",
     ownerHint: "The owner can close the order, add all to cart, and transfer ownership.",
+    unknownOwner: "Unknown owner",
     transferOwner: "Transfer",
     transferring: "Transferring…",
     statusLabel: "Order status",
