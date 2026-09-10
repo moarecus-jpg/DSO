@@ -43,8 +43,24 @@ export function parseHhvRecordUrl(url) {
     const slug = idMatch ? slugFull.slice(0, -idMatch[0].length) : slugFull;
     if (productId == null && !slug) return { valid: false };
 
-    const pathLang = u.pathname.match(/^\/shop\/([a-z]{2})\//i)?.[1] ?? "en";
-    const canonicalPath = `/shop/${pathLang}/item/${slugFull}`;
+    // New HHV paths: /en/records/item/…, /de/clothing/item/…
+    const modern = u.pathname.match(
+      /^\/([a-z]{2})\/([a-z0-9-]+)\/item\//i
+    );
+    // Legacy: /shop/en/item/…
+    const legacy = u.pathname.match(/^\/shop\/([a-z]{2})\//i);
+
+    let canonicalPath;
+    if (modern) {
+      const [, lang, category] = modern;
+      canonicalPath = `/${lang}/${category}/item/${slugFull}`;
+    } else if (legacy) {
+      // Keep legacy shop URLs as-is (still resolve for older bookmarks).
+      canonicalPath = `/shop/${legacy[1]}/item/${slugFull}`;
+    } else {
+      // Bare /item/… → assume records catalog.
+      canonicalPath = `/en/records/item/${slugFull}`;
+    }
 
     return {
       valid: true,

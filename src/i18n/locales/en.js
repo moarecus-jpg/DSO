@@ -333,7 +333,7 @@ export default {
     emptyBodyAfterShop:
       " to a {{domain}} product page — one or more at a time.",
     emptyBodyAfterHhv:
-      " to an HHV product page (hhv.de/shop/…/item/…) — one or more at a time.",
+      " to an HHV product page (hhv.de/…/item/…) — one or more at a time.",
     discogsNotConnected: "Discogs not connected",
     participantAria: "Participant name",
     ordererAria: "Orderer name",
@@ -398,7 +398,7 @@ export default {
     linksHintShop:
       "Paste one or more {{store}} product links ({{domain}}) — one per line.",
     linksHintHhv:
-      "Paste one or more HHV product links (hhv.de/shop/…/item/…) — one per line.",
+      "Paste one or more HHV product links (hhv.de/…/item/…) — one per line.",
     skip: "Skip",
     skipHint: "You can add items later with Add item.",
     validLinkOne: "1 valid link",

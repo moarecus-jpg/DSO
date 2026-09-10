@@ -4,6 +4,11 @@ import {
 } from "../../shared/parseShopUrl.js";
 import { getStoreConfig, normalizeStore } from "../../shared/stores.js";
 import { toEurPrice } from "../../shared/currency.js";
+import {
+  fetchHtmlWithBrowser,
+  looksLikeBotWall,
+  resolveChromeExecutable,
+} from "./browserFetch.js";
 
 const FETCH_TIMEOUT_MS = 12_000;
 
@@ -150,7 +155,7 @@ function splitArtistTitle(name, storeId) {
   return { artist: null, title: cleaned };
 }
 
-async function fetchShopHtml(url) {
+async function fetchShopHtmlPlain(url) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
@@ -158,9 +163,11 @@ async function fetchShopHtml(url) {
       signal: controller.signal,
       headers: {
         "User-Agent":
-          "DCO-GroupOrders/1.0 (+https://github.com/moarecus-jpg/DSO; group-order metadata)",
-        Accept: "text/html,application/xhtml+xml",
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9,de;q=0.8,fr;q=0.7",
+        "Cache-Control": "no-cache",
       },
       redirect: "follow",
     });
@@ -170,6 +177,37 @@ async function fetchShopHtml(url) {
     return await res.text();
   } finally {
     clearTimeout(timer);
+  }
+}
+
+async function fetchShopHtml(url) {
+  let html = null;
+  let plainError = null;
+  try {
+    html = await fetchShopHtmlPlain(url);
+  } catch (err) {
+    plainError = err;
+  }
+
+  const needsBrowser =
+    plainError != null || looksLikeBotWall(html) || !html;
+
+  if (!needsBrowser) return html;
+
+  if (!resolveChromeExecutable()) {
+    if (html) return html;
+    throw plainError ?? new Error("Shop fetch failed");
+  }
+
+  try {
+    console.info(`[shops] bot-wall/fallback → headless browser for ${url}`);
+    const rendered = await fetchHtmlWithBrowser(url);
+    if (rendered && !looksLikeBotWall(rendered)) return rendered;
+    return rendered || html;
+  } catch (err) {
+    console.warn(`[shops] browser fetch failed:`, err?.message ?? err);
+    if (html) return html;
+    throw plainError ?? err;
   }
 }
 

@@ -335,7 +335,7 @@ export default {
     emptyBodyAfterShop:
       " do izdelka ({{domain}}) — eno ali več naenkrat.",
     emptyBodyAfterHhv:
-      " do HHV izdelka (hhv.de/shop/…/item/…) — eno ali več naenkrat.",
+      " do HHV izdelka (hhv.de/…/item/…) — eno ali več naenkrat.",
     discogsNotConnected: "Discogs ni povezan",
     participantAria: "Ime sodelujočega",
     ordererAria: "Ime naročnika",
@@ -404,7 +404,7 @@ export default {
     linksHintShop:
       "Prilepi eno ali več {{store}} povezav ({{domain}}) — ena na vrstico.",
     linksHintHhv:
-      "Prilepi eno ali več HHV povezav (hhv.de/shop/…/item/…) — ena na vrstico.",
+      "Prilepi eno ali več HHV povezav (hhv.de/…/item/…) — ena na vrstico.",
     skip: "Preskoči",
     skipHint: "Iteme lahko dodaš kasneje z gumbom Dodaj Item.",
     validLinkOne: "1 veljavna povezava",
