@@ -289,8 +289,17 @@ function metaFromHtml(html, parsed, note, storeId) {
 
   const itemDescription = [artist, title].filter(Boolean).join(" — ") || title;
 
+  let listingId = parsed.listingId ?? null;
+  if (storeId === "yoyaku") {
+    const wcId = firstMatch(html, [
+      /name=["']add-to-cart["'][^>]*value=["'](\d+)["']/i,
+      /value=["'](\d+)["'][^>]*name=["']add-to-cart["']/i,
+    ]);
+    if (wcId && Number.isFinite(Number(wcId))) listingId = Number(wcId);
+  }
+
   return {
-    listingId: parsed.listingId ?? null,
+    listingId,
     releaseId: null,
     artist,
     title,

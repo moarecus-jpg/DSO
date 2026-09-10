@@ -461,6 +461,29 @@ export default {
     hhvCartDontClick:
       "Don’t click it here. Drag this button to your bookmarks bar, open hhv.de, then click the bookmark.",
     hhvCartOpenHhv: "Open HHV",
+    shopCartCreate: "Create a {{store}} cart ({{count}})",
+    shopCartCreateShort: "{{store}} cart ({{count}})",
+    shopCartProgress: "{{store}} cart {{current}}/{{total}}…",
+    shopCartHint:
+      "{{store}} blocks outside apps from filling your cart. Use the short helper steps.",
+    shopCartModalTitle: "Add items to your {{store}} cart",
+    shopCartWhy:
+      "Unlike Discogs, {{store}} needs a one-time bookmark that runs while you are logged in on their site.",
+    shopCartStep1:
+      "Make sure the bookmarks bar is visible (Chrome: Ctrl+Shift+B).",
+    shopCartStep2:
+      "Drag the purple button below onto your bookmarks bar ({{count}} {{store}} items).",
+    shopCartStep3:
+      "Open {{store}}, stay logged in, then click that bookmark once — items are added and the cart opens.",
+    shopCartDragHint: "Drag this button to your bookmarks bar — don’t just click it here:",
+    shopCartBookmarkLabel: "{{store}} cart · {{count}}",
+    shopCartBookmarkTitle: "Drag to bookmarks: add {{count}} items on {{store}}",
+    shopCartDontClick:
+      "Don’t click it here. Drag this button to your bookmarks bar, open {{store}}, then click the bookmark.",
+    shopCartOpenShop: "Open {{store}}",
+    shopCartFailed: "Could not build the {{store}} cart. Try again.",
+    junoCartHint:
+      "Adds each Juno product via /cart/add/… deep links, then opens your Juno cart. Allow pop-ups and stay logged in on juno.co.uk.",
     hiddenItem: "Hidden item",
     hiddenItemPlaceholder: "This participant hid their picks in settings.",
     recordOne: "1 record",

@@ -467,6 +467,29 @@ export default {
     hhvCartDontClick:
       "Tukaj ne klikaj. Povleci gumb med zaznamke, odpri hhv.de, nato klikni zaznamek.",
     hhvCartOpenHhv: "Odpri HHV",
+    shopCartCreate: "Ustvari {{store}} košarico ({{count}})",
+    shopCartCreateShort: "{{store}} košarica ({{count}})",
+    shopCartProgress: "{{store}} košarica {{current}}/{{total}}…",
+    shopCartHint:
+      "{{store}} ne dovoli, da app napolni košarico. Uporabi kratka navodila v oknu.",
+    shopCartModalTitle: "Dodaj artikle v {{store}} košarico",
+    shopCartWhy:
+      "Za razliko od Discogs {{store}} potrebuje enkratni zaznamek, ki teče ko si prijavljen v njihovi trgovini.",
+    shopCartStep1:
+      "Vklopi vrstico zaznamkov (Chrome: Ctrl+Shift+B).",
+    shopCartStep2:
+      "Povleci vijolični gumb spodaj med zaznamke ({{count}} {{store}} artiklov).",
+    shopCartStep3:
+      "Odpri {{store}}, ostani prijavljen, nato enkrat klikni ta zaznamek — artikli se dodajo in odpre se košarica.",
+    shopCartDragHint: "Ta gumb povleci med zaznamke — tukaj ga ne klikaj:",
+    shopCartBookmarkLabel: "{{store}} košarica · {{count}}",
+    shopCartBookmarkTitle: "Povleci med zaznamke: dodaj {{count}} artiklov na {{store}}",
+    shopCartDontClick:
+      "Tukaj ne klikaj. Povleci gumb med zaznamke, odpri {{store}}, nato klikni zaznamek.",
+    shopCartOpenShop: "Odpri {{store}}",
+    shopCartFailed: "{{store}} košarice ni bilo mogoče ustvariti. Poskusi znova.",
+    junoCartHint:
+      "Vsak Juno artikel doda prek /cart/add/… povezave, nato odpre košarico. Dovoli pop-upe in ostani prijavljen na juno.co.uk.",
     hiddenItem: "Skrit item",
     hiddenItemPlaceholder: "Ta udeleženec je skril svoje izbire v nastavitvah.",
     recordOne: "1 plato",

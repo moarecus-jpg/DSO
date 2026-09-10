@@ -5,7 +5,7 @@ import { AddRecordModal } from "../components/AddRecordModal.jsx";
 import { AppSelect } from "../components/AppSelect.jsx";
 import { CloseOrderDialog } from "../components/CloseOrderDialog.jsx";
 import { DiscogsAddAllToCartButton } from "../components/DiscogsAddAllToCartButton.jsx";
-import { HhvAddAllToCartButton } from "../components/HhvAddAllToCartButton.jsx";
+import { ShopAddAllToCartButton } from "../components/ShopAddAllToCartButton.jsx";
 import { MemberChips } from "../components/MemberChips.jsx";
 import { OrderStoreAvatar } from "../components/OrderStoreAvatar.jsx";
 import { OrderStickyFooter } from "../components/OrderStickyFooter.jsx";
@@ -23,7 +23,8 @@ import { displayOrderTitle } from "../../shared/orderTitle.js";
 import { orderPageTitle } from "../../shared/orderShare.js";
 import { APP_TITLE } from "../../shared/brand.js";
 import { canReportItemIssue } from "../../shared/orderReview.js";
-import { getStoreConfig, isShopStore, STORE_HHV } from "../../shared/stores.js";
+import { getStoreConfig, isShopStore } from "../../shared/stores.js";
+import { shopCartSupports } from "../../shared/shopCart.js";
 import {
   isArchivedSession,
   isOpenSession,
@@ -573,8 +574,9 @@ export function Session() {
           variant="outline"
           className="order-sticky-footer-action-btn order-sticky-footer-action-btn--secondary"
         />
-      ) : session.store === STORE_HHV ? (
-        <HhvAddAllToCartButton
+      ) : shopCartSupports(session.store) ? (
+        <ShopAddAllToCartButton
+          store={session.store}
           links={session.links}
           disabled={isArchived}
           variant="outline"
