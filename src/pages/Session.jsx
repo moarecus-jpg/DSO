@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Archive, Disc3, ExternalLink, Heart, Plus, RefreshCw, RotateCcw, X } from "lucide-react";
 import { AddRecordModal } from "../components/AddRecordModal.jsx";
@@ -66,6 +66,7 @@ export function Session() {
   const [deletingIssueId, setDeletingIssueId] = useState(null);
   const [markingReportSent, setMarkingReportSent] = useState(false);
   const [issueFormLinkId, setIssueFormLinkId] = useState(null);
+  const autoPriceRefreshForId = useRef(null);
 
   function loadSession() {
     return api(`/api/sessions/${id}`).then((d) => {
@@ -77,6 +78,7 @@ export function Session() {
   useEffect(() => {
     setAddRecordOpen(false);
     setBecameUnavailable([]);
+    autoPriceRefreshForId.current = null;
     loadSession().catch(console.error).finally(() => setLoading(false));
   }, [id]);
 
@@ -95,6 +97,41 @@ export function Session() {
       setSearchParams({}, { replace: true });
     }
   }, [searchParams, setSearchParams]);
+
+  // Shop orders added before browser scrape: fill missing prices when opening the order.
+  useEffect(() => {
+    if (!session || loading) return;
+    if (autoPriceRefreshForId.current === session.id) return;
+    if (!isOpenSession(session.status)) return;
+    if (!isShopStore(session.store)) return;
+    const missingPrice = (session.links ?? []).some(
+      (link) => link.price_value == null && link.priceValue == null
+    );
+    if (!missingPrice) {
+      autoPriceRefreshForId.current = session.id;
+      return;
+    }
+
+    autoPriceRefreshForId.current = session.id;
+    let cancelled = false;
+    setRefreshingAvailability(true);
+    api(`/api/sessions/${session.id}/availability/refresh`, { method: "POST" })
+      .then((data) => {
+        if (cancelled) return;
+        setSession(data.session);
+        setBecameUnavailable(data.becameUnavailable ?? []);
+      })
+      .catch((err) => {
+        console.warn("Auto price refresh failed:", err);
+      })
+      .finally(() => {
+        if (!cancelled) setRefreshingAvailability(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session, loading]);
 
   useEffect(() => {
     setOwnerId(session?.created_by ?? "");

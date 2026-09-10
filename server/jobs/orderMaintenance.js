@@ -12,10 +12,10 @@ import {
   notifyOrderNeedsAttention,
 } from "../email/notifications.js";
 import { envPublicAppUrl } from "../appUrl.js";
-import { refreshOpenOrdersAvailability } from "./availability.js";
+import { refreshOpenOrdersAvailability, backfillMissingShopPrices } from "./availability.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const START_DELAY_MS = 45_000;
+const START_DELAY_MS = 20_000;
 const AUTO_CLOSE_DAYS = 14;
 
 function publicBaseUrl() {
@@ -74,7 +74,7 @@ async function runAttentionOwnerNotify() {
   }
 }
 
-async function runDailyMaintenance() {
+async function runDailyMaintenance({ includeFullAvailability = true } = {}) {
   console.log("[jobs] daily order maintenance started");
   try {
     await runAutoClose();
@@ -87,16 +87,38 @@ async function runDailyMaintenance() {
     console.error("[jobs] attention notify failed:", err);
   }
   try {
-    await refreshOpenOrdersAvailability();
+    const result = await backfillMissingShopPrices();
+    console.log(
+      `[jobs] shop price backfill: ${result.filled} filled across ${result.refreshed} order(s)`
+    );
   } catch (err) {
-    console.error("[jobs] availability refresh failed:", err);
+    console.error("[jobs] shop price backfill failed:", err);
+  }
+  if (includeFullAvailability) {
+    try {
+      await refreshOpenOrdersAvailability();
+    } catch (err) {
+      console.error("[jobs] availability refresh failed:", err);
+    }
   }
   console.log("[jobs] daily order maintenance finished");
 }
 
 export function startOrderMaintenanceJobs() {
   setTimeout(() => {
-    runDailyMaintenance().catch((err) => console.error("[jobs]", err));
+    // On boot, prioritize filling missing shop prices before the heavier full refresh.
+    backfillMissingShopPrices()
+      .then((result) => {
+        console.log(
+          `[jobs] startup shop price backfill: ${result.filled} filled across ${result.refreshed} order(s)`
+        );
+      })
+      .catch((err) => console.error("[jobs] startup shop price backfill:", err))
+      .finally(() => {
+        runDailyMaintenance({ includeFullAvailability: true }).catch((err) =>
+          console.error("[jobs]", err)
+        );
+      });
   }, START_DELAY_MS);
   setInterval(() => {
     runDailyMaintenance().catch((err) => console.error("[jobs]", err));

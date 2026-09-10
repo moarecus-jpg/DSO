@@ -55,8 +55,8 @@ export function parseHhvRecordUrl(url) {
       const [, lang, category] = modern;
       canonicalPath = `/${lang}/${category}/item/${slugFull}`;
     } else if (legacy) {
-      // Keep legacy shop URLs as-is (still resolve for older bookmarks).
-      canonicalPath = `/shop/${legacy[1]}/item/${slugFull}`;
+      // HHV migrated off /shop/… — rewrite to the current records catalog path.
+      canonicalPath = `/${legacy[1]}/records/item/${slugFull}`;
     } else {
       // Bare /item/… → assume records catalog.
       canonicalPath = `/en/records/item/${slugFull}`;

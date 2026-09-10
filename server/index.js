@@ -22,6 +22,7 @@ import {
   orderShareUrl,
 } from "../shared/orderShare.js";
 import { startOrderMaintenanceJobs } from "./jobs/orderMaintenance.js";
+import { logBrowserStatus } from "./shops/browserFetch.js";
 
 dotenv.config();
 
@@ -148,6 +149,7 @@ const server = app.listen(PORT, () => {
   console.log(
     `Auth: lokalni računi${googleConfigured() ? " + Google OAuth" : ""}${process.env.USE_MOCK_AUTH === "true" ? " · Discogs demo" : ""}`
   );
+  logBrowserStatus().catch(() => {});
   startOrderMaintenanceJobs();
 });
 

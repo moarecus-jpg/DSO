@@ -5,9 +5,9 @@ import {
 import { getStoreConfig, normalizeStore } from "../../shared/stores.js";
 import { toEurPrice } from "../../shared/currency.js";
 import {
+  browserFetchAvailable,
   fetchHtmlWithBrowser,
   looksLikeBotWall,
-  resolveChromeExecutable,
 } from "./browserFetch.js";
 
 const FETCH_TIMEOUT_MS = 12_000;
@@ -194,7 +194,7 @@ async function fetchShopHtml(url) {
 
   if (!needsBrowser) return html;
 
-  if (!resolveChromeExecutable()) {
+  if (!browserFetchAvailable()) {
     if (html) return html;
     throw plainError ?? new Error("Shop fetch failed");
   }

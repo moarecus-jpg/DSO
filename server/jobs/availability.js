@@ -9,7 +9,7 @@ import { resolveShopRecordFromUrl } from "../shops/recordMeta.js";
 import { isShopStore } from "../../shared/stores.js";
 import { isLinkUnavailable } from "../../shared/orderTotals.js";
 
-const SHOP_CONCURRENCY = 4;
+const SHOP_CONCURRENCY = 1;
 
 async function mapPool(items, concurrency, mapper) {
   if (!items.length) return;
@@ -82,9 +82,17 @@ async function refreshOneLink(session, link, becameUnavailableIds) {
   }
 }
 
-async function refreshSessionLinks(session) {
+async function refreshSessionLinks(session, { onlyMissingPrice = false } = {}) {
   const becameUnavailableIds = [];
-  const links = session.links ?? [];
+  let links = session.links ?? [];
+  if (onlyMissingPrice) {
+    links = links.filter(
+      (link) => link.price_value == null || !Number.isFinite(Number(link.price_value))
+    );
+  }
+  if (!links.length) {
+    return { session: getGroupSession(session.id), becameUnavailable: [] };
+  }
   const concurrency = isShopStore(session.store) ? SHOP_CONCURRENCY : 1;
 
   await mapPool(links, concurrency, (link) =>
@@ -99,7 +107,10 @@ async function refreshSessionLinks(session) {
   return { session: updated, becameUnavailable };
 }
 
-export async function refreshSessionAvailability(session, { force = false } = {}) {
+export async function refreshSessionAvailability(
+  session,
+  { force = false, onlyMissingPrice = false } = {}
+) {
   if (!session || session.status !== "open") {
     return { session, becameUnavailable: [] };
   }
@@ -110,7 +121,47 @@ export async function refreshSessionAvailability(session, { force = false } = {}
     return { session, becameUnavailable: [] };
   }
 
-  return refreshSessionLinks(session);
+  return refreshSessionLinks(session, { onlyMissingPrice });
+}
+
+/** Fill prices for open shop orders that still have null price_value. */
+export async function backfillMissingShopPrices() {
+  const sessions = listOpenGroupSessions();
+  let refreshed = 0;
+  let filled = 0;
+
+  for (const summary of sessions) {
+    if (!isShopStore(summary.store)) continue;
+    const session = getGroupSession(summary.id);
+    if (!session) continue;
+    const missingBefore = (session.links ?? []).filter(
+      (link) => link.price_value == null || !Number.isFinite(Number(link.price_value))
+    ).length;
+    if (!missingBefore) continue;
+
+    try {
+      const result = await refreshSessionAvailability(session, {
+        force: true,
+        onlyMissingPrice: true,
+      });
+      refreshed += 1;
+      const stillMissing = (result.session?.links ?? []).filter(
+        (link) =>
+          link.price_value == null || !Number.isFinite(Number(link.price_value))
+      ).length;
+      filled += Math.max(0, missingBefore - stillMissing);
+      console.info(
+        `[availability] shop price backfill ${session.id}: ${missingBefore - stillMissing}/${missingBefore} filled`
+      );
+    } catch (err) {
+      console.warn(
+        `[availability] shop price backfill ${summary.id}:`,
+        err?.message ?? err
+      );
+    }
+  }
+
+  return { refreshed, filled };
 }
 
 export async function refreshOpenOrdersAvailability() {

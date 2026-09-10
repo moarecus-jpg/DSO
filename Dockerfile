@@ -17,7 +17,7 @@ FROM node:22-bookworm-slim
 WORKDIR /app
 
 ENV NODE_ENV=production
-# System Chromium for shop price scraping (HHV anti-bot JS challenge).
+# Prefer system Chromium; @sparticuz/chromium is the fallback if launch fails.
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV PUPPETEER_SKIP_DOWNLOAD=1
 
@@ -26,6 +26,21 @@ RUN apt-get update \
     chromium \
     fonts-liberation \
     ca-certificates \
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
+    libpango-1.0-0 \
+    libcairo2 \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/package.json /app/package-lock.json ./

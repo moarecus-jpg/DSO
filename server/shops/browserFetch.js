@@ -6,6 +6,16 @@ import puppeteer from "puppeteer-core";
 const BROWSER_TIMEOUT_MS = 35_000;
 const CHALLENGE_WAIT_MS = 4_000;
 
+const DEFAULT_ARGS = [
+  "--no-sandbox",
+  "--disable-setuid-sandbox",
+  "--disable-dev-shm-usage",
+  "--disable-gpu",
+  "--disable-extensions",
+  "--disable-background-networking",
+  "--font-render-hinting=none",
+];
+
 const LINUX_CHROME_CANDIDATES = [
   process.env.PUPPETEER_EXECUTABLE_PATH,
   process.env.CHROME_PATH,
@@ -74,6 +84,12 @@ export function resolveChromeExecutable() {
   return null;
 }
 
+/** True when we can attempt a headless render (system Chrome or @sparticuz/chromium). */
+export function browserFetchAvailable() {
+  if (resolveChromeExecutable()) return true;
+  return process.platform === "linux";
+}
+
 export function looksLikeBotWall(html) {
   if (!html) return true;
   const text = String(html);
@@ -95,25 +111,39 @@ export function looksLikeBotWall(html) {
 }
 
 let browserQueue = Promise.resolve();
+let loggedLaunchConfig = false;
 
-async function renderOnce(url, executablePath) {
+async function resolveLaunchConfig() {
+  const systemPath = resolveChromeExecutable();
+  if (systemPath) {
+    return {
+      executablePath: systemPath,
+      args: DEFAULT_ARGS,
+      headless: true,
+      source: "system",
+    };
+  }
+
+  const { default: chromium } = await import("@sparticuz/chromium");
+  const executablePath = await chromium.executablePath();
+  return {
+    executablePath,
+    args: [...chromium.args, "--disable-dev-shm-usage"],
+    headless: chromium.headless ?? true,
+    source: "sparticuz",
+  };
+}
+
+async function renderOnce(url, launchConfig) {
   const userDataDir = path.join(
     os.tmpdir(),
     `dco-chrome-${process.pid}-${Date.now()}`
   );
 
   const browser = await puppeteer.launch({
-    executablePath,
-    headless: true,
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",
-      "--disable-gpu",
-      "--disable-extensions",
-      "--disable-background-networking",
-      `--user-data-dir=${userDataDir}`,
-    ],
+    executablePath: launchConfig.executablePath,
+    headless: launchConfig.headless,
+    args: [...launchConfig.args, `--user-data-dir=${userDataDir}`],
   });
 
   try {
@@ -170,21 +200,45 @@ async function renderOnce(url, executablePath) {
  */
 export function fetchHtmlWithBrowser(url) {
   const run = async () => {
-    const executablePath = resolveChromeExecutable();
-    if (!executablePath) {
-      throw new Error(
-        "Chromium ni na voljo (nastavi PUPPETEER_EXECUTABLE_PATH)."
+    let launchConfig = await resolveLaunchConfig();
+    if (!loggedLaunchConfig) {
+      loggedLaunchConfig = true;
+      console.info(
+        `[shops] browser launch via ${launchConfig.source}: ${launchConfig.executablePath}`
       );
     }
 
     try {
-      return await renderOnce(url, executablePath);
+      return await renderOnce(url, launchConfig);
     } catch (err) {
-      // Retries help when HHV navigates mid-scrape (detached frame).
       console.warn(
-        `[shops] browser render retry after: ${err?.message ?? err}`
+        `[shops] browser render failed (${launchConfig.source}): ${err?.message ?? err}`
       );
-      return await renderOnce(url, executablePath);
+
+      // If system Chromium is broken (common in slim Docker images), fall back.
+      if (launchConfig.source === "system") {
+        cachedChromePath = null;
+        try {
+          const { default: chromium } = await import("@sparticuz/chromium");
+          launchConfig = {
+            executablePath: await chromium.executablePath(),
+            args: [...chromium.args, "--disable-dev-shm-usage"],
+            headless: chromium.headless ?? true,
+            source: "sparticuz",
+          };
+          console.info(
+            `[shops] falling back to sparticuz chromium: ${launchConfig.executablePath}`
+          );
+          return await renderOnce(url, launchConfig);
+        } catch (fallbackErr) {
+          console.warn(
+            `[shops] sparticuz fallback failed: ${fallbackErr?.message ?? fallbackErr}`
+          );
+        }
+      }
+
+      // Final retry with the last known config.
+      return await renderOnce(url, launchConfig);
     }
   };
 
@@ -194,4 +248,15 @@ export function fetchHtmlWithBrowser(url) {
     () => undefined
   );
   return queued;
+}
+
+export async function logBrowserStatus() {
+  try {
+    const config = await resolveLaunchConfig();
+    console.info(
+      `[shops] headless browser ready (${config.source}): ${config.executablePath}`
+    );
+  } catch (err) {
+    console.warn(`[shops] headless browser unavailable: ${err?.message ?? err}`);
+  }
 }
