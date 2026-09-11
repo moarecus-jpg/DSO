@@ -1,4 +1,4 @@
-import { nativePrice, toEurPrice } from "../../shared/currency.js";
+import { nativePrice } from "../../shared/currency.js";
 import { buildPlacReleaseFormat, normalizePlacYear } from "../../shared/placFormat.js";
 import { parseDiscogsRecordUrl } from "../../shared/parseRecordUrl.js";
 import { MOCK_INVENTORY } from "../mock.js";
@@ -51,19 +51,19 @@ function listingDisplayTitle(release) {
   return `${head}${fmt}${lab}`;
 }
 
+/**
+ * Discogs marketplace price for DCO.
+ * Always request listings with curr_abbr=EUR, then use Discogs `price`
+ * (converted by Discogs). Never apply our approximate FX — the cart/order
+ * later uses Discogs rates.
+ */
 function listingPrice(data) {
-  // Prefer marketplace `price` (already in curr_abbr we requested — EUR).
-  // `original_price` is the seller currency and used our approximate FX before.
-  const p = data.price;
+  const p = data?.price;
   if (p?.value != null) {
-    const cur = (p.currency || "EUR").toUpperCase();
-    if (cur === "EUR") return nativePrice(p.value, "EUR");
-    return toEurPrice(p.value, cur);
+    // Discogs returns the amount in the requested curr_abbr (EUR).
+    return nativePrice(p.value, "EUR");
   }
-  const listed = data.original_price;
-  if (listed?.value != null) {
-    return toEurPrice(listed.value, listed.curr_abbr ?? "EUR");
-  }
+  // Do not fall back to original_price + local FX — that diverges from Discogs checkout.
   return { value: null, currency: "EUR" };
 }
 
@@ -596,7 +596,7 @@ export function mockResolveRecordFromUrl(url, note, options = {}) {
       artist,
       title,
       itemDescription,
-      priceValue: toEurPrice(listing.price?.value, listing.price?.currency).value,
+      priceValue: nativePrice(listing.price?.value, "EUR").value,
       priceCurrency: "EUR",
       mediaCondition: listing.condition ?? null,
       sleeveCondition: listing.sleeve_condition ?? null,
