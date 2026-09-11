@@ -19,6 +19,7 @@ export function OrderTargetDate({
   readOnly = false,
   saving = false,
   onSave,
+  embedded = false,
 }) {
   const { t, localeTag } = useLocale();
 
@@ -32,7 +33,11 @@ export function OrderTargetDate({
   const formatted = formatTargetDate(targetDate, localeTag);
 
   return (
-    <div className="order-target-date card">
+    <div
+      className={
+        embedded ? "order-target-date order-target-date--embedded" : "order-target-date card"
+      }
+    >
       <div className="order-target-date-header">
         <Calendar size={18} aria-hidden />
         <span className="order-target-date-label">{t("session.targetDate")}</span>

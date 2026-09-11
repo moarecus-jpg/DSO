@@ -1541,6 +1541,10 @@ code {
   margin-top: 1rem;
 }
 
+.order-target-date--embedded {
+  margin-top: 0;
+}
+
 .order-target-date-header {
   display: flex;
   align-items: center;
@@ -3539,6 +3543,42 @@ code {
 
 .session-owner-card .muted {
   margin: 0.35rem 0 0;
+}
+
+.session-manage-card {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0.95rem 1.1rem;
+}
+
+.session-manage-section {
+  padding: 0.85rem 0;
+}
+
+.session-manage-section + .session-manage-section {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.session-manage-section:first-child {
+  padding-top: 0.15rem;
+}
+
+.session-manage-section:last-child {
+  padding-bottom: 0.15rem;
+}
+
+.session-manage-section .muted.fine {
+  margin: 0.35rem 0 0;
+}
+
+.session-manage-section .order-target-date--embedded {
+  margin-top: 0;
+}
+
+.session-manage-section .order-target-date-header {
+  margin-bottom: 0.45rem;
 }
 
 .session-owner-row {
@@ -8176,8 +8216,8 @@ a.order-preview-item-title:hover {
   }
 
   .mobile-topbar .brand-mark--icon .brand-mark-logo {
-    width: 2.45rem;
-    height: 2.45rem;
+    width: 2.75rem;
+    height: 2.75rem;
   }
 
   .mobile-topbar-profile {

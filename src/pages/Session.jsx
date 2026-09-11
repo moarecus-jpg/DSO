@@ -792,68 +792,77 @@ export function Session() {
         <MemberChips members={session.members} />
       </div>
 
-      {canManageOrder && isOpen && ownerOptions.length > 0 && (
-        <div className="members card session-owner-card">
-          <span className="label">{t("session.ownerLabel")}</span>
-          <p className="muted fine">{t("session.ownerHint")}</p>
-          <div className="session-owner-row">
-            <AppSelect
-              value={ownerId || session.created_by}
-              onChange={setOwnerId}
-              options={ownerOptions}
-              ariaLabel={t("session.ownerLabel")}
-              disabled={transferring}
-            />
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={handleTransferOwner}
-              disabled={
-                transferring || !ownerId || ownerId === session.created_by
-              }
-            >
-              {transferring ? t("session.transferring") : t("session.transferOwner")}
-            </button>
+      <div className="card session-manage-card">
+        {canManageOrder && isOpen && ownerOptions.length > 0 && (
+          <div className="session-manage-section">
+            <span className="label">{t("session.ownerLabel")}</span>
+            <p className="muted fine">{t("session.ownerHint")}</p>
+            <div className="session-owner-row">
+              <AppSelect
+                value={ownerId || session.created_by}
+                onChange={setOwnerId}
+                options={ownerOptions}
+                ariaLabel={t("session.ownerLabel")}
+                disabled={transferring}
+              />
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={handleTransferOwner}
+                disabled={
+                  transferring || !ownerId || ownerId === session.created_by
+                }
+              >
+                {transferring
+                  ? t("session.transferring")
+                  : t("session.transferOwner")}
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {(session.canChangeStatus || user?.isAdmin) && (
-        <div className="members card session-owner-card">
-          <span className="label">{t("session.statusLabel")}</span>
-          <p className="muted fine">{t("session.statusHint")}</p>
-          <div className="session-owner-row">
-            <AppSelect
-              value={statusId || session.status || "open"}
-              onChange={setStatusId}
-              options={SESSION_STATUSES.map((status) => ({
-                value: status,
-                label: t(sessionStatusAppearance(status).labelKey),
-              }))}
-              ariaLabel={t("session.statusLabel")}
-              disabled={savingStatus}
-              searchable={false}
-            />
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={handleSaveStatus}
-              disabled={
-                savingStatus || !statusId || statusId === session.status
-              }
-            >
-              {savingStatus ? t("session.savingStatus") : t("session.saveStatus")}
-            </button>
+        {(session.canChangeStatus || user?.isAdmin) && (
+          <div className="session-manage-section">
+            <span className="label">{t("session.statusLabel")}</span>
+            <p className="muted fine">{t("session.statusHint")}</p>
+            <div className="session-owner-row">
+              <AppSelect
+                value={statusId || session.status || "open"}
+                onChange={setStatusId}
+                options={SESSION_STATUSES.map((status) => ({
+                  value: status,
+                  label: t(sessionStatusAppearance(status).labelKey),
+                }))}
+                ariaLabel={t("session.statusLabel")}
+                disabled={savingStatus}
+                searchable={false}
+              />
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={handleSaveStatus}
+                disabled={
+                  savingStatus || !statusId || statusId === session.status
+                }
+              >
+                {savingStatus
+                  ? t("session.savingStatus")
+                  : t("session.saveStatus")}
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <OrderTargetDate
-        targetDate={session.target_date}
-        readOnly={isArchived || !canManageOrder}
-        saving={savingTargetDate}
-        onSave={canManageOrder ? handleSaveTargetDate : undefined}
-      />
+        <div className="session-manage-section">
+          <OrderTargetDate
+            embedded
+            targetDate={session.target_date}
+            readOnly={isArchived || !canManageOrder}
+            saving={savingTargetDate}
+            onSave={canManageOrder ? handleSaveTargetDate : undefined}
+          />
+        </div>
+      </div>
 
       <section>
         {recordCount === 0 ? (
