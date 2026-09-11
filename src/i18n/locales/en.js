@@ -588,6 +588,8 @@ export default {
     openOrder: "Open order",
     bannerTitle: "PayPal request: {{amount}}",
     bannerFrom: "From {{name}} — open PayPal and settle the amount.",
+    searchPlaceholder: "Search by person, order, or amount…",
+    count: "{{count}} open requests",
   },
   settings: {
     title: "Settings",

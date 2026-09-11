@@ -594,6 +594,8 @@ export default {
     openOrder: "Odpri naročilo",
     bannerTitle: "PayPal zahtevek: {{amount}}",
     bannerFrom: "Od {{name}} — odpri PayPal in poravnaj znesek.",
+    searchPlaceholder: "Išči po osebi, naročilu ali znesku…",
+    count: "{{count}} odprtih zahtevkov",
   },
   settings: {
     title: "Nastavitve",
