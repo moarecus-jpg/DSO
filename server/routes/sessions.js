@@ -56,7 +56,7 @@ import {
   mockResolveShopRecordFromUrl,
 } from "../shops/recordMeta.js";
 import { parseDiscogsUrlList } from "../../shared/parseRecordUrl.js";
-import { parseShopUrlList } from "../../shared/parseShopUrl.js";
+import { parseShopUrlList, normalizeShopLinkUrl } from "../../shared/parseShopUrl.js";
 import {
   getStoreConfig,
   isShopStore,
@@ -1398,7 +1398,15 @@ async function createSessionLink(req, sessionId, trimmedUrl, note, rawForUserId)
     sessionId.startsWith("mock") &&
     (!discogsOAuthConfigured() || findUserById(req.session.userId)?.discogs_token === "mock");
 
-  const meta = await resolveLinkMeta(trimmedUrl, note, {
+  // HHV: rewrite DE/en storefront links to SI locale so we always scrape SI prices.
+  const storedUrl = isShopStore(store)
+    ? normalizeShopLinkUrl(trimmedUrl, store)
+    : trimmedUrl;
+  if (storedUrl !== trimmedUrl) {
+    console.info(`[shops] link locale normalize: ${trimmedUrl} → ${storedUrl}`);
+  }
+
+  const meta = await resolveLinkMeta(storedUrl, note, {
     store,
     sellerUsername,
     useMockDiscogs,
@@ -1419,7 +1427,7 @@ async function createSessionLink(req, sessionId, trimmedUrl, note, rawForUserId)
 
     const link = {
       id: `link-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      url: trimmedUrl,
+      url: storedUrl,
       user_id: targetUserId,
       user_name: targetUser?.name ?? MOCK_USER.name,
       listing_id: meta.listingId,
@@ -1438,6 +1446,7 @@ async function createSessionLink(req, sessionId, trimmedUrl, note, rawForUserId)
       (item) =>
         item.user_id === targetUserId &&
         ((meta.listingId != null && item.listing_id === meta.listingId) ||
+          item.url?.trim().toLowerCase() === storedUrl.toLowerCase() ||
           item.url?.trim().toLowerCase() === trimmedUrl.toLowerCase())
     );
     if (existing) {
@@ -1467,7 +1476,7 @@ async function createSessionLink(req, sessionId, trimmedUrl, note, rawForUserId)
 
   const duplicate = findDuplicateSessionLink(sessionId, targetUserId, {
     listingId: meta.listingId,
-    url: trimmedUrl,
+    url: storedUrl,
   });
   if (duplicate) {
     throw new Error("Ta listing je za tega udeleženca že v tem naročilu.");
@@ -1476,7 +1485,7 @@ async function createSessionLink(req, sessionId, trimmedUrl, note, rawForUserId)
   return addSessionLink({
     sessionId,
     userId: targetUserId,
-    url: trimmedUrl,
+    url: storedUrl,
     releaseId: meta.releaseId,
     listingId: meta.listingId,
     label: meta.label,

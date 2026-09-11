@@ -248,6 +248,26 @@ export function parseShopRecordUrl(url, store) {
   return parser(url);
 }
 
+/**
+ * Normalize a pasted shop URL for storage.
+ * HHV: always rewrite to SI price locale so DE/en links become en-SI-EUR-eu.
+ */
+export function normalizeShopLinkUrl(url, store) {
+  const storeId = normalizeStore(store);
+  const trimmed = String(url ?? "").trim();
+  if (!trimmed) return trimmed;
+
+  if (storeId === STORE_HHV) {
+    const parsed = parseHhvRecordUrl(trimmed);
+    if (parsed.valid && parsed.canonicalUrl) return parsed.canonicalUrl;
+    return hhvPriceLocaleUrl(trimmed) || trimmed;
+  }
+
+  const parsed = parseShopRecordUrl(trimmed, storeId);
+  if (parsed.valid && parsed.canonicalUrl) return parsed.canonicalUrl;
+  return trimmed;
+}
+
 export function isShopRecordUrl(url, store) {
   return Boolean(parseShopRecordUrl(url, store).valid);
 }
