@@ -2511,9 +2511,9 @@ code {
     3.25rem
     minmax(4.25rem, 0.95fr)
     minmax(4.25rem, 0.95fr)
-    minmax(5.5rem, 1fr)
-    4.75rem;
-  column-gap: 0.75rem;
+    minmax(5.25rem, 0.95fr)
+    minmax(6.5rem, 7.5rem);
+  column-gap: 0.85rem;
 }
 
 .order-summary-grid-head,
@@ -2564,9 +2564,10 @@ code {
 
 .order-summary-col-settle {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: center;
-  min-width: 3rem;
+  min-width: 0;
+  padding-left: 0.35rem;
 }
 
 .order-summary-col-span {
@@ -2575,6 +2576,7 @@ code {
 
 .order-summary-due {
   font-weight: 600;
+  padding-right: 0.25rem;
 }
 
 .order-summary-grid-row--settled .order-summary-col-name {
@@ -2621,7 +2623,9 @@ code {
 .order-summary-settle-actions {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  flex-wrap: nowrap;
 }
 
 .order-paypal-btn {
@@ -3059,7 +3063,7 @@ code {
   margin: 0 auto;
   padding: 0;
   width: 100%;
-  max-width: 54rem;
+  max-width: 62rem;
   background: transparent;
   border: none;
   box-shadow: none;
@@ -8742,9 +8746,9 @@ a.order-preview-item-title:hover {
       2.25rem
       minmax(3.25rem, 1fr)
       minmax(3.25rem, 1fr)
-      minmax(4.5rem, 1fr)
-      2.75rem;
-    column-gap: 0.5rem;
+      minmax(4rem, 1fr)
+      minmax(5.5rem, 6.5rem);
+    column-gap: 0.55rem;
     font-size: 0.74rem;
   }
 
