@@ -8141,17 +8141,17 @@ a.order-preview-item-title:hover {
     display: flex;
     position: sticky;
     top: 0;
-    z-index: 20;
+    z-index: 50;
     align-items: center;
     justify-content: space-between;
     gap: 0.55rem;
-    min-height: 3rem;
+    min-height: 3.15rem;
     padding: 0.5rem 0.85rem;
     padding-top: max(0.5rem, env(safe-area-inset-top));
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(9, 9, 11, 0.92);
     backdrop-filter: blur(20px);
-    overflow: hidden;
+    overflow: visible;
   }
 
   .mobile-topbar-left {
@@ -8176,8 +8176,8 @@ a.order-preview-item-title:hover {
   }
 
   .mobile-topbar .brand-mark--icon .brand-mark-logo {
-    width: 2rem;
-    height: 2rem;
+    width: 2.45rem;
+    height: 2.45rem;
   }
 
   .mobile-topbar-profile {
@@ -8188,11 +8188,14 @@ a.order-preview-item-title:hover {
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.04);
+    position: relative;
+    z-index: 2;
   }
 
   .mobile-topbar-profile .community-switcher--compact {
     flex: 0 0 auto;
     max-width: none;
+    z-index: 3;
   }
 
   .mobile-topbar-profile .community-switcher-name,
@@ -12681,6 +12684,7 @@ img.plac-user-avatar {
   top: calc(100% + 0.35rem);
   right: 0;
   left: auto;
+  z-index: 80;
   min-width: max(100%, 12rem);
   display: flex;
   flex-direction: column;
