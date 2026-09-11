@@ -796,8 +796,10 @@ export function Session() {
         {canManageOrder && isOpen && ownerOptions.length > 0 && (
           <div className="session-manage-section">
             <span className="label">{t("session.ownerLabel")}</span>
-            <p className="muted fine">{t("session.ownerHint")}</p>
-            <div className="session-owner-row">
+            <p className="muted fine session-manage-hint">
+              {t("session.ownerHint")}
+            </p>
+            <div className="session-manage-control">
               <AppSelect
                 value={ownerId || session.created_by}
                 onChange={setOwnerId}
@@ -805,9 +807,11 @@ export function Session() {
                 ariaLabel={t("session.ownerLabel")}
                 disabled={transferring}
               />
+            </div>
+            <div className="session-manage-action">
               <button
                 type="button"
-                className="btn btn-ghost"
+                className="btn btn-ghost btn-small"
                 onClick={handleTransferOwner}
                 disabled={
                   transferring || !ownerId || ownerId === session.created_by
@@ -824,8 +828,10 @@ export function Session() {
         {(session.canChangeStatus || user?.isAdmin) && (
           <div className="session-manage-section">
             <span className="label">{t("session.statusLabel")}</span>
-            <p className="muted fine">{t("session.statusHint")}</p>
-            <div className="session-owner-row">
+            <p className="muted fine session-manage-hint">
+              {t("session.statusHint")}
+            </p>
+            <div className="session-manage-control">
               <AppSelect
                 value={statusId || session.status || "open"}
                 onChange={setStatusId}
@@ -837,9 +843,11 @@ export function Session() {
                 disabled={savingStatus}
                 searchable={false}
               />
+            </div>
+            <div className="session-manage-action">
               <button
                 type="button"
-                className="btn btn-ghost"
+                className="btn btn-ghost btn-small"
                 onClick={handleSaveStatus}
                 disabled={
                   savingStatus || !statusId || statusId === session.status

@@ -3554,8 +3554,13 @@ code {
 }
 
 .session-manage-section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto auto auto;
+  gap: 0.4rem 0;
   padding: 0.85rem 0;
   min-width: 0;
+  align-content: start;
 }
 
 .session-manage-section + .session-manage-section {
@@ -3570,16 +3575,37 @@ code {
   padding-bottom: 0.15rem;
 }
 
-.session-manage-section .muted.fine {
-  margin: 0.35rem 0 0;
+.session-manage-hint {
+  margin: 0;
+  min-height: 2.4em;
+  line-height: 1.35;
 }
 
-.session-manage-section .order-target-date--embedded {
-  margin-top: 0;
+.session-manage-control,
+.session-manage-action {
+  min-width: 0;
 }
 
-.session-manage-section .order-target-date-header {
-  margin-bottom: 0.45rem;
+.session-manage-control .app-select,
+.session-manage-control .app-date-picker {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+}
+
+.session-manage-action {
+  display: flex;
+  align-items: center;
+  min-height: 2.15rem;
+}
+
+.session-manage-action .btn {
+  width: auto;
+}
+
+.session-manage-section .order-target-date-value {
+  margin: 0;
+  font-size: 0.95rem;
 }
 
 .session-owner-row {
@@ -3597,17 +3623,21 @@ code {
 
 @media (min-width: 900px) {
   .session-manage-card {
-    flex-direction: row;
+    display: grid;
+    grid-template-rows: auto auto auto auto;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
     align-items: stretch;
     gap: 0;
-    padding: 1rem 0.35rem;
+    padding: 1rem 0.25rem;
   }
 
   .session-manage-section {
-    flex: 1 1 0;
-    padding: 0.25rem 1rem;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: 1 / -1;
+    gap: 0.45rem 0;
+    padding: 0.15rem 1.05rem;
   }
 
   .session-manage-section + .session-manage-section {
@@ -3617,31 +3647,17 @@ code {
 
   .session-manage-section:first-child,
   .session-manage-section:last-child {
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
+    padding-top: 0.15rem;
+    padding-bottom: 0.15rem;
   }
 
-  .session-owner-row {
-    flex-direction: column;
-    align-items: stretch;
-    margin-top: auto;
-    padding-top: 0.75rem;
+  .session-manage-hint {
+    min-height: 3.2em;
   }
 
-  .session-owner-row .app-select {
-    min-width: 0;
-    width: 100%;
-    flex: none;
-  }
-
-  .session-owner-row .btn {
+  .session-manage-action .btn {
     width: 100%;
     justify-content: center;
-  }
-
-  .session-manage-section .app-date-picker {
-    width: 100%;
-    max-width: none;
   }
 }
 

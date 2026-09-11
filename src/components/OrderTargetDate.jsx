@@ -32,12 +32,37 @@ export function OrderTargetDate({
 
   const formatted = formatTargetDate(targetDate, localeTag);
 
+  if (embedded) {
+    return (
+      <>
+        <span className="label">{t("session.targetDate")}</span>
+        <p className="muted fine session-manage-hint">
+          {t("session.targetDateHint")}
+        </p>
+        <div className="session-manage-control">
+          {readOnly ? (
+            <p className="order-target-date-value">
+              {formatted ?? (
+                <span className="muted fine">{t("session.targetDateUnset")}</span>
+              )}
+            </p>
+          ) : (
+            <AppDatePicker
+              value={targetDate ?? ""}
+              onChange={handleChange}
+              disabled={saving}
+              ariaLabel={t("session.targetDateAria")}
+              placeholder={t("session.targetDatePlaceholder")}
+            />
+          )}
+        </div>
+        <div className="session-manage-action" aria-hidden />
+      </>
+    );
+  }
+
   return (
-    <div
-      className={
-        embedded ? "order-target-date order-target-date--embedded" : "order-target-date card"
-      }
-    >
+    <div className="order-target-date card">
       <div className="order-target-date-header">
         <Calendar size={18} aria-hidden />
         <span className="order-target-date-label">{t("session.targetDate")}</span>
