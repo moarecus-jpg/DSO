@@ -1,4 +1,4 @@
-import { toEurPrice } from "../../shared/currency.js";
+import { nativePrice, toEurPrice } from "../../shared/currency.js";
 import { buildPlacReleaseFormat, normalizePlacYear } from "../../shared/placFormat.js";
 import { parseDiscogsRecordUrl } from "../../shared/parseRecordUrl.js";
 import { MOCK_INVENTORY } from "../mock.js";
@@ -52,13 +52,17 @@ function listingDisplayTitle(release) {
 }
 
 function listingPrice(data) {
+  // Prefer marketplace `price` (already in curr_abbr we requested — EUR).
+  // `original_price` is the seller currency and used our approximate FX before.
+  const p = data.price;
+  if (p?.value != null) {
+    const cur = (p.currency || "EUR").toUpperCase();
+    if (cur === "EUR") return nativePrice(p.value, "EUR");
+    return toEurPrice(p.value, cur);
+  }
   const listed = data.original_price;
   if (listed?.value != null) {
     return toEurPrice(listed.value, listed.curr_abbr ?? "EUR");
-  }
-  const p = data.price;
-  if (p?.value != null) {
-    return toEurPrice(p.value, p.currency);
   }
   return { value: null, currency: "EUR" };
 }

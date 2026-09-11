@@ -4,20 +4,23 @@
  */
 export const DISPLAY_CURRENCY = "EUR";
 
-/** 1 unit of foreign currency → EUR (približni tečaji za settle). */
+/**
+ * 1 unit of foreign currency → EUR (settle / fallback FX).
+ * Approx mid-market; Discogs listings prefer API EUR when available.
+ */
 const TO_EUR_FROM = {
   EUR: 1,
-  USD: 0.93,
-  GBP: 1.17,
-  CAD: 0.68,
-  AUD: 0.61,
-  JPY: 0.0062,
-  CHF: 1.05,
-  MXN: 0.052,
-  BRL: 0.17,
-  NZD: 0.56,
-  SEK: 0.088,
-  ZAR: 0.051,
+  USD: 0.86,
+  GBP: 1.164,
+  CAD: 0.63,
+  AUD: 0.57,
+  JPY: 0.0058,
+  CHF: 1.07,
+  MXN: 0.046,
+  BRL: 0.16,
+  NZD: 0.52,
+  SEK: 0.091,
+  ZAR: 0.05,
 };
 
 export function toEurAmount(value, currency) {
