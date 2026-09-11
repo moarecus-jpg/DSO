@@ -799,7 +799,7 @@ export function Session() {
             <p className="muted fine session-manage-hint">
               {t("session.ownerHint")}
             </p>
-            <div className="session-manage-control">
+            <div className="session-manage-fields">
               <AppSelect
                 value={ownerId || session.created_by}
                 onChange={setOwnerId}
@@ -807,11 +807,9 @@ export function Session() {
                 ariaLabel={t("session.ownerLabel")}
                 disabled={transferring}
               />
-            </div>
-            <div className="session-manage-action">
               <button
                 type="button"
-                className="btn btn-ghost btn-small"
+                className="btn btn-ghost btn-small session-manage-btn"
                 onClick={handleTransferOwner}
                 disabled={
                   transferring || !ownerId || ownerId === session.created_by
@@ -831,7 +829,7 @@ export function Session() {
             <p className="muted fine session-manage-hint">
               {t("session.statusHint")}
             </p>
-            <div className="session-manage-control">
+            <div className="session-manage-fields">
               <AppSelect
                 value={statusId || session.status || "open"}
                 onChange={setStatusId}
@@ -843,11 +841,9 @@ export function Session() {
                 disabled={savingStatus}
                 searchable={false}
               />
-            </div>
-            <div className="session-manage-action">
               <button
                 type="button"
-                className="btn btn-ghost btn-small"
+                className="btn btn-ghost btn-small session-manage-btn"
                 onClick={handleSaveStatus}
                 disabled={
                   savingStatus || !statusId || statusId === session.status

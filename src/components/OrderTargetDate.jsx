@@ -39,7 +39,7 @@ export function OrderTargetDate({
         <p className="muted fine session-manage-hint">
           {t("session.targetDateHint")}
         </p>
-        <div className="session-manage-control">
+        <div className="session-manage-fields">
           {readOnly ? (
             <p className="order-target-date-value">
               {formatted ?? (
@@ -56,7 +56,6 @@ export function OrderTargetDate({
             />
           )}
         </div>
-        <div className="session-manage-action" aria-hidden />
       </>
     );
   }
