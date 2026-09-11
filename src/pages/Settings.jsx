@@ -241,6 +241,52 @@ export function Settings() {
         </div>
       )}
 
+      <div className="card settings-card" id="settings-paypal">
+        <h2>{t("settings.paypalTitle")}</h2>
+        <p className="muted settings-privacy-hint">{t("settings.paypalHint")}</p>
+        <form
+          className="settings-email-form"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const form = e.currentTarget;
+            const paypalMe = form.paypalMe.value.trim();
+            try {
+              await api("/auth/me/paypal", {
+                method: "PATCH",
+                body: JSON.stringify({ paypalMe }),
+              });
+              await refresh();
+              setMessageType("ok");
+              setMessage(t("settings.paypalSaved"));
+            } catch (err) {
+              setMessageType("warn");
+              setMessage(err.message ?? t("common.error"));
+            }
+          }}
+        >
+          <label className="settings-email-field">
+            <span>{t("settings.paypalMe")}</span>
+            <input
+              type="text"
+              name="paypalMe"
+              defaultValue={user?.paypalMe ?? ""}
+              key={user?.paypalMe ?? "paypal-empty"}
+              placeholder={t("settings.paypalPlaceholder")}
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </label>
+          <button type="submit" className="btn btn-ghost">
+            {t("settings.savePaypal")}
+          </button>
+        </form>
+        {user?.paypalMe && (
+          <p className="muted fine">
+            paypal.me/{user.paypalMe}
+          </p>
+        )}
+      </div>
+
       <div className="card settings-card">
         <h2>{t("settings.notificationsTitle")}</h2>
         <p className="muted settings-privacy-hint">{t("settings.notificationsHint")}</p>

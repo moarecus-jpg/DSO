@@ -19,6 +19,7 @@ import {
   updateMemberSettled,
   updateLinkOrdererDisplayName,
   createGroupSession,
+  createPaymentRequest,
   findUserById,
   getActiveCommunityForUser,
   getGroupSession,
@@ -64,7 +65,11 @@ import {
   shopSellerUsername,
 } from "../../shared/stores.js";
 import { DISPLAY_CURRENCY, toEurAmount } from "../../shared/currency.js";
-import { enrichSessionOrder, recordTitle } from "../../shared/orderTotals.js";
+import { enrichSessionOrder, formatPrice, recordTitle } from "../../shared/orderTotals.js";
+import {
+  normalizePaypalMe,
+  paypalMePaymentUrl,
+} from "../../shared/paypalMe.js";
 import {
   isArchivedSession,
   isReopenableSession,
@@ -102,6 +107,7 @@ import {
   notifyNewOrderOpened,
   notifyOrderClosed,
   notifyOrderNotePosted,
+  notifyPaymentRequest,
 } from "../email/notifications.js";
 
 const router = Router();
@@ -343,15 +349,23 @@ function withOrderPermissions(session, userId) {
     viewed.shipping_value != null && Number.isNaN(Number(viewed.shipping_value))
       ? null
       : viewed.shipping_value;
+  const canManageSettle = isCreator || isAdmin;
+  const allRequests = session.paymentRequests ?? [];
+  const paymentRequests = canManageSettle
+    ? allRequests
+    : allRequests.filter((r) => r.toUserId === userId);
   return {
     ...viewed,
     shipping_value: shippingValue,
+    paymentRequests,
+    ownerHasPaypal: Boolean(session.ownerHasPaypal),
     canManageMembers: isAdmin,
     canManageShipping: isCreator || isAdmin,
     canManageOrder: isAdmin,
     canAddAllToCart: isCreator || isAdmin,
     canReopen: isReopenableSession(session.status) && (isCreator || isAdmin),
     canChangeStatus: appAdmin,
+    canRequestPayment: canManageSettle,
   };
 }
 
@@ -1268,6 +1282,126 @@ router.patch("/:id/members/:userId/settle", requireUser, (req, res) => {
     console.error(err);
     res.status(500).json({
       error: err.message ?? "Poravnave ni bilo mogoče shraniti.",
+    });
+  }
+});
+
+router.post("/:id/payment-requests", requireUser, async (req, res) => {
+  const { id } = req.params;
+  const userId = req.session.userId;
+  const all = Boolean(req.body?.all);
+  const targetUserId = typeof req.body?.userId === "string" ? req.body.userId : null;
+  const noteRaw = typeof req.body?.note === "string" ? req.body.note.trim() : "";
+  const note = noteRaw ? noteRaw.slice(0, 500) : null;
+
+  if (!all && !targetUserId) {
+    return res.status(400).json({ error: "Izberi udeleženca ali pošlji vsem." });
+  }
+
+  if (useMockAuth() && id.startsWith("mock")) {
+    return res.status(400).json({
+      error: "PayPal zahtevki v demo načinu niso na voljo.",
+    });
+  }
+
+  const session = getGroupSession(id);
+  if (!session) return res.status(404).json({ error: "Session not found" });
+  if (!isOrderCreator(session, userId) && !isOrderAdmin(session, userId)) {
+    return res.status(403).json({
+      error: "Samo odpravitelj naročila lahko pošlje PayPal zahtevek.",
+    });
+  }
+
+  const owner = findUserById(session.created_by);
+  const paypalMe = normalizePaypalMe(owner?.paypal_me);
+  if (!paypalMe) {
+    return res.status(400).json({
+      error:
+        "Najprej v Nastavitvah shrani svoj PayPal.me handle, nato pošlji zahtevek.",
+    });
+  }
+
+  const enriched = enrichSessionOrder(session);
+  const currency = enriched.orderGrandTotal?.currency || DISPLAY_CURRENCY;
+  const rows = (enriched.memberTotals ?? []).filter((row) => {
+    if (!row.userId) return false;
+    if (row.userId === session.created_by) return false;
+    if (row.settled) return false;
+    const due = Number(row.due ?? 0);
+    if (!(due > 0)) return false;
+    if (!all && row.userId !== targetUserId) return false;
+    return true;
+  });
+
+  if (!rows.length) {
+    return res.status(400).json({
+      error: all
+        ? "Ni udeležencev z odprtim zneskom za zahtevek."
+        : "Za tega udeleženca ni odprtega zneska (ali je že poravnan).",
+    });
+  }
+
+  const fromUser = findUserById(userId);
+  const fromName =
+    fromUser?.name || fromUser?.username || session.creator_name || "Order owner";
+  const created = [];
+  const emailResults = [];
+
+  try {
+    for (const row of rows) {
+      const amountValue = Math.round(Number(row.due) * 100) / 100;
+      const paypalUrl = paypalMePaymentUrl(paypalMe, amountValue, currency);
+      if (!paypalUrl) {
+        return res.status(400).json({ error: "PayPal povezave ni bilo mogoče ustvariti." });
+      }
+      const amountLabel = formatPrice(amountValue, currency);
+      const requestNote =
+        note ||
+        `DCO · ${session.title || "order"} · ${row.name || "member"}`;
+      const request = createPaymentRequest({
+        sessionId: id,
+        fromUserId: userId,
+        toUserId: row.userId,
+        amountValue,
+        amountCurrency: currency,
+        paypalMe,
+        paypalUrl,
+        note: requestNote,
+      });
+      created.push(request);
+
+      const toUser = findUserById(row.userId);
+      try {
+        const mail = await notifyPaymentRequest({
+          baseUrl: appBaseUrl(req),
+          session,
+          toUser,
+          fromName,
+          amountLabel,
+          paypalUrl,
+          note: requestNote,
+        });
+        emailResults.push({
+          userId: row.userId,
+          emailed: mail?.ok !== false && mail?.reason !== "no_email",
+          reason: mail?.reason ?? null,
+        });
+      } catch (err) {
+        console.error("Payment request email:", err);
+        emailResults.push({ userId: row.userId, emailed: false, reason: "send_failed" });
+      }
+    }
+
+    const updated = getGroupSession(id);
+    res.status(201).json({
+      requests: created,
+      emailResults,
+      session: withOrderPermissions(updated, userId),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: err.message ?? "PayPal zahtevka ni bilo mogoče poslati.",
     });
   }
 });

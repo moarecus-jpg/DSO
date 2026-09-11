@@ -19,7 +19,13 @@ import {
   upsertGoogleUser,
   verifyLocalUser,
   ensureMembershipInSloveniaCommunity,
+  updateUserPaypalMe,
+  listPendingPaymentRequestsForUser,
+  countPendingPaymentRequestsForUser,
 } from "../db.js";
+import {
+  normalizePaypalMe,
+} from "../../shared/paypalMe.js";
 import {
   exchangeGoogleCode,
   getGoogleAuthUrl,
@@ -186,6 +192,58 @@ router.patch("/me/notifications", (req, res) => {
 
   const updated = updateNotificationPrefs(req.session.userId, prefs);
   res.json({ user: publicUserWithCommunities(updated) });
+});
+
+router.patch("/me/paypal", (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Prijavi se v aplikacijo." });
+  }
+
+  const raw = req.body?.paypalMe;
+  if (raw != null && typeof raw !== "string") {
+    return res.status(400).json({ error: "Neveljaven PayPal.me handle." });
+  }
+
+  const trimmed = raw?.trim() ?? "";
+  const handle = trimmed === "" ? null : normalizePaypalMe(trimmed);
+  if (trimmed !== "" && !handle) {
+    return res.status(400).json({
+      error:
+        "Neveljaven PayPal.me. Vnesi handle (npr. moarecus) ali povezavo paypal.me/…",
+    });
+  }
+
+  const updated = updateUserPaypalMe(req.session.userId, handle);
+  if (!updated) {
+    return res.status(404).json({ error: "Uporabnik ni bil najden." });
+  }
+  res.json({ user: publicUserWithCommunities(updated) });
+});
+
+router.get("/me/payment-requests", (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Prijavi se v aplikacijo." });
+  }
+  if (useMockAuth()) {
+    return res.json({ requests: [], pendingCount: 0 });
+  }
+  const requests = listPendingPaymentRequestsForUser(req.session.userId);
+  res.json({
+    requests,
+    pendingCount: requests.length,
+  });
+});
+
+router.get("/me/payment-requests/count", (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Prijavi se v aplikacijo." });
+  }
+  if (useMockAuth()) {
+    return res.json({ pendingCount: 0 });
+  }
+  res.json({
+    pendingCount: countPendingPaymentRequestsForUser(req.session.userId),
+  });
 });
 
 router.post("/forgot-password", async (req, res) => {

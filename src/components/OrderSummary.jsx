@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { ClipboardCheck, Pencil } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ClipboardCheck, HandCoins, Pencil } from "lucide-react";
 import { formatPrice } from "../../shared/orderTotals.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { isValidShippingNumber, normalizeShippingNumber } from "../utils/sanitizeError.js";
@@ -20,6 +21,14 @@ export function OrderSummary({
   onToggleSettle,
   settlingUserId = null,
   canManageSettle = false,
+  canRequestPayment = false,
+  ownerHasPaypal = false,
+  ownerUserId = null,
+  paymentRequests = [],
+  currentUserId = null,
+  onRequestPayment,
+  requestingUserId = null,
+  requestingAll = false,
 }) {
   const { t } = useLocale();
 
@@ -41,6 +50,21 @@ export function OrderSummary({
   const shipCur = shippingCurrency ?? computedShipCurrency ?? currency;
   const mode = shippingMode ?? computedMode ?? "equal";
   const byItems = mode === "by_items";
+
+  const pendingByUser = new Map();
+  for (const req of paymentRequests) {
+    if (req.status !== "pending" || !req.toUserId) continue;
+    if (!pendingByUser.has(req.toUserId)) {
+      pendingByUser.set(req.toUserId, req);
+    }
+  }
+
+  const requestableCount = memberTotals.filter((row) => {
+    if (!row.userId || row.settled) return false;
+    if (ownerUserId && row.userId === ownerUserId) return false;
+    if (Number(row.due ?? 0) <= 0) return false;
+    return true;
+  }).length;
 
   const [draft, setDraft] = useState("");
   const [draftSplit, setDraftSplit] = useState("");
@@ -143,6 +167,27 @@ export function OrderSummary({
         </p>
       )}
 
+      {canRequestPayment && !ownerHasPaypal && (
+        <p className="order-summary-paypal-hint muted">
+          {t("summary.paypalSetupHint")}{" "}
+          <Link to="/settings#settings-paypal">{t("summary.paypalSetupLink")}</Link>
+        </p>
+      )}
+
+      {canRequestPayment && ownerHasPaypal && requestableCount > 0 && (
+        <div className="order-summary-paypal-actions">
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            disabled={requestingAll || Boolean(requestingUserId)}
+            onClick={() => onRequestPayment?.({ all: true })}
+          >
+            <HandCoins size={16} strokeWidth={2.2} aria-hidden />
+            {t("summary.requestAllPaypal")}
+          </button>
+        </div>
+      )}
+
       <div className="order-summary-grid order-summary-grid--settle">
         <div className="order-summary-grid-head">
           <span>{t("summary.participants")}</span>
@@ -156,6 +201,18 @@ export function OrderSummary({
         {memberTotals.map((row) => {
           const settling = settlingUserId === row.userId;
           const settled = Boolean(row.settled);
+          const pending = row.userId ? pendingByUser.get(row.userId) : null;
+          const requesting = requestingUserId === row.userId;
+          const canRequestRow =
+            canRequestPayment &&
+            ownerHasPaypal &&
+            row.userId &&
+            (!ownerUserId || row.userId !== ownerUserId) &&
+            !settled &&
+            Number(row.due ?? 0) > 0;
+          const isOwnPending =
+            pending && currentUserId && pending.toUserId === currentUserId;
+
           return (
             <div
               key={`${row.userId ?? ""}-${row.name}`}
@@ -163,7 +220,14 @@ export function OrderSummary({
                 settled ? " order-summary-grid-row--settled" : ""
               }`}
             >
-              <span className="order-summary-col-name">{row.name}</span>
+              <span className="order-summary-col-name">
+                {row.name}
+                {pending && !settled && (
+                  <span className="order-summary-requested muted fine">
+                    {t("summary.paypalRequested")}
+                  </span>
+                )}
+              </span>
               <span className="order-summary-col-num">{row.count}</span>
               <span className="order-summary-col-amount">
                 {formatPrice(row.total, row.currency)}
@@ -178,34 +242,66 @@ export function OrderSummary({
                 {formatPrice(row.due ?? row.total, currency)}
               </span>
               <span className="order-summary-col-settle">
-                <button
-                  type="button"
-                  className={`order-settle-btn${
-                    settled ? " order-settle-btn--settled" : ""
-                  }`}
-                  disabled={
-                    !canManageSettle ||
-                    readOnly ||
-                    !row.userId ||
-                    settling ||
-                    !onToggleSettle
-                  }
-                  aria-pressed={settled}
-                  aria-label={
-                    settled
-                      ? t("summary.unsettleAria", { name: row.name })
-                      : t("summary.settleAria", { name: row.name })
-                  }
-                  title={
-                    settled ? t("summary.settled") : t("summary.markSettled")
-                  }
-                  onClick={() => onToggleSettle?.(row.userId, !settled)}
-                >
-                  <span className="order-settle-icon" aria-hidden>
-                    <ClipboardCheck size={18} strokeWidth={2.25} />
-                    <span className="order-settle-currency">$</span>
-                  </span>
-                </button>
+                <span className="order-summary-settle-actions">
+                  <button
+                    type="button"
+                    className={`order-settle-btn${
+                      settled ? " order-settle-btn--settled" : ""
+                    }`}
+                    disabled={
+                      !canManageSettle ||
+                      readOnly ||
+                      !row.userId ||
+                      settling ||
+                      !onToggleSettle
+                    }
+                    aria-pressed={settled}
+                    aria-label={
+                      settled
+                        ? t("summary.unsettleAria", { name: row.name })
+                        : t("summary.settleAria", { name: row.name })
+                    }
+                    title={
+                      settled ? t("summary.settled") : t("summary.markSettled")
+                    }
+                    onClick={() => onToggleSettle?.(row.userId, !settled)}
+                  >
+                    <span className="order-settle-icon" aria-hidden>
+                      <ClipboardCheck size={18} strokeWidth={2.25} />
+                      <span className="order-settle-currency">$</span>
+                    </span>
+                  </button>
+
+                  {canRequestRow && (
+                    <button
+                      type="button"
+                      className="order-paypal-btn"
+                      disabled={requesting || requestingAll}
+                      title={t("summary.requestPaypal")}
+                      aria-label={t("summary.requestPaypalAria", {
+                        name: row.name,
+                      })}
+                      onClick={() =>
+                        onRequestPayment?.({ userId: row.userId })
+                      }
+                    >
+                      <HandCoins size={17} strokeWidth={2.25} aria-hidden />
+                    </button>
+                  )}
+
+                  {isOwnPending && (
+                    <a
+                      className="order-paypal-btn order-paypal-btn--pay"
+                      href={pending.paypalUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={t("summary.payPaypal")}
+                      aria-label={t("summary.payPaypal")}
+                    >
+                      <HandCoins size={17} strokeWidth={2.25} aria-hidden />
+                    </a>
+                  )}
+                </span>
               </span>
             </div>
           );

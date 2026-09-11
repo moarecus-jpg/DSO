@@ -2512,7 +2512,7 @@ code {
     minmax(4.25rem, 0.95fr)
     minmax(4.25rem, 0.95fr)
     minmax(5.5rem, 1fr)
-    3rem;
+    4.75rem;
   column-gap: 0.75rem;
 }
 
@@ -2616,6 +2616,105 @@ code {
   border-color: rgba(74, 222, 128, 0.55);
   background: rgba(34, 197, 94, 0.22);
   color: #86efac;
+}
+
+.order-summary-settle-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.order-paypal-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
+  border: 1px solid rgba(0, 112, 186, 0.45);
+  border-radius: 0.65rem;
+  background: rgba(0, 112, 186, 0.14);
+  color: #7dd3fc;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.order-paypal-btn:hover:not(:disabled) {
+  border-color: rgba(56, 189, 248, 0.7);
+  background: rgba(0, 112, 186, 0.28);
+  color: #e0f2fe;
+}
+
+.order-paypal-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.order-paypal-btn--pay {
+  border-color: rgba(14, 165, 233, 0.65);
+  background: rgba(14, 165, 233, 0.22);
+}
+
+.order-summary-paypal-hint,
+.order-summary-paypal-actions {
+  margin: 0 0 0.75rem;
+}
+
+.order-summary-paypal-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.order-summary-requested {
+  display: block;
+  margin-top: 0.15rem;
+}
+
+.payment-request-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.payment-request-list {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.payment-request-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.payment-request-card-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.payment-request-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.payment-request-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
 }
 
 .order-settle-icon {

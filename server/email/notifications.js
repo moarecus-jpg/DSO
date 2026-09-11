@@ -6,6 +6,7 @@ import { sendEmail } from "./mailer.js";
 import {
   listUsersForNewOrderNotifications,
   listSessionMembersForNotifications,
+  isDeliverableEmail,
 } from "../db.js";
 import { displayOrderTitle } from "../../shared/orderTitle.js";
 import {
@@ -119,6 +120,52 @@ export async function notifyNewOrderOpened({ baseUrl, session, excludeUserId }) 
   );
 
   await notifyUsers(users, {
+    subject,
+    text,
+    html,
+    attachments: withBrandAttachments(undefined, logoBuffer),
+  });
+}
+
+export async function notifyPaymentRequest({
+  baseUrl,
+  session,
+  toUser,
+  fromName,
+  amountLabel,
+  paypalUrl,
+  note,
+}) {
+  if (!toUser?.email || !isDeliverableEmail(toUser.email)) {
+    return { ok: false, reason: "no_email" };
+  }
+
+  const title = displayOrderTitle(session);
+  const url = orderShareUrl(baseUrl, session.id);
+  const linkLabel = orderEmailLinkLabel(session, { locale: "en", action: "view" });
+  const subject = `${APP_SHORT_NAME}: Payment request — ${amountLabel} for ${title}`;
+  const noteBlock = note?.trim() ? `\n\nNote: ${note.trim()}` : "";
+  const text = `${fromName} requested ${amountLabel} for the group order ${title}.
+
+Pay with PayPal:
+${paypalUrl}
+${noteBlock}
+
+${linkLabel}: ${url}`;
+  const noteHtml = note?.trim()
+    ? `<p>${note.trim().replace(/\n/g, "<br>")}</p>`
+    : "";
+  const { html, logoBuffer } = brandedHtml(
+    baseUrl,
+    `<p><strong>${fromName}</strong> requested <strong>${amountLabel}</strong> for the group order <strong>${title}</strong>.</p>
+<p><a href="${paypalUrl}" style="display:inline-block;padding:10px 16px;background:#0070ba;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">Pay with PayPal</a></p>
+<p style="font-size:13px;color:#555;word-break:break-all;"><a href="${paypalUrl}">${paypalUrl}</a></p>
+${noteHtml}
+<p><a href="${url}">${linkLabel}</a></p>`
+  );
+
+  return sendEmail({
+    to: toUser.email,
     subject,
     text,
     html,

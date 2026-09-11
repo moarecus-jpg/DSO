@@ -22,6 +22,7 @@ import { useLocale } from "../hooks/useLocale.jsx";
 import { sellerMywantsUrl } from "../../shared/discogsUrls.js";
 import { displayOrderTitle } from "../../shared/orderTitle.js";
 import { orderPageTitle } from "../../shared/orderShare.js";
+import { formatPrice } from "../../shared/orderTotals.js";
 import { APP_TITLE } from "../../shared/brand.js";
 import { canReportItemIssue } from "../../shared/orderReview.js";
 import { getStoreConfig, isShopStore, normalizeStore } from "../../shared/stores.js";
@@ -57,6 +58,8 @@ export function Session() {
   const [footerExpanded, setFooterExpanded] = useState(false);
   const [shippingError, setShippingError] = useState(null);
   const [settlingUserId, setSettlingUserId] = useState(null);
+  const [requestingUserId, setRequestingUserId] = useState(null);
+  const [requestingAll, setRequestingAll] = useState(false);
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
   const [reopening, setReopening] = useState(false);
   const [ownerId, setOwnerId] = useState("");
@@ -302,6 +305,29 @@ export function Session() {
     }
   }
 
+  async function handleRequestPayment({ userId, all = false } = {}) {
+    setShippingError(null);
+    if (all) setRequestingAll(true);
+    else setRequestingUserId(userId ?? null);
+    try {
+      const { session: updated } = await api(
+        `/api/sessions/${id}/payment-requests`,
+        {
+          method: "POST",
+          body: JSON.stringify(all ? { all: true } : { userId }),
+        }
+      );
+      setSession(updated);
+      setFooterExpanded(true);
+    } catch (err) {
+      setShippingError(err.message ?? t("errors.paymentRequestFailed"));
+      setFooterExpanded(true);
+    } finally {
+      setRequestingAll(false);
+      setRequestingUserId(null);
+    }
+  }
+
   async function handleSaveTargetDate(targetDate) {
     setSavingTargetDate(true);
     try {
@@ -535,6 +561,11 @@ export function Session() {
   const recordCount = session.links?.length ?? 0;
   const canManageOrder = session.canManageOrder;
   const showOrderFooter = true;
+  const myPaymentRequest = (session.paymentRequests ?? []).find(
+    (req) =>
+      req.status === "pending" &&
+      req.toUserId === user?.id
+  );
   const backTo = sessionListPath(session.status);
   const backLabel = t(sessionListNavKey(session.status));
   const statusNoteKey = sessionStatusNoteKey(session.status);
@@ -651,6 +682,34 @@ export function Session() {
       <Link to={backTo} className="back-link">
         <ArrowLeft size={16} /> {backLabel}
       </Link>
+
+      {myPaymentRequest && (
+        <div className="banner banner-ok payment-request-banner" role="status">
+          <div>
+            <strong>
+              {t("payments.bannerTitle", {
+                amount: formatPrice(
+                  myPaymentRequest.amountValue,
+                  myPaymentRequest.amountCurrency
+                ),
+              })}
+            </strong>
+            <p className="muted fine">
+              {t("payments.bannerFrom", {
+                name: myPaymentRequest.fromUserName || "—",
+              })}
+            </p>
+          </div>
+          <a
+            className="btn btn-primary"
+            href={myPaymentRequest.paypalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {t("payments.payPaypal")}
+          </a>
+        </div>
+      )}
 
       <header className="page-header">
         <div>
@@ -904,6 +963,16 @@ export function Session() {
               : undefined
           }
           settlingUserId={settlingUserId}
+          canRequestPayment={Boolean(session.canRequestPayment)}
+          ownerHasPaypal={Boolean(session.ownerHasPaypal)}
+          ownerUserId={session.created_by}
+          paymentRequests={session.paymentRequests ?? []}
+          currentUserId={user?.id}
+          onRequestPayment={
+            session.canRequestPayment ? handleRequestPayment : undefined
+          }
+          requestingUserId={requestingUserId}
+          requestingAll={requestingAll}
         />
       )}
 

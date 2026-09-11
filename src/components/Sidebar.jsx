@@ -6,6 +6,7 @@ import {
   ChevronRight,
   CircleOff,
   Folder,
+  HandCoins,
   Lock,
   Package,
   Plus,
@@ -63,6 +64,13 @@ const ORDER_LINKS = [
     iconClass: "stats",
     labelKey: "myStatistics",
   },
+  {
+    to: "/payments",
+    icon: HandCoins,
+    iconClass: "payments",
+    labelKey: "paymentRequests",
+    countKey: "payments",
+  },
 ];
 
 const PLAC_LINKS = [
@@ -92,11 +100,24 @@ export function Sidebar() {
 
   useEffect(() => {
     api("/api/sessions/counts")
-      .then((d) => setCounts(d.counts))
+      .then((d) =>
+        setCounts((prev) => ({
+          ...(prev ?? {}),
+          ...(d.counts ?? {}),
+        }))
+      )
       .catch(() => setCounts(null));
     api("/api/plac/counts")
       .then((d) => setPlacCounts(d))
       .catch(() => setPlacCounts(null));
+    api("/auth/me/payment-requests/count")
+      .then((d) =>
+        setCounts((prev) => ({
+          ...(prev ?? {}),
+          payments: d.pendingCount ?? 0,
+        }))
+      )
+      .catch(() => {});
   }, [pathname]);
 
   return (

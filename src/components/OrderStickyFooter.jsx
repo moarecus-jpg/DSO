@@ -26,6 +26,14 @@ export function OrderStickyFooter({
   onToggleSettle,
   settlingUserId = null,
   canManageSettle = false,
+  canRequestPayment = false,
+  ownerHasPaypal = false,
+  ownerUserId = null,
+  paymentRequests = [],
+  currentUserId = null,
+  onRequestPayment,
+  requestingUserId = null,
+  requestingAll = false,
 }) {
   const { t } = useLocale();
   const [expanded, setExpanded] = useState(false);
@@ -97,6 +105,14 @@ export function OrderStickyFooter({
                 onToggleSettle={onToggleSettle}
                 settlingUserId={settlingUserId}
                 canManageSettle={canManageSettle}
+                canRequestPayment={canRequestPayment}
+                ownerHasPaypal={ownerHasPaypal}
+                ownerUserId={ownerUserId}
+                paymentRequests={paymentRequests}
+                currentUserId={currentUserId}
+                onRequestPayment={onRequestPayment}
+                requestingUserId={requestingUserId}
+                requestingAll={requestingAll}
               />
             </div>
           )}

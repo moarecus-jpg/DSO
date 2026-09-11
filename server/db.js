@@ -164,6 +164,7 @@ for (const sql of [
   "ALTER TABLE plac_listings ADD COLUMN category TEXT DEFAULT 'vinyl'",
   "ALTER TABLE users ADD COLUMN shop_discount_percent REAL NOT NULL DEFAULT 0",
   "ALTER TABLE users ADD COLUMN shop_discount_label TEXT",
+  "ALTER TABLE users ADD COLUMN paypal_me TEXT",
 ]) {
   try {
     db.exec(sql);
@@ -171,6 +172,29 @@ for (const sql of [
     /* column already exists */
   }
 }
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS payment_requests (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    from_user_id TEXT NOT NULL,
+    to_user_id TEXT NOT NULL,
+    amount_value REAL NOT NULL,
+    amount_currency TEXT NOT NULL DEFAULT 'EUR',
+    paypal_me TEXT NOT NULL,
+    paypal_url TEXT NOT NULL,
+    note TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (session_id) REFERENCES group_sessions(id),
+    FOREIGN KEY (from_user_id) REFERENCES users(id),
+    FOREIGN KEY (to_user_id) REFERENCES users(id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_payment_requests_session
+    ON payment_requests(session_id, created_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_payment_requests_to_user
+    ON payment_requests(to_user_id, status, created_at DESC);
+`);
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS plac_threads (
@@ -782,8 +806,18 @@ export function getGroupSession(id) {
 
   const notes = listSessionNotes(id);
   const issues = listSessionItemIssues(id);
+  const paymentRequests = listSessionPaymentRequests(id);
+  const owner = session.created_by ? findUserById(session.created_by) : null;
 
-  return withOrderTitle({ ...session, members, links, notes, issues });
+  return withOrderTitle({
+    ...session,
+    members,
+    links,
+    notes,
+    issues,
+    paymentRequests,
+    ownerHasPaypal: Boolean(owner?.paypal_me),
+  });
 }
 
 export function getGroupSessionShareMeta(id) {
@@ -1107,14 +1141,136 @@ export function updateSessionShipping(
 
 export function updateMemberSettled(sessionId, memberUserId, settled) {
   const settledAt = settled ? new Date().toISOString() : null;
-  const result = db
-    .prepare(
-      `UPDATE session_members SET settled_at = ?
-       WHERE session_id = ? AND user_id = ?`
-    )
-    .run(settledAt, sessionId, memberUserId);
-  if (result.changes === 0) return null;
+  const apply = db.transaction(() => {
+    const result = db
+      .prepare(
+        `UPDATE session_members SET settled_at = ?
+         WHERE session_id = ? AND user_id = ?`
+      )
+      .run(settledAt, sessionId, memberUserId);
+    if (result.changes === 0) return false;
+    if (settled) {
+      db.prepare(
+        `UPDATE payment_requests
+         SET status = 'paid'
+         WHERE session_id = ? AND to_user_id = ? AND status = 'pending'`
+      ).run(sessionId, memberUserId);
+    }
+    return true;
+  });
+  if (!apply()) return null;
   return getGroupSession(sessionId);
+}
+
+function mapPaymentRequestRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    sessionId: row.session_id,
+    fromUserId: row.from_user_id,
+    toUserId: row.to_user_id,
+    fromUserName: row.from_user_name ?? null,
+    toUserName: row.to_user_name ?? null,
+    amountValue: row.amount_value,
+    amountCurrency: row.amount_currency || "EUR",
+    paypalMe: row.paypal_me,
+    paypalUrl: row.paypal_url,
+    note: row.note ?? null,
+    status: row.status,
+    createdAt: row.created_at,
+    orderTitle: row.order_title ?? null,
+    orderId: row.session_id,
+  };
+}
+
+export function listSessionPaymentRequests(sessionId) {
+  return db
+    .prepare(
+      `SELECT pr.*,
+              fu.name as from_user_name,
+              tu.name as to_user_name
+       FROM payment_requests pr
+       LEFT JOIN users fu ON fu.id = pr.from_user_id
+       LEFT JOIN users tu ON tu.id = pr.to_user_id
+       WHERE pr.session_id = ?
+       ORDER BY pr.created_at DESC`
+    )
+    .all(sessionId)
+    .map(mapPaymentRequestRow);
+}
+
+export function listPendingPaymentRequestsForUser(userId) {
+  return db
+    .prepare(
+      `SELECT pr.*,
+              fu.name as from_user_name,
+              tu.name as to_user_name,
+              gs.title as order_title
+       FROM payment_requests pr
+       JOIN group_sessions gs ON gs.id = pr.session_id
+       LEFT JOIN users fu ON fu.id = pr.from_user_id
+       LEFT JOIN users tu ON tu.id = pr.to_user_id
+       WHERE pr.to_user_id = ? AND pr.status = 'pending'
+       ORDER BY pr.created_at DESC`
+    )
+    .all(userId)
+    .map(mapPaymentRequestRow);
+}
+
+export function countPendingPaymentRequestsForUser(userId) {
+  const row = db
+    .prepare(
+      `SELECT COUNT(*) as c FROM payment_requests
+       WHERE to_user_id = ? AND status = 'pending'`
+    )
+    .get(userId);
+  return Number(row?.c) || 0;
+}
+
+export function createPaymentRequest({
+  sessionId,
+  fromUserId,
+  toUserId,
+  amountValue,
+  amountCurrency = "EUR",
+  paypalMe,
+  paypalUrl,
+  note = null,
+}) {
+  const id = randomUUID();
+  const apply = db.transaction(() => {
+    db.prepare(
+      `UPDATE payment_requests
+       SET status = 'superseded'
+       WHERE session_id = ? AND to_user_id = ? AND status = 'pending'`
+    ).run(sessionId, toUserId);
+    db.prepare(
+      `INSERT INTO payment_requests (
+         id, session_id, from_user_id, to_user_id,
+         amount_value, amount_currency, paypal_me, paypal_url, note, status
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`
+    ).run(
+      id,
+      sessionId,
+      fromUserId,
+      toUserId,
+      amountValue,
+      amountCurrency,
+      paypalMe,
+      paypalUrl,
+      note
+    );
+  });
+  apply();
+  return listSessionPaymentRequests(sessionId).find((r) => r.id === id) ?? null;
+}
+
+export function updateUserPaypalMe(userId, paypalMe) {
+  db.prepare("UPDATE users SET paypal_me = ? WHERE id = ?").run(
+    paypalMe,
+    userId
+  );
+  return findUserById(userId);
 }
 
 function parseTargetDate(value) {
@@ -1353,6 +1509,7 @@ export function deleteGroupSession(id) {
         WHERE issue_id IN (SELECT id FROM session_item_issues WHERE session_id = ?)`
     ).run(id);
     db.prepare("DELETE FROM session_item_issues WHERE session_id = ?").run(id);
+    db.prepare("DELETE FROM payment_requests WHERE session_id = ?").run(id);
     db.prepare("DELETE FROM session_notes WHERE session_id = ?").run(id);
     db.prepare("DELETE FROM session_links WHERE session_id = ?").run(id);
     db.prepare("DELETE FROM session_members WHERE session_id = ?").run(id);
@@ -2429,6 +2586,7 @@ export function publicUser(user) {
         : Boolean(user.notify_order_attention),
     shopDiscountPercent: Number(user.shop_discount_percent) || 0,
     shopDiscountLabel: user.shop_discount_label ?? null,
+    paypalMe: user.paypal_me ?? null,
     activeCommunityId: user.active_community_id ?? null,
   };
 }

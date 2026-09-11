@@ -5,6 +5,7 @@ import {
   BarChart3,
   CircleOff,
   Folder,
+  HandCoins,
   Lock,
   MoreHorizontal,
   Package,
@@ -34,6 +35,7 @@ export function MobileNav() {
     pathname.startsWith("/unplaced") ||
     pathname.startsWith("/canceled") ||
     pathname.startsWith("/my-statistics") ||
+    pathname.startsWith("/payments") ||
     pathname.startsWith("/settings");
 
   useEffect(() => {
@@ -149,6 +151,15 @@ export function MobileNav() {
               >
                 <BarChart3 size={16} strokeWidth={2.1} aria-hidden />
                 {t("nav.mobileStatistics")}
+              </NavLink>
+              <NavLink
+                to="/payments"
+                role="menuitem"
+                className="mobile-nav-more-item"
+                onClick={() => setMoreOpen(false)}
+              >
+                <HandCoins size={16} strokeWidth={2.1} aria-hidden />
+                {t("nav.paymentRequests")}
               </NavLink>
               <NavLink
                 to="/settings"
