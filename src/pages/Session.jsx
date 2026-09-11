@@ -864,7 +864,6 @@ export function Session() {
         )}
         <OrderNotes
           notes={session.notes}
-          readOnly={isArchived}
           posting={postingNote}
           onPostNote={handlePostNote}
         />

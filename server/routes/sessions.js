@@ -1692,9 +1692,6 @@ router.post("/:id/notes", requireUser, (req, res) => {
       return res.status(404).json({ error: "Session not found" });
     }
     const summary = mockSessions[idx];
-    if (isArchivedSession(summary.status ?? "open")) {
-      return res.status(400).json({ error: "Zaključenega naročila ni mogoče urejati." });
-    }
     const user = findUserById(userId);
     const note = {
       id: `note-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -1714,9 +1711,6 @@ router.post("/:id/notes", requireUser, (req, res) => {
 
   const session = getGroupSession(id);
   if (!session) return res.status(404).json({ error: "Session not found" });
-  if (isArchivedSession(session.status)) {
-    return res.status(400).json({ error: "Zaključenega naročila ni mogoče urejati." });
-  }
   if (!isSessionMember(id, userId)) {
     return res.status(403).json({ error: "Nisi udeleženec tega naročila." });
   }
