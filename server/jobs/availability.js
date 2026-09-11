@@ -162,7 +162,7 @@ export async function refreshSessionAvailability(
 }
 
 /** Fill prices for open shop orders that still have null price_value.
- *  Decks: always re-scrape open orders — stale rows often hold USD×0.93 leftovers. */
+ *  Decks/HHV: always re-scrape open orders (geo/locale pricing). */
 export async function backfillMissingShopPrices() {
   const sessions = listOpenGroupSessions();
   let refreshed = 0;
@@ -173,17 +173,17 @@ export async function backfillMissingShopPrices() {
     const session = getGroupSession(summary.id);
     if (!session) continue;
     const storeId = normalizeStore(session.store);
-    const isDecks = storeId === "decks";
+    const forceFull = storeId === "decks" || storeId === "hhv";
     const missingBefore = (session.links ?? []).filter(
       (link) => link.price_value == null || !Number.isFinite(Number(link.price_value))
     ).length;
-    if (!isDecks && !missingBefore) continue;
-    if (isDecks && !(session.links ?? []).length) continue;
+    if (!forceFull && !missingBefore) continue;
+    if (forceFull && !(session.links ?? []).length) continue;
 
     try {
       const result = await refreshSessionAvailability(session, {
         force: true,
-        onlyMissingPrice: !isDecks,
+        onlyMissingPrice: !forceFull,
       });
       refreshed += 1;
       const stillMissing = (result.session?.links ?? []).filter(
@@ -193,7 +193,9 @@ export async function backfillMissingShopPrices() {
       filled += Math.max(0, missingBefore - stillMissing);
       console.info(
         `[availability] shop price backfill ${session.id}: ${
-          isDecks ? "decks full refresh" : `${missingBefore - stillMissing}/${missingBefore} filled`
+          forceFull
+            ? `${storeId} full refresh`
+            : `${missingBefore - stillMissing}/${missingBefore} filled`
         }`
       );
     } catch (err) {

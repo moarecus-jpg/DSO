@@ -19,7 +19,7 @@ export const SHOP_CART_HOST = {
 };
 
 export const SHOP_CART_URL = {
-  [STORE_HHV]: "https://www.hhv.de/en/cart",
+  [STORE_HHV]: "https://www.hhv.de/en-SI-EUR-eu/cart",
   [STORE_YOYAKU]: "https://yoyaku.io/cart/",
   [STORE_DECKS]: "https://www.decks.de/decks/order/warenkorb.php",
   [STORE_DEEJAY]: "https://www.deejay.de/m_Info/sm_Cart",
@@ -298,7 +298,7 @@ export function shopCartLabel(store) {
 export const HHV_CART_URL = SHOP_CART_URL[STORE_HHV];
 export function buildHhvCartBookmarklet(productIds) {
   const links = (productIds ?? []).map((id) => ({
-    url: `https://www.hhv.de/en/records/item/x-${id}`,
+    url: `https://www.hhv.de/en-SI-EUR-eu/records/item/x-${id}`,
     listing_id: id,
   }));
   return buildShopCartBookmarklet(links, STORE_HHV);

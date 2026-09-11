@@ -117,8 +117,8 @@ export function Session() {
       .catch(console.error);
   }, [searchParams, setSearchParams, t]);
 
-  // Shop orders: fill/fix prices on open. Decks always re-scrapes once
-  // (Railway sees export prices; server converts to EU ≈ ×1.22).
+  // Shop orders: fill/fix prices on open.
+  // Decks: export→EU conversion. HHV: SI locale prices (DE vs SI differ).
   useEffect(() => {
     if (!session || loading) return;
     if (autoPriceRefreshForId.current === session.id) return;
@@ -128,7 +128,8 @@ export function Session() {
     const missingPrice = (session.links ?? []).some(
       (link) => link.price_value == null && link.priceValue == null
     );
-    if (!missingPrice && storeId !== "decks") {
+    const forceRescrape = storeId === "decks" || storeId === "hhv";
+    if (!missingPrice && !forceRescrape) {
       autoPriceRefreshForId.current = session.id;
       return;
     }

@@ -27,6 +27,45 @@ export function stableListingId(key) {
   return Math.abs(hash) || 1;
 }
 
+/** HHV storefront locale for SI community pricing (DE vs SI prices differ). */
+export const HHV_PRICE_LOCALE =
+  process.env.HHV_LOCALE?.trim() || "en-SI-EUR-eu";
+
+/**
+ * Rewrite an HHV product URL to the community price locale.
+ * /en/records/item/x  →  /en-SI-EUR-eu/records/item/x
+ */
+export function hhvPriceLocaleUrl(url, locale = HHV_PRICE_LOCALE) {
+  try {
+    const href = ensureUrl(url);
+    if (!href) return null;
+    const u = new URL(href);
+    if (!u.hostname.includes("hhv.de")) return href;
+
+    const itemMatch = u.pathname.match(/\/item\/([^/?#]+)/i);
+    if (!itemMatch) return href;
+    const slugFull = decodeURIComponent(itemMatch[1]).replace(/\/+$/, "");
+
+    const parts = u.pathname.replace(/\/+$/, "").split("/").filter(Boolean);
+    // …/{locale}/{category}/item/{slug}  or legacy /shop/{lang}/item/{slug}
+    let category = "records";
+    const itemIdx = parts.findIndex((p) => p.toLowerCase() === "item");
+    if (itemIdx >= 2) {
+      category = parts[itemIdx - 1] || "records";
+    } else if (parts[0]?.toLowerCase() === "shop" && parts[2]?.toLowerCase() === "item") {
+      category = "records";
+    }
+
+    u.hostname = "www.hhv.de";
+    u.pathname = `/${locale}/${category}/item/${slugFull}`;
+    u.search = "";
+    u.hash = "";
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
 export function parseHhvRecordUrl(url) {
   try {
     const href = ensureUrl(url);
@@ -43,24 +82,22 @@ export function parseHhvRecordUrl(url) {
     const slug = idMatch ? slugFull.slice(0, -idMatch[0].length) : slugFull;
     if (productId == null && !slug) return { valid: false };
 
-    // New HHV paths: /en/records/item/…, /de/clothing/item/…
-    const modern = u.pathname.match(
-      /^\/([a-z]{2})\/([a-z0-9-]+)\/item\//i
-    );
-    // Legacy: /shop/en/item/…
-    const legacy = u.pathname.match(/^\/shop\/([a-z]{2})\//i);
+    const parts = u.pathname.replace(/\/+$/, "").split("/").filter(Boolean);
+    let category = "records";
+    const itemIdx = parts.findIndex((p) => p.toLowerCase() === "item");
 
-    let canonicalPath;
-    if (modern) {
-      const [, lang, category] = modern;
-      canonicalPath = `/${lang}/${category}/item/${slugFull}`;
-    } else if (legacy) {
-      // HHV migrated off /shop/… — rewrite to the current records catalog path.
-      canonicalPath = `/${legacy[1]}/records/item/${slugFull}`;
-    } else {
-      // Bare /item/… → assume records catalog.
-      canonicalPath = `/en/records/item/${slugFull}`;
+    // Legacy: /shop/en/item/…
+    if (parts[0]?.toLowerCase() === "shop") {
+      category = "records";
+    } else if (itemIdx >= 2) {
+      // /{locale}/{category}/item/…  (locale may be en or en-SI-EUR-eu)
+      category = parts[itemIdx - 1] || "records";
     }
+
+    const canonicalUrl = hhvPriceLocaleUrl(
+      `https://www.hhv.de/${HHV_PRICE_LOCALE}/${category}/item/${slugFull}`,
+      HHV_PRICE_LOCALE
+    );
 
     return {
       valid: true,
@@ -69,7 +106,8 @@ export function parseHhvRecordUrl(url) {
       listingId: productId,
       slug,
       slugFull,
-      canonicalUrl: `https://www.hhv.de${canonicalPath}`,
+      category,
+      canonicalUrl,
     };
   } catch {
     return { valid: false };

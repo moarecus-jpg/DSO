@@ -26,10 +26,10 @@ export const STORES = {
     label: "HHV",
     kind: "shop",
     sellerUsername: "hhv",
-    shopUrl: "https://www.hhv.de/en/records",
+    shopUrl: "https://www.hhv.de/en-SI-EUR-eu/records",
     hostIncludes: ["hhv.de"],
     exampleUrl:
-      "https://www.hhv.de/en/records/item/artist-album-1395420",
+      "https://www.hhv.de/en-SI-EUR-eu/records/item/artist-album-1395420",
     urlHint: "hhv.de/…/item/…",
     logoDomain: "hhv.de",
     logoUrl: shopLogoUrl("hhv.de"),

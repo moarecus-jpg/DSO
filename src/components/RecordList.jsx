@@ -8,8 +8,16 @@ import {
   recordTitle,
 } from "../../shared/orderTotals.js";
 import { issuesForLink } from "../../shared/orderReview.js";
-import { getStoreConfig, isShopStore } from "../../shared/stores.js";
+import { getStoreConfig, isShopStore, normalizeStore, STORE_HHV } from "../../shared/stores.js";
+import { hhvPriceLocaleUrl } from "../../shared/parseShopUrl.js";
 import { useLocale } from "../hooks/useLocale.jsx";
+
+function itemHref(link, store) {
+  const href = link?.url;
+  if (!href) return "#";
+  if (normalizeStore(store) === STORE_HHV) return hhvPriceLocaleUrl(href) || href;
+  return href;
+}
 
 function ItemRow({
   link,
@@ -26,6 +34,7 @@ function ItemRow({
   onSubmitIssue,
   submittingIssue = false,
 }) {
+  const href = itemHref(link, store);
   return (
     <>
     <tr
@@ -61,7 +70,7 @@ function ItemRow({
               </span>
             )}
             <a
-              href={link.url}
+              href={href}
               target="_blank"
               rel="noreferrer"
               className="order-listing-id"
@@ -70,7 +79,7 @@ function ItemRow({
               <ExternalLink size={12} aria-hidden />
             </a>
             <a
-              href={link.url}
+              href={href}
               target="_blank"
               rel="noreferrer"
               className="order-item-title"

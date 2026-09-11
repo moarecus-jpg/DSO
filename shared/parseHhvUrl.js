@@ -3,6 +3,8 @@
  */
 export {
   humanizeHhvSlug,
+  hhvPriceLocaleUrl,
+  HHV_PRICE_LOCALE,
   isHhvRecordUrl,
   parseHhvRecordUrl,
   parseHhvUrlList,
