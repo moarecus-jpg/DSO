@@ -3555,6 +3555,7 @@ code {
 
 .session-manage-section {
   padding: 0.85rem 0;
+  min-width: 0;
 }
 
 .session-manage-section + .session-manage-section {
@@ -3592,6 +3593,56 @@ code {
 .session-owner-row .app-select {
   min-width: min(16rem, 100%);
   flex: 1;
+}
+
+@media (min-width: 900px) {
+  .session-manage-card {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 0;
+    padding: 1rem 0.35rem;
+  }
+
+  .session-manage-section {
+    flex: 1 1 0;
+    padding: 0.25rem 1rem;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .session-manage-section + .session-manage-section {
+    border-top: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .session-manage-section:first-child,
+  .session-manage-section:last-child {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+  }
+
+  .session-owner-row {
+    flex-direction: column;
+    align-items: stretch;
+    margin-top: auto;
+    padding-top: 0.75rem;
+  }
+
+  .session-owner-row .app-select {
+    min-width: 0;
+    width: 100%;
+    flex: none;
+  }
+
+  .session-owner-row .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .session-manage-section .app-date-picker {
+    width: 100%;
+    max-width: none;
+  }
 }
 
 .modal-close-order {
