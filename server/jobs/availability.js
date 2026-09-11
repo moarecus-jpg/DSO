@@ -11,6 +11,7 @@ import {
 } from "../shops/recordMeta.js";
 import { isShopStore, normalizeStore } from "../../shared/stores.js";
 import { isLinkUnavailable } from "../../shared/orderTotals.js";
+import { normalizeShopLinkUrl } from "../../shared/parseShopUrl.js";
 
 const SHOP_CONCURRENCY = 1;
 
@@ -45,14 +46,15 @@ function listingUnavailable(meta) {
 async function resolveMeta(link, session) {
   const note = link.note ?? null;
   if (isShopStore(session.store)) {
-    return resolveShopRecordFromUrl(link.url, note, session.store);
+    const url = normalizeShopLinkUrl(link.url, session.store);
+    return resolveShopRecordFromUrl(url, note, session.store);
   }
   return resolveRecordFromUrl(link.url, note, {
     sellerUsername: session.seller_username,
   });
 }
 
-function applyMetaToLink(link, meta, wasUnavailable, becameUnavailableIds) {
+function applyMetaToLink(link, meta, wasUnavailable, becameUnavailableIds, session) {
   const unavailable = listingUnavailable(meta);
   const fields = {
     artist: meta.artist,
@@ -66,10 +68,15 @@ function applyMetaToLink(link, meta, wasUnavailable, becameUnavailableIds) {
     availability: unavailable ? "unavailable" : "available",
     availabilityNote: unavailable ? "Listing is no longer for sale." : null,
   };
-  // Never write null prices — that keeps stale USD→EUR leftovers via `??` in db.js.
+  // Never write null prices — that keeps stale leftovers via `??` in db.js.
   if (meta.priceValue != null && Number.isFinite(Number(meta.priceValue))) {
     fields.priceValue = meta.priceValue;
     fields.priceCurrency = meta.priceCurrency ?? "EUR";
+  }
+  // Always persist the normalized shop URL (HHV → SI locale).
+  if (session && isShopStore(session.store)) {
+    const normalized = normalizeShopLinkUrl(link.url, session.store);
+    if (normalized) fields.url = normalized;
   }
   updateSessionLinkAvailability(link.id, fields);
   if (unavailable && !wasUnavailable) becameUnavailableIds.push(link.id);
@@ -79,7 +86,7 @@ async function refreshOneLink(session, link, becameUnavailableIds) {
   const wasUnavailable = isLinkUnavailable(link);
   try {
     const meta = await resolveMeta(link, session);
-    applyMetaToLink(link, meta, wasUnavailable, becameUnavailableIds);
+    applyMetaToLink(link, meta, wasUnavailable, becameUnavailableIds, session);
   } catch (err) {
     if (isNotFoundError(err)) {
       updateSessionLinkAvailability(link.id, {
@@ -103,11 +110,10 @@ async function refreshDecksLinks(session, links, becameUnavailableIds) {
         continue;
       }
       const wasUnavailable = isLinkUnavailable(link);
-      applyMetaToLink(link, meta, wasUnavailable, becameUnavailableIds);
+      applyMetaToLink(link, meta, wasUnavailable, becameUnavailableIds, session);
     }
   } catch (err) {
     console.warn(`[availability] decks batch failed:`, err?.message ?? err);
-    // Fall back to per-link so a partial outage can still update some rows.
     await mapPool(links, 1, (link) =>
       refreshOneLink(session, link, becameUnavailableIds)
     );

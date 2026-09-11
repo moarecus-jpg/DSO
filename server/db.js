@@ -1315,13 +1315,15 @@ export function updateSessionLinkAvailability(linkId, fields) {
 
   db.prepare(
     `UPDATE session_links
-     SET artist = ?, title = ?, item_description = ?, label = ?,
+     SET url = ?,
+         artist = ?, title = ?, item_description = ?, label = ?,
          price_value = ?, price_currency = ?,
          media_condition = ?, sleeve_condition = ?,
          listing_id = ?, release_id = ?,
          availability = ?, availability_note = ?
      WHERE id = ?`
   ).run(
+    fields.url ?? existing.url,
     fields.artist ?? existing.artist,
     fields.title ?? existing.title,
     fields.itemDescription ?? existing.item_description,

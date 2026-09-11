@@ -5,6 +5,7 @@ export {
   humanizeHhvSlug,
   hhvPriceLocaleUrl,
   HHV_PRICE_LOCALE,
+  isHhvSiLocaleUrl,
   isHhvRecordUrl,
   parseHhvRecordUrl,
   parseHhvUrlList,
