@@ -809,7 +809,7 @@ export function Session() {
               />
               <button
                 type="button"
-                className="btn btn-ghost btn-small session-manage-btn"
+                className="btn btn-primary btn-small session-manage-btn order-preview-view-btn"
                 onClick={handleTransferOwner}
                 disabled={
                   transferring || !ownerId || ownerId === session.created_by
@@ -843,7 +843,7 @@ export function Session() {
               />
               <button
                 type="button"
-                className="btn btn-ghost btn-small session-manage-btn"
+                className="btn btn-primary btn-small session-manage-btn order-preview-view-btn"
                 onClick={handleSaveStatus}
                 disabled={
                   savingStatus || !statusId || statusId === session.status
