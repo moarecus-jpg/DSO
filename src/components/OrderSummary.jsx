@@ -232,17 +232,31 @@ export function OrderSummary({
                   </span>
                 )}
               </span>
-              <span className="order-summary-col-num">{row.count}</span>
-              <span className="order-summary-col-amount">
+              <span
+                className="order-summary-col-num"
+                data-label={t("summary.recordCount")}
+              >
+                {row.count}
+              </span>
+              <span
+                className="order-summary-col-amount"
+                data-label={t("summary.items")}
+              >
                 {formatPrice(row.total, row.currency)}
                 {row.hasUnknownPrice && (
                   <span className="muted fine">{t("common.withoutPrice")}</span>
                 )}
               </span>
-              <span className="order-summary-col-amount">
+              <span
+                className="order-summary-col-amount"
+                data-label={t("summary.postage")}
+              >
                 {formatPrice(row.shippingShare ?? 0, currency)}
               </span>
-              <span className="order-summary-col-amount order-summary-due">
+              <span
+                className="order-summary-col-amount order-summary-due"
+                data-label={t("summary.due")}
+              >
                 {formatPrice(row.due ?? row.total, currency)}
               </span>
               <span className="order-summary-col-settle">
@@ -317,18 +331,24 @@ export function OrderSummary({
           <span className="order-summary-col-name">
             <strong>{t("summary.subtotal")}</strong>
           </span>
-          <span className="order-summary-col-num">
+          <span
+            className="order-summary-col-num"
+            data-label={t("summary.recordCount")}
+          >
             <strong>{count ?? 0}</strong>
           </span>
-          <span className="order-summary-col-amount">
+          <span
+            className="order-summary-col-amount"
+            data-label={t("summary.items")}
+          >
             <strong>{formatPrice(itemsTotal, currency)}</strong>
             {hasUnknown && (
               <span className="muted fine">{t("common.someWithoutPrice")}</span>
             )}
           </span>
-          <span className="order-summary-col-amount" />
-          <span className="order-summary-col-amount" />
-          <span className="order-summary-col-settle" />
+          <span className="order-summary-col-amount order-summary-col-empty" />
+          <span className="order-summary-col-amount order-summary-col-empty" />
+          <span className="order-summary-col-settle order-summary-col-empty" />
         </div>
 
         <div className="order-summary-grid-row order-summary-grid-row--shipping">
@@ -338,7 +358,7 @@ export function OrderSummary({
               <span className="muted fine">{t("summary.shippingHint")}</span>
             )}
           </span>
-          <span className="order-summary-col-num" />
+          <span className="order-summary-col-num order-summary-col-empty" />
           <span className="order-summary-col-amount order-summary-col-span">
             {readOnly ? (
               <strong>{formatPrice(shipping, shipCur)}</strong>
@@ -375,7 +395,7 @@ export function OrderSummary({
               <span className="muted fine">{t("summary.shippingModeHint")}</span>
             )}
           </span>
-          <span className="order-summary-col-num" />
+          <span className="order-summary-col-num order-summary-col-empty" />
           <span className="order-summary-col-amount order-summary-col-span">
             {readOnly ? (
               <span>
@@ -424,7 +444,7 @@ export function OrderSummary({
                 <span className="muted fine">{t("summary.peopleCount")}</span>
               )}
             </span>
-            <span className="order-summary-col-num" />
+            <span className="order-summary-col-num order-summary-col-empty" />
             <span className="order-summary-col-amount order-summary-col-span">
               {readOnly ? (
                 <span>
@@ -482,8 +502,8 @@ export function OrderSummary({
                 })}
               </span>
             </span>
-            <span className="order-summary-col-num" />
-            <span className="order-summary-col-amount order-summary-col-span" />
+            <span className="order-summary-col-num order-summary-col-empty" />
+            <span className="order-summary-col-amount order-summary-col-span order-summary-col-empty" />
           </div>
         )}
 
@@ -496,7 +516,7 @@ export function OrderSummary({
           <span className="order-summary-col-name">
             <strong>{t("summary.totalWithShipping")}</strong>
           </span>
-          <span className="order-summary-col-num" />
+          <span className="order-summary-col-num order-summary-col-empty" />
           <span className="order-summary-col-amount order-summary-col-span">
             <strong className="order-total-value order-summary-grand-total">
               {formatPrice(total, currency)}
