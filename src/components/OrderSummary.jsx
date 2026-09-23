@@ -196,20 +196,6 @@ export function OrderSummary({
         </p>
       )}
 
-      {canRequestPayment && ownerHasPaypal && requestableCount > 0 && (
-        <div className="order-summary-paypal-actions">
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
-            disabled={requestingAll || Boolean(requestingUserId)}
-            onClick={() => onRequestPayment?.({ all: true })}
-          >
-            <HandCoins size={16} strokeWidth={2.2} aria-hidden />
-            {t("summary.requestAllPaypal")}
-          </button>
-        </div>
-      )}
-
       <div className="order-summary-grid order-summary-grid--settle">
         <div className="order-summary-grid-head">
           <span>{t("summary.participants")}</span>
@@ -361,7 +347,7 @@ export function OrderSummary({
             <strong>{count ?? 0}</strong>
           </span>
           <span
-            className="order-summary-col-amount"
+            className="order-summary-col-amount order-summary-subtotal-price"
             data-label={t("summary.items")}
           >
             <strong>{formatPrice(itemsTotal, currency)}</strong>
@@ -369,9 +355,19 @@ export function OrderSummary({
               <span className="muted fine">{t("common.someWithoutPrice")}</span>
             )}
           </span>
-          <span className="order-summary-col-amount order-summary-col-empty" />
-          <span className="order-summary-col-amount order-summary-col-empty" />
-          <span className="order-summary-col-settle order-summary-col-empty" />
+          <span className="order-summary-subtotal-actions">
+            {canRequestPayment && ownerHasPaypal && requestableCount > 0 && (
+              <button
+                type="button"
+                className="btn btn-ghost btn-small order-summary-paypal-all"
+                disabled={requestingAll || Boolean(requestingUserId)}
+                onClick={() => onRequestPayment?.({ all: true })}
+              >
+                <HandCoins size={15} strokeWidth={2.2} aria-hidden />
+                {t("summary.requestAllPaypal")}
+              </button>
+            )}
+          </span>
         </div>
 
         <div className="order-summary-grid-row order-summary-grid-row--discount">

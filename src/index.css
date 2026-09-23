@@ -2850,6 +2850,22 @@ code {
   padding-top: 0.75rem;
 }
 
+.order-summary-subtotal-actions {
+  grid-column: 4 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.order-summary-paypal-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
 .order-summary-grid-row--shipping,
 .order-summary-grid-row--discount,
 .order-summary-grid-row--split {
@@ -3468,19 +3484,68 @@ code {
   text-align: left;
 }
 
-.order-items-table th.col-price,
-.order-items-table td.col-price {
-  text-align: right;
-  white-space: nowrap;
-  width: 7rem;
+.order-items-table th.col-item {
+  width: auto;
 }
 
-.order-items-table th.col-discount,
-.order-items-table td.col-discount {
-  text-align: center;
-  width: 3.75rem;
+.order-items-head-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+}
+
+.order-items-head-side {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.order-items-head-price,
+.order-items-head-discount {
+  text-align: right;
   white-space: nowrap;
-  vertical-align: middle;
+}
+
+.order-items-head-discount {
+  min-width: 1.6rem;
+  text-align: center;
+}
+
+.order-item-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.order-item-title-row .order-item-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-item-side {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.order-item-price {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.order-item-row--discount .order-item-price {
+  color: var(--accent);
 }
 
 /* Shared accent checkbox used for discount eligibility */
@@ -3575,10 +3640,6 @@ code {
 
 .order-items-discount-hint {
   margin: 0.65rem 0.85rem 0.85rem;
-}
-
-.order-item-row--discount .col-price {
-  color: var(--accent);
 }
 
 .order-items-table td {
@@ -3958,6 +4019,13 @@ code {
   border-radius: 0.45rem;
 }
 
+.modal-discount .modal-actions {
+  background: transparent;
+  margin-top: 0.15rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
 .modal-discount .discount-dialog-percent {
   display: flex;
   flex-direction: row;
@@ -3974,54 +4042,61 @@ code {
   margin: 0;
   flex: 1;
   min-width: 0;
+  font-size: 0.9rem;
   font-weight: 500;
+  line-height: 1.3;
 }
 
 .discount-dialog-percent-field {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.3rem;
   flex-shrink: 0;
-  min-height: 2.15rem;
-  padding: 0.2rem 0.55rem 0.2rem 0.2rem;
-  border: 1px solid rgba(139, 92, 246, 0.35);
-  border-radius: 0.65rem;
-  background: rgba(255, 255, 255, 0.05);
+  height: 1.85rem;
+  padding: 0 0.45rem 0 0.15rem;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.04);
   box-sizing: border-box;
 }
 
 .discount-dialog-percent-field:focus-within {
-  border-color: rgba(167, 139, 250, 0.65);
-  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.18);
+  border-color: rgba(167, 139, 250, 0.7);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.16);
 }
 
-.modal-discount .discount-dialog-percent-input {
+.modal-discount .discount-dialog-percent-input,
+.layout-dashboard .modal-discount .discount-dialog-percent-input {
   display: block;
-  width: 3.25rem;
-  min-height: 1.7rem;
+  width: 2.75rem;
+  height: 1.55rem;
+  min-height: 0;
   margin: 0;
-  padding: 0.2rem 0.45rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.5rem;
-  background: rgba(255, 255, 255, 0.05);
+  padding: 0 0.35rem;
+  border: none;
+  border-radius: 0.35rem;
+  background: transparent;
   color: var(--text);
   font: inherit;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  line-height: 1.25;
+  line-height: 1.55rem;
   text-align: center;
   box-sizing: border-box;
+  box-shadow: none;
 }
 
-.modal-discount .discount-dialog-percent-input:focus {
+.modal-discount .discount-dialog-percent-input:focus,
+.layout-dashboard .modal-discount .discount-dialog-percent-input:focus {
   outline: none;
-  border-color: rgba(255, 255, 255, 0.18);
+  border: none;
   box-shadow: none;
+  background: transparent;
 }
 
 .discount-dialog-percent-suffix {
   flex-shrink: 0;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: var(--muted);
   line-height: 1;
@@ -9407,6 +9482,17 @@ a.order-preview-item-title:hover {
   .order-summary-grid--settle .order-summary-grid-row--split .order-summary-col-name,
   .order-summary-grid--settle .order-summary-grid-row--grand .order-summary-col-name {
     grid-column: 1 / -1;
+  }
+
+  .order-summary-grid--settle .order-summary-subtotal-actions {
+    order: 3;
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
+  .order-summary-grid--settle .order-summary-paypal-all {
+    width: 100%;
+    justify-content: center;
   }
 
   .order-summary-grid--settle .order-summary-grid-row--discount,

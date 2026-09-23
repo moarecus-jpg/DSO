@@ -20,6 +20,37 @@ function itemHref(link, store) {
   return href;
 }
 
+function DiscountControl({
+  link,
+  t,
+  applies,
+  canManageDiscount,
+  discountBusy,
+  onToggleDiscount,
+}) {
+  if (canManageDiscount) {
+    return (
+      <label className="ui-check order-item-discount-check">
+        <input
+          type="checkbox"
+          checked={applies}
+          disabled={discountBusy || !onToggleDiscount}
+          onChange={() => onToggleDiscount?.(link, !applies)}
+          aria-label={t("items.discountAppliesAria")}
+        />
+      </label>
+    );
+  }
+  if (applies) {
+    return (
+      <span className="order-item-discount-yes" title={t("items.discountApplies")}>
+        ✓
+      </span>
+    );
+  }
+  return <span className="muted order-item-discount-empty">—</span>;
+}
+
 function ItemRow({
   link,
   store,
@@ -38,11 +69,20 @@ function ItemRow({
   canManageDiscount = false,
   onToggleDiscount,
   togglingDiscountId = null,
-  colSpan = 3,
+  colSpan = 2,
 }) {
   const href = itemHref(link, store);
   const applies = linkDiscountApplies(link);
   const discountBusy = togglingDiscountId === link.id;
+  const priceLabel = link.blurred
+    ? "—"
+    : unavailable
+      ? (
+          <span className="order-item-price--unavailable">
+            {formatPrice(link.price_value, link.price_currency)}
+          </span>
+        )
+      : formatPrice(link.price_value, link.price_currency);
 
   return (
     <>
@@ -88,14 +128,29 @@ function ItemRow({
               {listingIdFor(link)}
               <ExternalLink size={12} aria-hidden />
             </a>
-            <a
-              href={href}
-              target="_blank"
-              rel="noreferrer"
-              className="order-item-title"
-            >
-              {recordTitle(link)}
-            </a>
+            <div className="order-item-title-row">
+              <a
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                className="order-item-title"
+              >
+                {recordTitle(link)}
+              </a>
+              <div className="order-item-side">
+                <span className="order-item-price">{priceLabel}</span>
+                {showDiscountCol && (
+                  <DiscountControl
+                    link={link}
+                    t={t}
+                    applies={applies}
+                    canManageDiscount={canManageDiscount}
+                    discountBusy={discountBusy}
+                    onToggleDiscount={onToggleDiscount}
+                  />
+                )}
+              </div>
+            </div>
             {link.media_condition && (
               <p className="order-item-condition">
                 {t("items.mediaCondition")}: {link.media_condition}
@@ -121,40 +176,6 @@ function ItemRow({
           </div>
         )}
       </td>
-      <td className="col-price">
-        {link.blurred ? (
-          "—"
-        ) : unavailable ? (
-          <span className="order-item-price--unavailable">
-            {formatPrice(link.price_value, link.price_currency)}
-          </span>
-        ) : (
-          formatPrice(link.price_value, link.price_currency)
-        )}
-      </td>
-      {showDiscountCol && (
-        <td className="col-discount">
-          {link.blurred || unavailable ? (
-            <span className="muted">—</span>
-          ) : canManageDiscount ? (
-            <label className="ui-check order-item-discount-check">
-              <input
-                type="checkbox"
-                checked={applies}
-                disabled={discountBusy || !onToggleDiscount}
-                onChange={() => onToggleDiscount?.(link, !applies)}
-                aria-label={t("items.discountAppliesAria")}
-              />
-            </label>
-          ) : applies ? (
-            <span className="order-item-discount-yes" title={t("items.discountApplies")}>
-              ✓
-            </span>
-          ) : (
-            <span className="muted">—</span>
-          )}
-        </td>
-      )}
     </tr>
     {issueFormOpen && (
       <tr className="order-item-issue-row">
@@ -193,7 +214,7 @@ export function RecordList({
   const { t } = useLocale();
   const isShop = isShopStore(store);
   const storeConfig = getStoreConfig(store);
-  const colSpan = showDiscountCol ? 4 : 3;
+  const colSpan = 2;
 
   const visible = unavailableOnly
     ? links.filter((link) => isLinkUnavailable(link) && !link.blurred)
@@ -210,13 +231,22 @@ export function RecordList({
         <thead>
           <tr>
             <th className="col-participant">{t("items.ordered")}</th>
-            <th className="col-item">{t("items.id")}</th>
-            <th className="col-price">{t("items.price")}</th>
-            {showDiscountCol && (
-              <th className="col-discount" title={t("items.discountHint")}>
-                {t("items.discount")}
-              </th>
-            )}
+            <th className="col-item">
+              <span className="order-items-head-row">
+                <span>{t("items.id")}</span>
+                <span className="order-items-head-side">
+                  <span className="order-items-head-price">{t("items.price")}</span>
+                  {showDiscountCol && (
+                    <span
+                      className="order-items-head-discount"
+                      title={t("items.discountHint")}
+                    >
+                      {t("items.discount")}
+                    </span>
+                  )}
+                </span>
+              </span>
+            </th>
           </tr>
         </thead>
         <tbody>
