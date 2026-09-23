@@ -35,6 +35,12 @@ const SERVER_ERROR_MAP = {
   "Neveljaven popust (%). Vnesi 0–100.": "errors.invalidDiscount",
   "Neveljaven popust (%).": "errors.invalidDiscount",
   "Število oseb mora biti vsaj 1.": "errors.minPeople",
+  "Samo app admin lahko prekliče PayPal zahtevek.": "errors.paymentCancelAdminOnly",
+  "Prekličeš lahko samo PayPal zahtevke, ki so poslani tebi.": "errors.paymentCancelOwnOnly",
+  "PayPal zahtevek ni bil najden.": "errors.paymentRequestNotFound",
+  "Zahtevek ni več odprt.": "errors.paymentRequestNotPending",
+  "Neveljaven PayPal.me. Vnesi uporabniško ime (npr. tvojeime), povezavo paypal.me/… ali e-pošto PayPal računa.":
+    "errors.invalidPaypalMe",
   "Neveljavno ime.": "errors.invalidName",
   "Ime je predolgo (največ 80 znakov).": "errors.nameTooLong",
   "Samo admin lahko spreminja imena.": "errors.adminOnly",

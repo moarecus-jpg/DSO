@@ -22,6 +22,7 @@ import {
   updateUserPaypalMe,
   listPendingPaymentRequestsForUser,
   countPendingPaymentRequestsForUser,
+  cancelPaymentRequestForRecipient,
 } from "../db.js";
 import {
   normalizePaypalMe,
@@ -209,7 +210,7 @@ router.patch("/me/paypal", (req, res) => {
   if (trimmed !== "" && !handle) {
     return res.status(400).json({
       error:
-        "Neveljaven PayPal.me. Vnesi handle (npr. moarecus) ali povezavo paypal.me/…",
+        "Neveljaven PayPal.me. Vnesi uporabniško ime (npr. tvojeime), povezavo paypal.me/… ali e-pošto PayPal računa.",
     });
   }
 
@@ -236,6 +237,38 @@ router.get("/me/payment-requests/count", (req, res) => {
     return res.status(401).json({ error: "Prijavi se v aplikacijo." });
   }
   res.json({
+    pendingCount: countPendingPaymentRequestsForUser(req.session.userId),
+  });
+});
+
+router.delete("/me/payment-requests/:requestId", (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Prijavi se v aplikacijo." });
+  }
+  if (!isAppAdmin(req.session.userId)) {
+    return res.status(403).json({
+      error: "Samo app admin lahko prekliče PayPal zahtevek.",
+    });
+  }
+
+  const result = cancelPaymentRequestForRecipient(
+    req.params.requestId,
+    req.session.userId
+  );
+  if (result.error === "not_found") {
+    return res.status(404).json({ error: "PayPal zahtevek ni bil najden." });
+  }
+  if (result.error === "forbidden") {
+    return res.status(403).json({
+      error: "Prekličeš lahko samo PayPal zahtevke, ki so poslani tebi.",
+    });
+  }
+  if (result.error === "not_pending") {
+    return res.status(400).json({ error: "Zahtevek ni več odprt." });
+  }
+
+  res.json({
+    request: result.request,
     pendingCount: countPendingPaymentRequestsForUser(req.session.userId),
   });
 });

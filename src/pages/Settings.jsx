@@ -4,6 +4,7 @@ import { Disc3, ExternalLink, Lock, Shield, Unplug } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
+import { formatPaypalDisplay } from "../../shared/paypalMe.js";
 
 function discogsCallbackFallback() {
   if (typeof window !== "undefined") {
@@ -282,7 +283,7 @@ export function Settings() {
         </form>
         {user?.paypalMe && (
           <p className="muted fine">
-            paypal.me/{user.paypalMe}
+            {formatPaypalDisplay(user.paypalMe) || user.paypalMe}
           </p>
         )}
       </div>

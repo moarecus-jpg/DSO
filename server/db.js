@@ -1254,6 +1254,41 @@ export function countPendingPaymentRequestsForUser(userId) {
   return Number(row?.c) || 0;
 }
 
+export function getPaymentRequestById(id) {
+  const row = db
+    .prepare(
+      `SELECT pr.*,
+              fu.name as from_user_name,
+              tu.name as to_user_name,
+              gs.title as order_title
+       FROM payment_requests pr
+       JOIN group_sessions gs ON gs.id = pr.session_id
+       LEFT JOIN users fu ON fu.id = pr.from_user_id
+       LEFT JOIN users tu ON tu.id = pr.to_user_id
+       WHERE pr.id = ?`
+    )
+    .get(id);
+  return mapPaymentRequestRow(row);
+}
+
+/** Recipient cancels a pending request sent to them. */
+export function cancelPaymentRequestForRecipient(requestId, userId) {
+  const existing = db
+    .prepare(
+      `SELECT id, to_user_id, status FROM payment_requests WHERE id = ?`
+    )
+    .get(requestId);
+  if (!existing) return { error: "not_found" };
+  if (existing.to_user_id !== userId) return { error: "forbidden" };
+  if (existing.status !== "pending") return { error: "not_pending" };
+
+  db.prepare(
+    `UPDATE payment_requests SET status = 'cancelled' WHERE id = ? AND status = 'pending'`
+  ).run(requestId);
+
+  return { request: getPaymentRequestById(requestId) };
+}
+
 export function createPaymentRequest({
   sessionId,
   fromUserId,

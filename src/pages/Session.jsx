@@ -60,6 +60,7 @@ export function Session() {
   const [settlingUserId, setSettlingUserId] = useState(null);
   const [requestingUserId, setRequestingUserId] = useState(null);
   const [requestingAll, setRequestingAll] = useState(false);
+  const [cancellingPayment, setCancellingPayment] = useState(false);
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
   const [reopening, setReopening] = useState(false);
   const [ownerId, setOwnerId] = useState("");
@@ -327,6 +328,34 @@ export function Session() {
     } finally {
       setRequestingAll(false);
       setRequestingUserId(null);
+    }
+  }
+
+  async function handleCancelMyPaymentRequest() {
+    const request = (session?.paymentRequests ?? []).find(
+      (req) => req.status === "pending" && req.toUserId === user?.id
+    );
+    if (!request?.id || cancellingPayment) return;
+    if (!window.confirm(t("payments.cancelConfirm"))) return;
+    setCancellingPayment(true);
+    try {
+      await api(`/auth/me/payment-requests/${request.id}`, {
+        method: "DELETE",
+      });
+      setSession((prev) =>
+        prev
+          ? {
+              ...prev,
+              paymentRequests: (prev.paymentRequests ?? []).filter(
+                (req) => req.id !== request.id
+              ),
+            }
+          : prev
+      );
+    } catch (err) {
+      alert(err.message ?? t("common.error"));
+    } finally {
+      setCancellingPayment(false);
     }
   }
 
@@ -703,14 +732,28 @@ export function Session() {
               })}
             </p>
           </div>
-          <a
-            className="btn btn-primary"
-            href={myPaymentRequest.paypalUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {t("payments.payPaypal")}
-          </a>
+          <div className="payment-request-banner-actions">
+            <a
+              className="btn btn-primary"
+              href={myPaymentRequest.paypalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t("payments.payPaypal")}
+            </a>
+            {user?.isAdmin && (
+              <button
+                type="button"
+                className="btn btn-ghost"
+                disabled={cancellingPayment}
+                onClick={handleCancelMyPaymentRequest}
+              >
+                {cancellingPayment
+                  ? t("payments.cancelling")
+                  : t("payments.cancelRequest")}
+              </button>
+            )}
+          </div>
         </div>
       )}
 

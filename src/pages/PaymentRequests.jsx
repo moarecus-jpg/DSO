@@ -4,14 +4,18 @@ import { HandCoins } from "lucide-react";
 import { api } from "../api.js";
 import { formatPrice } from "../../shared/orderTotals.js";
 import { OrdersPageHeader } from "../components/OrdersPageHeader.jsx";
+import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
 
 export function PaymentRequests() {
   const { t } = useLocale();
+  const { user } = useAuth();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [query, setQuery] = useState("");
+  const [cancellingId, setCancellingId] = useState(null);
+  const canCancel = Boolean(user?.isAdmin);
 
   useEffect(() => {
     let cancelled = false;
@@ -44,6 +48,21 @@ export function PaymentRequests() {
       );
     });
   }, [requests, query]);
+
+  async function handleCancel(requestId) {
+    if (!canCancel || cancellingId) return;
+    if (!window.confirm(t("payments.cancelConfirm"))) return;
+    setCancellingId(requestId);
+    setError(null);
+    try {
+      await api(`/auth/me/payment-requests/${requestId}`, { method: "DELETE" });
+      setRequests((prev) => prev.filter((req) => req.id !== requestId));
+    } catch (err) {
+      setError(err.message ?? t("common.error"));
+    } finally {
+      setCancellingId(null);
+    }
+  }
 
   const subtitle = loading
     ? t("common.loading")
@@ -108,6 +127,18 @@ export function PaymentRequests() {
                 <Link className="btn btn-ghost" to={`/session/${req.orderId}`}>
                   {t("payments.openOrder")}
                 </Link>
+              )}
+              {canCancel && (
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  disabled={cancellingId === req.id}
+                  onClick={() => handleCancel(req.id)}
+                >
+                  {cancellingId === req.id
+                    ? t("payments.cancelling")
+                    : t("payments.cancelRequest")}
+                </button>
               )}
             </div>
           </li>

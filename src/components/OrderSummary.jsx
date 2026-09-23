@@ -300,7 +300,6 @@ export function OrderSummary({
                     }`}
                     disabled={
                       !canManageSettle ||
-                      readOnly ||
                       !row.userId ||
                       settling ||
                       !onToggleSettle

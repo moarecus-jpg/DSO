@@ -2693,6 +2693,13 @@ code {
   margin-bottom: 1rem;
 }
 
+.payment-request-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .payment-request-list {
   list-style: none;
   margin: 1rem 0 0;

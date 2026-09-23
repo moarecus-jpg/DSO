@@ -47,7 +47,9 @@ export function PlacInbox() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
   const [sellOpen, setSellOpen] = useState(false);
+  const [cancellingId, setCancellingId] = useState(null);
   const messagesEndRef = useRef(null);
+  const canCancelPayments = Boolean(user?.isAdmin);
 
   useEffect(() => {
     setLoading(true);
@@ -141,6 +143,21 @@ export function PlacInbox() {
     }
   }
 
+  async function handleCancelPayment(requestId) {
+    if (!canCancelPayments || cancellingId) return;
+    if (!window.confirm(t("payments.cancelConfirm"))) return;
+    setCancellingId(requestId);
+    setError(null);
+    try {
+      await api(`/auth/me/payment-requests/${requestId}`, { method: "DELETE" });
+      setPaymentRequests((prev) => prev.filter((req) => req.id !== requestId));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCancellingId(null);
+    }
+  }
+
   const isEmpty = !loading && threads.length === 0 && paymentRequests.length === 0;
 
   return (
@@ -199,6 +216,18 @@ export function PlacInbox() {
                         >
                           {t("payments.openOrder")}
                         </Link>
+                      )}
+                      {canCancelPayments && (
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm"
+                          disabled={cancellingId === req.id}
+                          onClick={() => handleCancelPayment(req.id)}
+                        >
+                          {cancellingId === req.id
+                            ? t("payments.cancelling")
+                            : t("payments.cancelRequest")}
+                        </button>
                       )}
                     </div>
                   </div>
