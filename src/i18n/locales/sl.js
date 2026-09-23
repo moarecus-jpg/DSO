@@ -602,7 +602,7 @@ export default {
     hint: "Odprti PayPal zahtevki, ki so jih odpravitelji poslali tebi.",
     empty: "Nimaš odprtih PayPal zahtevkov.",
     emptyHint:
-      "Ko ti odpravitelj pošlje PayPal zahtevek, se prikaže tukaj, v Prejeto in na naročilu. Velja tudi, če zahtevek pošlješ sam sebi.",
+      "Ko ti odpravitelj pošlje PayPal zahtevek, se prikaže tukaj. Ko te označi kot poravnanega, ostane na seznamu z oznako Poravnano.",
     from: "Od {{name}}",
     payPaypal: "Plačaj s PayPal",
     openOrder: "Odpri naročilo",
@@ -610,9 +610,12 @@ export default {
     bannerFrom: "Od {{name}} — odpri PayPal in poravnaj znesek.",
     searchPlaceholder: "Išči po osebi, naročilu ali znesku…",
     count: "{{count}} odprtih zahtevkov",
+    countSettled: "{{count}} poravnanih zahtevkov",
+    statusPaid: "Poravnano",
+    statusCancelled: "Preklicano",
     cancelRequest: "Prekliči zahtevek",
     cancelling: "Preklicujem…",
-    cancelConfirm: "Prekličem ta PayPal zahtevek? Odstranjen bo s tvojega seznama.",
+    cancelConfirm: "Prekličem ta PayPal zahtevek? Odstranjen bo iz odprtega seznama.",
   },
   settings: {
     title: "Nastavitve",

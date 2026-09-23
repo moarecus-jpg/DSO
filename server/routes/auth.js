@@ -20,7 +20,7 @@ import {
   verifyLocalUser,
   ensureMembershipInSloveniaCommunity,
   updateUserPaypalMe,
-  listPendingPaymentRequestsForUser,
+  listPaymentRequestsForUser,
   countPendingPaymentRequestsForUser,
   cancelPaymentRequestForRecipient,
 } from "../db.js";
@@ -225,10 +225,11 @@ router.get("/me/payment-requests", (req, res) => {
   if (!req.session.userId) {
     return res.status(401).json({ error: "Prijavi se v aplikacijo." });
   }
-  const requests = listPendingPaymentRequestsForUser(req.session.userId);
+  const requests = listPaymentRequestsForUser(req.session.userId);
+  const pendingCount = countPendingPaymentRequestsForUser(req.session.userId);
   res.json({
     requests,
-    pendingCount: requests.length,
+    pendingCount,
   });
 });
 

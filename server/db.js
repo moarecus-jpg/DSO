@@ -1244,6 +1244,36 @@ export function listPendingPaymentRequestsForUser(userId) {
     .map(mapPaymentRequestRow);
 }
 
+/** Pending first, then recently paid/cancelled (so settle shows as checked). */
+export function listPaymentRequestsForUser(userId, { includeResolved = true } = {}) {
+  if (!includeResolved) return listPendingPaymentRequestsForUser(userId);
+  return db
+    .prepare(
+      `SELECT pr.*,
+              fu.name as from_user_name,
+              tu.name as to_user_name,
+              gs.title as order_title
+       FROM payment_requests pr
+       JOIN group_sessions gs ON gs.id = pr.session_id
+       LEFT JOIN users fu ON fu.id = pr.from_user_id
+       LEFT JOIN users tu ON tu.id = pr.to_user_id
+       WHERE pr.to_user_id = ?
+         AND (
+           pr.status = 'pending'
+           OR (
+             pr.status IN ('paid', 'cancelled')
+             AND pr.created_at >= datetime('now', '-180 days')
+           )
+         )
+       ORDER BY
+         CASE pr.status WHEN 'pending' THEN 0 ELSE 1 END,
+         pr.created_at DESC
+       LIMIT 100`
+    )
+    .all(userId)
+    .map(mapPaymentRequestRow);
+}
+
 export function countPendingPaymentRequestsForUser(userId) {
   const row = db
     .prepare(

@@ -596,7 +596,7 @@ export default {
     hint: "Open payment requests sent to you by order owners.",
     empty: "You have no open PayPal requests.",
     emptyHint:
-      "When an order owner sends you a PayPal request, it appears here, in Inbox, and on that order. Includes requests you send to yourself.",
+      "When an order owner sends you a PayPal request, it appears here. After they mark you settled, it stays listed with a Settled check.",
     from: "From {{name}}",
     payPaypal: "Pay with PayPal",
     openOrder: "Open order",
@@ -604,9 +604,12 @@ export default {
     bannerFrom: "From {{name}} — open PayPal and settle the amount.",
     searchPlaceholder: "Search by person, order, or amount…",
     count: "{{count}} open requests",
+    countSettled: "{{count}} settled requests",
+    statusPaid: "Settled",
+    statusCancelled: "Cancelled",
     cancelRequest: "Cancel request",
     cancelling: "Cancelling…",
-    cancelConfirm: "Cancel this PayPal request? It will be removed from your list.",
+    cancelConfirm: "Cancel this PayPal request? It will be removed from your open list.",
   },
   settings: {
     title: "Settings",
