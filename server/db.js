@@ -417,6 +417,52 @@ try {
   /* column already exists */
 }
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS chat_rooms (
+    id TEXT PRIMARY KEY,
+    community_id TEXT NOT NULL,
+    kind TEXT NOT NULL CHECK (kind IN ('community', 'dm')),
+    dm_user_low TEXT,
+    dm_user_high TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE,
+    FOREIGN KEY (dm_user_low) REFERENCES users(id),
+    FOREIGN KEY (dm_user_high) REFERENCES users(id)
+  );
+
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_chat_rooms_community_room
+    ON chat_rooms (community_id) WHERE kind = 'community';
+
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_chat_rooms_dm_pair
+    ON chat_rooms (community_id, dm_user_low, dm_user_high) WHERE kind = 'dm';
+
+  CREATE INDEX IF NOT EXISTS idx_chat_rooms_community
+    ON chat_rooms (community_id, updated_at DESC);
+
+  CREATE TABLE IF NOT EXISTS chat_messages (
+    id TEXT PRIMARY KEY,
+    room_id TEXT NOT NULL,
+    sender_id TEXT NOT NULL,
+    body TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (room_id) REFERENCES chat_rooms(id) ON DELETE CASCADE,
+    FOREIGN KEY (sender_id) REFERENCES users(id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_chat_messages_room
+    ON chat_messages (room_id, created_at DESC);
+
+  CREATE TABLE IF NOT EXISTS chat_reads (
+    room_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    last_read_at TEXT NOT NULL,
+    PRIMARY KEY (room_id, user_id),
+    FOREIGN KEY (room_id) REFERENCES chat_rooms(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+`);
+
 const SLOVENIA_COMMUNITY_SLUG = "slovenia";
 const SLOVENIA_COMMUNITY_NAME = "Slovenian Community";
 const DEFAULT_COMMUNITY_ADMIN_USERNAMES = ["eraom"];
@@ -2310,6 +2356,7 @@ export function createCommunity({
       id,
       createdBy
     );
+    ensureCommunityChatRoom(id);
   });
   insert();
 
@@ -3314,6 +3361,328 @@ export function countPlacInboxUnread(userId) {
       )
       .get(userId, userId, userId)?.c ?? 0
   );
+}
+
+const CHAT_MESSAGE_MAX_LEN = 2000;
+
+export function ensureCommunityChatRoom(communityId) {
+  if (!communityId) return null;
+  const existing = db
+    .prepare(
+      `SELECT * FROM chat_rooms
+       WHERE community_id = ? AND kind = 'community'`
+    )
+    .get(communityId);
+  if (existing) return existing;
+  const id = randomUUID();
+  db.prepare(
+    `INSERT INTO chat_rooms (id, community_id, kind)
+     VALUES (?, ?, 'community')`
+  ).run(id, communityId);
+  return db.prepare("SELECT * FROM chat_rooms WHERE id = ?").get(id);
+}
+
+function canAccessChatRoom(room, userId) {
+  if (!room || !userId) return false;
+  if (!isCommunityMember(room.community_id, userId)) return false;
+  if (room.kind === "community") return true;
+  return room.dm_user_low === userId || room.dm_user_high === userId;
+}
+
+export function listChatRoomRecipientIds(roomId) {
+  const room = db.prepare("SELECT * FROM chat_rooms WHERE id = ?").get(roomId);
+  if (!room) return [];
+  if (room.kind === "community") {
+    return db
+      .prepare(
+        "SELECT user_id AS id FROM community_members WHERE community_id = ?"
+      )
+      .all(room.community_id)
+      .map((row) => row.id);
+  }
+  return [room.dm_user_low, room.dm_user_high].filter(Boolean);
+}
+
+export function getChatRoomCommunityId(roomId) {
+  return (
+    db.prepare("SELECT community_id FROM chat_rooms WHERE id = ?").get(roomId)
+      ?.community_id ?? null
+  );
+}
+
+function mapChatUser(row) {
+  if (!row?.id) return null;
+  return {
+    id: row.id,
+    name: row.name ?? null,
+    username: row.username ?? null,
+    picture: row.picture ?? null,
+    discogsUsername: row.discogs_username ?? null,
+    discogsAvatarUrl: row.discogs_avatar_url ?? null,
+  };
+}
+
+function mapChatMessageRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    roomId: row.room_id,
+    body: row.body,
+    createdAt: row.created_at,
+    sender: mapChatUser({
+      id: row.sender_id,
+      name: row.sender_name,
+      username: row.sender_username,
+      picture: row.sender_picture,
+      discogs_username: row.sender_discogs_username,
+      discogs_avatar_url: row.sender_discogs_avatar_url,
+    }),
+  };
+}
+
+function chatUnreadCountSql() {
+  return `(
+    SELECT COUNT(*) FROM chat_messages m
+    WHERE m.room_id = r.id
+      AND m.sender_id != ?
+      AND (
+        rd.last_read_at IS NULL
+        OR datetime(m.created_at) > datetime(rd.last_read_at)
+      )
+  )`;
+}
+
+function mapChatRoomRow(row, userId) {
+  if (!row) return null;
+  const other =
+    row.kind === "dm"
+      ? mapChatUser({
+          id: row.other_id,
+          name: row.other_name,
+          username: row.other_username,
+          picture: row.other_picture,
+          discogs_username: row.other_discogs_username,
+          discogs_avatar_url: row.other_discogs_avatar_url,
+        })
+      : null;
+  return {
+    id: row.id,
+    communityId: row.community_id,
+    kind: row.kind,
+    updatedAt: row.updated_at,
+    createdAt: row.created_at,
+    otherUser: other,
+    lastMessage: row.last_body
+      ? {
+          id: row.last_id,
+          body: row.last_body,
+          createdAt: row.last_created_at,
+          senderId: row.last_sender_id,
+        }
+      : null,
+    unreadCount: Number(row.unread_count) || 0,
+  };
+}
+
+function chatRoomSelectBase() {
+  return `SELECT r.id, r.community_id, r.kind, r.dm_user_low, r.dm_user_high,
+            r.created_at, r.updated_at,
+            CASE
+              WHEN r.kind = 'dm' AND r.dm_user_low = ? THEN r.dm_user_high
+              WHEN r.kind = 'dm' THEN r.dm_user_low
+              ELSE NULL
+            END AS other_id,
+            ou.name AS other_name, ou.username AS other_username,
+            ou.picture AS other_picture,
+            ou.discogs_username AS other_discogs_username,
+            ou.discogs_avatar_url AS other_discogs_avatar_url,
+            lm.id AS last_id, lm.body AS last_body,
+            lm.created_at AS last_created_at, lm.sender_id AS last_sender_id,
+            ${chatUnreadCountSql()} AS unread_count
+     FROM chat_rooms r
+     LEFT JOIN users ou ON ou.id = CASE
+       WHEN r.kind = 'dm' AND r.dm_user_low = ? THEN r.dm_user_high
+       WHEN r.kind = 'dm' THEN r.dm_user_low
+       ELSE NULL
+     END
+     LEFT JOIN chat_reads rd ON rd.room_id = r.id AND rd.user_id = ?
+     LEFT JOIN chat_messages lm ON lm.id = (
+       SELECT m2.id FROM chat_messages m2
+       WHERE m2.room_id = r.id
+       ORDER BY m2.created_at DESC LIMIT 1
+     )`;
+}
+
+export function listChatRoomsForUser(userId, communityId) {
+  if (!userId || !communityId) return [];
+  if (!isCommunityMember(communityId, userId)) {
+    throw new Error("You are not a member of this community.");
+  }
+  ensureCommunityChatRoom(communityId);
+  return db
+    .prepare(
+      `${chatRoomSelectBase()}
+       WHERE r.community_id = ?
+         AND (
+           r.kind = 'community'
+           OR r.dm_user_low = ?
+           OR r.dm_user_high = ?
+         )
+       ORDER BY
+         CASE WHEN r.kind = 'community' THEN 0 ELSE 1 END,
+         datetime(r.updated_at) DESC`
+    )
+    .all(userId, userId, userId, userId, communityId, userId, userId)
+    .map((row) => mapChatRoomRow(row, userId));
+}
+
+export function getChatRoomForUser(roomId, userId) {
+  if (!roomId || !userId) return null;
+  const room = db.prepare("SELECT * FROM chat_rooms WHERE id = ?").get(roomId);
+  if (!canAccessChatRoom(room, userId)) return null;
+  const row = db
+    .prepare(`${chatRoomSelectBase()} WHERE r.id = ?`)
+    .get(userId, userId, userId, userId, roomId);
+  return mapChatRoomRow(row, userId);
+}
+
+export function getOrCreateDmRoom(communityId, userId, otherUserId) {
+  if (!communityId || !userId || !otherUserId) {
+    throw new Error("Missing DM details.");
+  }
+  if (userId === otherUserId) {
+    throw new Error("You cannot start a chat with yourself.");
+  }
+  if (!isCommunityMember(communityId, userId)) {
+    throw new Error("You are not a member of this community.");
+  }
+  if (!isCommunityMember(communityId, otherUserId)) {
+    throw new Error("That user is not in this community.");
+  }
+  const [low, high] =
+    userId < otherUserId ? [userId, otherUserId] : [otherUserId, userId];
+  const existing = db
+    .prepare(
+      `SELECT id FROM chat_rooms
+       WHERE community_id = ? AND kind = 'dm'
+         AND dm_user_low = ? AND dm_user_high = ?`
+    )
+    .get(communityId, low, high);
+  if (existing) {
+    return getChatRoomForUser(existing.id, userId);
+  }
+  const id = randomUUID();
+  db.prepare(
+    `INSERT INTO chat_rooms (id, community_id, kind, dm_user_low, dm_user_high)
+     VALUES (?, ?, 'dm', ?, ?)`
+  ).run(id, communityId, low, high);
+  return getChatRoomForUser(id, userId);
+}
+
+export function listChatMessages(roomId, userId, { after = null, limit = 100 } = {}) {
+  const room = db.prepare("SELECT * FROM chat_rooms WHERE id = ?").get(roomId);
+  if (!canAccessChatRoom(room, userId)) {
+    throw new Error("Chat not found.");
+  }
+  const capped = Math.min(Math.max(Number(limit) || 100, 1), 200);
+  let rows;
+  if (after) {
+    rows = db
+      .prepare(
+        `SELECT m.id, m.room_id, m.sender_id, m.body, m.created_at,
+                u.name AS sender_name, u.username AS sender_username,
+                u.picture AS sender_picture,
+                u.discogs_username AS sender_discogs_username,
+                u.discogs_avatar_url AS sender_discogs_avatar_url
+         FROM chat_messages m
+         JOIN users u ON u.id = m.sender_id
+         WHERE m.room_id = ?
+           AND datetime(m.created_at) > datetime(?)
+         ORDER BY m.created_at ASC
+         LIMIT ?`
+      )
+      .all(roomId, after, capped);
+  } else {
+    rows = db
+      .prepare(
+        `SELECT m.id, m.room_id, m.sender_id, m.body, m.created_at,
+                u.name AS sender_name, u.username AS sender_username,
+                u.picture AS sender_picture,
+                u.discogs_username AS sender_discogs_username,
+                u.discogs_avatar_url AS sender_discogs_avatar_url
+         FROM chat_messages m
+         JOIN users u ON u.id = m.sender_id
+         WHERE m.room_id = ?
+         ORDER BY m.created_at DESC
+         LIMIT ?`
+      )
+      .all(roomId, capped)
+      .reverse();
+  }
+  return rows.map(mapChatMessageRow);
+}
+
+export function postChatMessage(roomId, userId, body) {
+  const room = db.prepare("SELECT * FROM chat_rooms WHERE id = ?").get(roomId);
+  if (!canAccessChatRoom(room, userId)) {
+    throw new Error("Chat not found.");
+  }
+  const text = String(body ?? "").trim();
+  if (!text) throw new Error("Message cannot be empty.");
+  if (text.length > CHAT_MESSAGE_MAX_LEN) {
+    throw new Error(`Message must be at most ${CHAT_MESSAGE_MAX_LEN} characters.`);
+  }
+  const id = randomUUID();
+  const insert = db.transaction(() => {
+    db.prepare(
+      `INSERT INTO chat_messages (id, room_id, sender_id, body)
+       VALUES (?, ?, ?, ?)`
+    ).run(id, roomId, userId, text);
+    db.prepare(
+      `UPDATE chat_rooms SET updated_at = datetime('now') WHERE id = ?`
+    ).run(roomId);
+    db.prepare(
+      `INSERT INTO chat_reads (room_id, user_id, last_read_at)
+       VALUES (?, ?, datetime('now'))
+       ON CONFLICT(room_id, user_id) DO UPDATE SET last_read_at = datetime('now')`
+    ).run(roomId, userId);
+  });
+  insert();
+  return mapChatMessageRow(
+    db
+      .prepare(
+        `SELECT m.id, m.room_id, m.sender_id, m.body, m.created_at,
+                u.name AS sender_name, u.username AS sender_username,
+                u.picture AS sender_picture,
+                u.discogs_username AS sender_discogs_username,
+                u.discogs_avatar_url AS sender_discogs_avatar_url
+         FROM chat_messages m
+         JOIN users u ON u.id = m.sender_id
+         WHERE m.id = ?`
+      )
+      .get(id)
+  );
+}
+
+export function markChatRoomRead(roomId, userId) {
+  const room = db.prepare("SELECT * FROM chat_rooms WHERE id = ?").get(roomId);
+  if (!canAccessChatRoom(room, userId)) {
+    throw new Error("Chat not found.");
+  }
+  db.prepare(
+    `INSERT INTO chat_reads (room_id, user_id, last_read_at)
+     VALUES (?, ?, datetime('now'))
+     ON CONFLICT(room_id, user_id) DO UPDATE SET last_read_at = datetime('now')`
+  ).run(roomId, userId);
+  return true;
+}
+
+export function countChatUnread(userId, communityId) {
+  if (!userId || !communityId) return 0;
+  if (!isCommunityMember(communityId, userId)) return 0;
+  ensureCommunityChatRoom(communityId);
+  const rooms = listChatRoomsForUser(userId, communityId);
+  return rooms.reduce((sum, room) => sum + (room.unreadCount || 0), 0);
 }
 
 export function getPlacThreadForUser(threadId, userId) {

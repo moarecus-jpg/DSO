@@ -11,6 +11,7 @@ import adminRoutes from "./routes/admin.js";
 import sessionRoutes from "./routes/sessions.js";
 import placRoutes from "./routes/plac.js";
 import communityRoutes from "./routes/communities.js";
+import chatRoutes from "./routes/chat.js";
 import { getDatabaseInfo, getGroupSessionShareMeta } from "./db.js";
 import { sessionStore } from "./sessionStore.js";
 import { appBaseUrl, discogsCallbackUrl } from "./appUrl.js";
@@ -23,6 +24,7 @@ import {
 } from "../shared/orderShare.js";
 import { startOrderMaintenanceJobs } from "./jobs/orderMaintenance.js";
 import { logBrowserStatus } from "./shops/browserFetch.js";
+import { attachChatRealtime } from "./chatRealtime.js";
 
 dotenv.config();
 
@@ -89,6 +91,7 @@ app.use("/auth/admin", adminRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/plac", placRoutes);
 app.use("/api/communities", communityRoutes);
+app.use("/api/chat", chatRoutes);
 
 if (serveClient) {
   const indexHtmlPath = path.join(distDir, "index.html");
@@ -125,7 +128,11 @@ if (serveClient) {
   });
 
   app.get("*", (req, res, next) => {
-    if (req.path.startsWith("/api") || req.path.startsWith("/auth")) {
+    if (
+      req.path.startsWith("/api") ||
+      req.path.startsWith("/auth") ||
+      req.path.startsWith("/ws")
+    ) {
       return next();
     }
     res.sendFile(indexHtmlPath, (err) => {
@@ -152,6 +159,10 @@ const server = app.listen(PORT, () => {
   );
   logBrowserStatus().catch(() => {});
   startOrderMaintenanceJobs();
+});
+
+attachChatRealtime(server, {
+  sessionSecret: process.env.SESSION_SECRET || "dev-secret-change-me",
 });
 
 server.on("error", (err) => {

@@ -8,6 +8,7 @@ import {
   Folder,
   HandCoins,
   Lock,
+  MessagesSquare,
   Package,
   Plus,
   Settings,
@@ -71,6 +72,13 @@ const ORDER_LINKS = [
     labelKey: "paymentRequests",
     countKey: "payments",
   },
+  {
+    to: "/chat",
+    icon: MessagesSquare,
+    iconClass: "chat",
+    labelKey: "chat",
+    countKey: "chat",
+  },
 ];
 
 const PLAC_LINKS = [
@@ -115,6 +123,14 @@ export function Sidebar() {
         setCounts((prev) => ({
           ...(prev ?? {}),
           payments: d.pendingCount ?? 0,
+        }))
+      )
+      .catch(() => {});
+    api("/api/chat/unread-count")
+      .then((d) =>
+        setCounts((prev) => ({
+          ...(prev ?? {}),
+          chat: d.unreadCount ?? 0,
         }))
       )
       .catch(() => {});

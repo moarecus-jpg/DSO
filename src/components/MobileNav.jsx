@@ -7,6 +7,7 @@ import {
   Folder,
   HandCoins,
   Lock,
+  MessagesSquare,
   MoreHorizontal,
   Package,
   Plus,
@@ -36,6 +37,7 @@ export function MobileNav() {
     pathname.startsWith("/canceled") ||
     pathname.startsWith("/my-statistics") ||
     pathname.startsWith("/payments") ||
+    pathname.startsWith("/chat") ||
     pathname.startsWith("/settings");
 
   useEffect(() => {
@@ -160,6 +162,15 @@ export function MobileNav() {
               >
                 <HandCoins size={16} strokeWidth={2.1} aria-hidden />
                 {t("nav.paymentRequests")}
+              </NavLink>
+              <NavLink
+                to="/chat"
+                role="menuitem"
+                className="mobile-nav-more-item"
+                onClick={() => setMoreOpen(false)}
+              >
+                <MessagesSquare size={16} strokeWidth={2.1} aria-hidden />
+                {t("nav.chat")}
               </NavLink>
               <NavLink
                 to="/settings"

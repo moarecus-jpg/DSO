@@ -29,6 +29,7 @@ import {
   JoinCommunity,
 } from "./pages/Communities.jsx";
 import { InviteLanding } from "./pages/InviteLanding.jsx";
+import { Chat } from "./pages/Chat.jsx";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -86,6 +87,8 @@ function AppRoutes() {
         <Route path="/marketplace-buyer-preview" element={<MarketplaceBuyerPreview />} />
         <Route path="/session/:id" element={<Session />} />
         <Route path="/payments" element={<PaymentRequests />} />
+        <Route path="/chat" element={<Chat />} />
+        <Route path="/chat/:roomId" element={<Chat />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="/join" element={<JoinCommunity />} />

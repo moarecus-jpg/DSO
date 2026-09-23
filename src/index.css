@@ -5478,6 +5478,10 @@ body.modal-open .order-sticky-backdrop {
   background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
 }
 
+.sidebar-link-v2.active .sidebar-link-icon--chat {
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+}
+
 .sidebar-link-label {
   min-width: 0;
   flex: 1;
@@ -12999,6 +13003,116 @@ img.plac-user-avatar {
 
   .plac-inbox-pane {
     min-height: min(70vh, 36rem);
+  }
+}
+
+.chat-list-actions {
+  display: flex;
+  padding: 0.75rem 0.85rem 0.35rem;
+}
+
+.chat-list-actions .btn {
+  width: 100%;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.chat-room-icon {
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.chat-bubble-sender {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.chat-back-mobile {
+  display: none;
+}
+
+.chat-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: end center;
+  padding: 1rem;
+  background: rgba(2, 6, 23, 0.55);
+}
+
+.chat-picker {
+  width: min(100%, 26rem);
+  max-height: min(70vh, 32rem);
+  overflow: auto;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0f172a;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.chat-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.chat-picker-head h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.chat-picker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.4rem;
+}
+
+.chat-picker-list button {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.65rem 0.7rem;
+  border: 0;
+  border-radius: 0.7rem;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chat-picker-list button:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.chat-picker-list button span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.chat-picker-list strong {
+  font-weight: 600;
+}
+
+@media (min-width: 820px) {
+  .chat-picker-backdrop {
+    place-items: center;
+  }
+}
+
+@media (max-width: 819px) {
+  .chat-back-mobile {
+    display: inline-flex;
   }
 }
 
