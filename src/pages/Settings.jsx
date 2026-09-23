@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Disc3, ExternalLink, Lock, Shield, Unplug } from "lucide-react";
+import { Camera, Disc3, ExternalLink, Lock, Shield, Trash2, Unplug } from "lucide-react";
 import { api } from "../api.js";
+import { UserAvatar } from "../components/UserAvatar.jsx";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
+import { compressImage } from "../lib/compressImage.js";
+import { resolveUserAvatarUrl } from "../utils/userAvatarUrl.js";
 import { formatPaypalDisplay } from "../../shared/paypalMe.js";
 
 function discogsCallbackFallback() {
@@ -20,6 +23,9 @@ export function Settings() {
   const [message, setMessage] = useState(null);
   const [messageType, setMessageType] = useState("ok");
   const [health, setHealth] = useState(null);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarBump, setAvatarBump] = useState(0);
+  const avatarInputRef = useRef(null);
 
   useEffect(() => {
     fetch("/api/health")
@@ -77,6 +83,54 @@ export function Settings() {
     await refresh();
     setMessageType("ok");
     setMessage(t("settings.disconnected"));
+  }
+
+  async function uploadAvatar(file) {
+    if (!file || avatarBusy) return;
+    if (!file.type?.startsWith("image/")) {
+      setMessageType("warn");
+      setMessage(t("settings.avatarUnsupported"));
+      return;
+    }
+    setAvatarBusy(true);
+    setMessage(null);
+    try {
+      const compressed = (await compressImage(file)) || file;
+      await api("/auth/me/avatar", {
+        method: "PUT",
+        headers: {
+          "Content-Type": compressed.type || "image/jpeg",
+        },
+        body: compressed,
+      });
+      await refresh();
+      setAvatarBump((n) => n + 1);
+      setMessageType("ok");
+      setMessage(t("settings.avatarSaved"));
+    } catch (err) {
+      setMessageType("warn");
+      setMessage(err.message ?? t("common.error"));
+    } finally {
+      setAvatarBusy(false);
+    }
+  }
+
+  async function removeAvatar() {
+    if (avatarBusy) return;
+    setAvatarBusy(true);
+    setMessage(null);
+    try {
+      await api("/auth/me/avatar", { method: "DELETE" });
+      await refresh();
+      setAvatarBump((n) => n + 1);
+      setMessageType("ok");
+      setMessage(t("settings.avatarRemoved"));
+    } catch (err) {
+      setMessageType("warn");
+      setMessage(err.message ?? t("common.error"));
+    } finally {
+      setAvatarBusy(false);
+    }
   }
 
   const discogsReady = health?.discogsConfigured === true;
@@ -426,18 +480,94 @@ export function Settings() {
           />
           <span className="sidebar-theme-toggle-track" aria-hidden />
         </label>
+        <label className="settings-theme-toggle">
+          <span>{t("settings.notifyChatMessage")}</span>
+          <input
+            type="checkbox"
+            className="sidebar-theme-toggle-input"
+            checked={Boolean(user?.notifyChatMessage)}
+            disabled={!user?.hasRealEmail}
+            onChange={async (e) => {
+              try {
+                await api("/auth/me/notifications", {
+                  method: "PATCH",
+                  body: JSON.stringify({ notifyChatMessage: e.target.checked }),
+                });
+                await refresh();
+                setMessageType("ok");
+                setMessage(t("settings.notificationsSaved"));
+              } catch (err) {
+                setMessageType("warn");
+                setMessage(err.message ?? t("common.error"));
+              }
+            }}
+          />
+          <span className="sidebar-theme-toggle-track" aria-hidden />
+        </label>
       </div>
 
       <div className="card settings-card">
         <h2>{t("settings.account")}</h2>
-        <p>
-          <strong>{user?.name}</strong>
-        </p>
-        {user?.username && (
-          <p className="muted">
-            {t("settings.usernameLabel")} <code>{user.username}</code>
-          </p>
-        )}
+        <div className="settings-avatar-row">
+          <UserAvatar
+            name={user?.name}
+            avatarUrl={
+              (() => {
+                const url = resolveUserAvatarUrl(user);
+                if (!url) return null;
+                return `${url}${url.includes("?") ? "&" : "?"}v=${avatarBump}`;
+              })()
+            }
+            size={72}
+            className="settings-avatar"
+          />
+          <div className="settings-avatar-copy">
+            <p>
+              <strong>{user?.name}</strong>
+            </p>
+            {user?.username && (
+              <p className="muted">
+                {t("settings.usernameLabel")} <code>{user.username}</code>
+              </p>
+            )}
+            <p className="muted fine">{t("settings.avatarHint")}</p>
+            <div className="settings-avatar-actions">
+              <button
+                type="button"
+                className="btn btn-primary btn-small"
+                disabled={avatarBusy}
+                onClick={() => avatarInputRef.current?.click()}
+              >
+                <Camera size={16} strokeWidth={2.1} aria-hidden />
+                {user?.hasCustomAvatar
+                  ? t("settings.avatarChange")
+                  : t("settings.avatarAdd")}
+              </button>
+              {user?.hasCustomAvatar ? (
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-small"
+                  disabled={avatarBusy}
+                  onClick={removeAvatar}
+                >
+                  <Trash2 size={16} strokeWidth={2.1} aria-hidden />
+                  {t("settings.avatarRemove")}
+                </button>
+              ) : null}
+            </div>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              className="sr-only"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (file) uploadAvatar(file);
+              }}
+            />
+          </div>
+        </div>
       </div>
 
       {user?.isAdmin && (

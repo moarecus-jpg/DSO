@@ -1,4 +1,4 @@
-import { Router } from "express";
+import express, { Router } from "express";
 import {
   connectDiscogs,
   consumePasswordResetToken,
@@ -23,6 +23,11 @@ import {
   listPaymentRequestsForUser,
   countPendingPaymentRequestsForUser,
   cancelPaymentRequestForRecipient,
+  updateUserAvatar,
+  clearUserAvatar,
+  getUserAvatar,
+  PROFILE_AVATAR_MIME_TYPES,
+  MAX_PROFILE_AVATAR_BYTES,
 } from "../db.js";
 import {
   normalizePaypalMe,
@@ -118,6 +123,48 @@ router.patch("/me/privacy", (req, res) => {
   res.json({ user: publicUserWithCommunities(user) });
 });
 
+const profileAvatarParser = express.raw({
+  type: PROFILE_AVATAR_MIME_TYPES,
+  limit: MAX_PROFILE_AVATAR_BYTES,
+});
+
+router.put("/me/avatar", profileAvatarParser, (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Prijavi se v aplikacijo." });
+  }
+  const mimeType = String(req.headers["content-type"] || "");
+  try {
+    const user = updateUserAvatar(req.session.userId, mimeType, req.body);
+    res.json({ user: withAdminFlag(user) });
+  } catch (err) {
+    res.status(400).json({ error: err.message ?? "Fotografije ni bilo mogoče shraniti." });
+  }
+});
+
+router.delete("/me/avatar", (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Prijavi se v aplikacijo." });
+  }
+  const user = clearUserAvatar(req.session.userId);
+  if (!user) {
+    return res.status(404).json({ error: "Uporabnik ni bil najden." });
+  }
+  res.json({ user: withAdminFlag(user) });
+});
+
+router.get("/avatar/:userId", (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Prijavi se v aplikacijo." });
+  }
+  const row = getUserAvatar(req.params.userId);
+  if (!row?.avatar_data || !row.avatar_mime) {
+    return res.status(404).json({ error: "Profile photo not found." });
+  }
+  res.setHeader("Cache-Control", "private, max-age=3600");
+  res.type(row.avatar_mime);
+  return res.send(row.avatar_data);
+});
+
 router.patch("/me/email", (req, res) => {
   if (!req.session.userId) {
     return res.status(401).json({ error: "Prijavi se v aplikacijo." });
@@ -174,6 +221,9 @@ router.patch("/me/notifications", (req, res) => {
   if (typeof body.notifyOrderAttention === "boolean") {
     prefs.notifyOrderAttention = body.notifyOrderAttention;
   }
+  if (typeof body.notifyChatMessage === "boolean") {
+    prefs.notifyChatMessage = body.notifyChatMessage;
+  }
 
   const user = findUserById(req.session.userId);
   if (!user) {
@@ -184,7 +234,8 @@ router.patch("/me/notifications", (req, res) => {
     prefs.notifyNewOrder ||
     prefs.notifyOrderNote ||
     prefs.notifyOrderClosed ||
-    prefs.notifyOrderAttention;
+    prefs.notifyOrderAttention ||
+    prefs.notifyChatMessage;
   if (enabling && !isDeliverableEmail(user.email)) {
     return res.status(400).json({
       error: "Najprej vnesi veljaven e-poštni naslov v nastavitvah.",

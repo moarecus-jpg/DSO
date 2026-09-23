@@ -7,6 +7,7 @@ import {
   countChatUnread,
   deleteChatMessage,
   deleteChatRoom,
+  editChatMessage,
   findUserById,
   getActiveCommunityForUser,
   getChatAttachmentForUser,
@@ -25,6 +26,8 @@ import {
 import { googleConfigured } from "../auth/google.js";
 import { MOCK_USER } from "../mock.js";
 import { broadcastChatEvent } from "../chatRealtime.js";
+import { appBaseUrl } from "../appUrl.js";
+import { notifyChatMessage } from "../email/notifications.js";
 
 const router = Router();
 
@@ -112,6 +115,7 @@ router.get("/members", requireUser, (req, res) => {
         picture: m.picture ?? null,
         discogsUsername: m.discogs_username ?? null,
         discogsAvatarUrl: m.discogs_avatar_url ?? null,
+        hasCustomAvatar: Boolean(m.avatar_mime),
         role: m.role,
       }));
     res.json({ members });
@@ -174,6 +178,30 @@ router.post("/rooms/:roomId/messages", requireUser, (req, res) => {
       { allowEmpty: hasAttachments }
     );
     broadcastMessage(req.params.roomId, message);
+    const room = getChatRoomForUser(req.params.roomId, req.session.userId);
+    const sender = findUserById(req.session.userId);
+    const recipients = listChatRoomRecipientIds(req.params.roomId);
+    const community = getActiveCommunityForUser(req.session.userId);
+    notifyChatMessage({
+      baseUrl: appBaseUrl(req),
+      roomId: req.params.roomId,
+      roomKind: room?.kind ?? "community",
+      roomLabel:
+        room?.kind === "community"
+          ? community?.name ?? "Community"
+          : room?.otherUser?.name ||
+            room?.otherUser?.username ||
+            "Direct message",
+      senderName:
+        sender?.name ||
+        sender?.username ||
+        sender?.discogs_username ||
+        "Someone",
+      messageBody: message?.body,
+      hasAttachments,
+      recipientIds: recipients,
+      excludeUserId: req.session.userId,
+    }).catch((err) => console.error("Chat message notification:", err));
     res.status(201).json({ message });
   } catch (err) {
     const notFound = err.message === "Chat not found.";
@@ -277,6 +305,30 @@ router.delete("/rooms/:roomId", requireUser, (req, res) => {
         ? 404
         : err.message.includes("Only direct messages")
           ? 400
+          : 400;
+    res.status(status).json({ error: err.message });
+  }
+});
+
+router.patch("/messages/:messageId", requireUser, (req, res) => {
+  try {
+    const message = editChatMessage(
+      req.params.messageId,
+      req.session.userId,
+      req.body?.body
+    );
+    broadcastChatEvent(listChatRoomRecipientIds(message.roomId), {
+      type: "chat.message",
+      roomId: message.roomId,
+      message,
+    });
+    res.json({ message });
+  } catch (err) {
+    const status =
+      err.message === "Chat not found." || err.message === "Message not found."
+        ? 404
+        : err.message.includes("only edit")
+          ? 403
           : 400;
     res.status(status).json({ error: err.message });
   }

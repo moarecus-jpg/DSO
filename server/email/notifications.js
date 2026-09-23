@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import { sendEmail } from "./mailer.js";
 import {
   listUsersForNewOrderNotifications,
+  listUsersForChatNotifications,
   listSessionMembersForNotifications,
   isDeliverableEmail,
 } from "../db.js";
@@ -289,6 +290,63 @@ ${linkLabel}: ${url}`;
 
   await sendEmail({
     to: owner.email,
+    subject,
+    text,
+    html,
+    attachments: withBrandAttachments(undefined, logoBuffer),
+  });
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+export async function notifyChatMessage({
+  baseUrl,
+  roomId,
+  roomKind,
+  roomLabel,
+  senderName,
+  messageBody,
+  hasAttachments = false,
+  recipientIds,
+  excludeUserId,
+}) {
+  const users = listUsersForChatNotifications(recipientIds, excludeUserId);
+  if (!users.length) return;
+
+  const origin = String(baseUrl || "").replace(/\/$/, "");
+  const url = `${origin}/chat/${roomId}`;
+  const from = senderName || "Someone";
+  const kindLabel =
+    roomKind === "community" ? "community chat" : "direct message";
+  const where = roomLabel ? ` in ${roomLabel}` : "";
+  const rawBody = String(messageBody || "").trim();
+  const preview = rawBody
+    ? rawBody.length > 200
+      ? `${rawBody.slice(0, 200)}…`
+      : rawBody
+    : hasAttachments
+      ? "Sent an attachment"
+      : "Sent a message";
+  const subject = `${APP_SHORT_NAME}: New message from ${from}`;
+  const text = `${from} sent a ${kindLabel}${where}:\n\n"${preview}"\n\nOpen chat: ${url}`;
+  const { html, logoBuffer } = brandedHtml(
+    baseUrl,
+    `<p><strong>${escapeHtml(from)}</strong> sent a ${kindLabel}${
+      roomLabel ? ` in <strong>${escapeHtml(roomLabel)}</strong>` : ""
+    }:</p>
+<blockquote style="margin:12px 0;padding:10px 12px;border-left:3px solid #c4b5fd;background:#f8f7ff;border-radius:0 8px 8px 0;">${escapeHtml(
+      preview
+    ).replace(/\n/g, "<br>")}</blockquote>
+<p><a href="${url}">Open chat</a></p>`
+  );
+
+  await notifyUsers(users, {
     subject,
     text,
     html,

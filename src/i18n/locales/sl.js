@@ -645,6 +645,10 @@ export default {
     clearHistory: "Počisti zgodovino",
     deleteConversation: "Izbriši pogovor",
     deleteMessage: "Izbriši sporočilo",
+    editMessage: "Uredi sporočilo",
+    saveEdit: "Shrani",
+    edited: "urejeno",
+    editEmpty: "Sporočilo ne sme biti prazno.",
     clearCommunityConfirm:
       "Počistim vsa sporočila v skupnostnem klepetu? Tega ni mogoče razveljaviti.",
     clearDmConfirm: "Počistim vsa sporočila v tem pogovoru?",
@@ -655,6 +659,13 @@ export default {
   settings: {
     title: "Nastavitve",
     account: "Račun",
+    avatarHint: "Prikaže se v klepetu in po aplikaciji. JPEG, PNG, WebP ali GIF.",
+    avatarAdd: "Dodaj fotografijo",
+    avatarChange: "Zamenjaj fotografijo",
+    avatarRemove: "Odstrani fotografijo",
+    avatarSaved: "Profilna fotografija shranjena.",
+    avatarRemoved: "Profilna fotografija odstranjena.",
+    avatarUnsupported: "Izberi slikovno datoteko (JPEG, PNG, WebP ali GIF).",
     usernameLabel: "Uporabniško ime:",
     discogsAccount: "Discogs račun",
     connectedAs: "Povezan kot",
@@ -723,6 +734,7 @@ export default {
     notifyOrderClosed: "Naročilo zaključeno",
     notifyOrderAttention:
       "Moje naročilo zahteva pozornost (nedejavno ali mimo ciljnega datuma)",
+    notifyChatMessage: "Novo sporočilo v klepetu",
   },
   admin: {
     title: "Admin računov",

@@ -150,6 +150,9 @@ for (const sql of [
   "ALTER TABLE users ADD COLUMN notify_order_note INTEGER NOT NULL DEFAULT 0",
   "ALTER TABLE users ADD COLUMN notify_order_closed INTEGER NOT NULL DEFAULT 0",
   "ALTER TABLE users ADD COLUMN notify_order_attention INTEGER NOT NULL DEFAULT 1",
+  "ALTER TABLE users ADD COLUMN notify_chat_message INTEGER NOT NULL DEFAULT 1",
+  "ALTER TABLE users ADD COLUMN avatar_mime TEXT",
+  "ALTER TABLE users ADD COLUMN avatar_data BLOB",
   "ALTER TABLE group_sessions ADD COLUMN attention_notified_at TEXT",
   "ALTER TABLE group_sessions ADD COLUMN shipping_mode TEXT DEFAULT 'equal'",
   "ALTER TABLE session_members ADD COLUMN settled_at TEXT",
@@ -476,6 +479,12 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_chat_attachments_message
     ON chat_attachments (message_id);
 `);
+
+try {
+  db.exec("ALTER TABLE chat_messages ADD COLUMN edited_at TEXT");
+} catch {
+  /* column already exists */
+}
 
 const SLOVENIA_COMMUNITY_SLUG = "slovenia";
 const SLOVENIA_COMMUNITY_NAME = "Slovenian Community";
@@ -1904,6 +1913,47 @@ export function updateUserEmail(userId, email) {
   return findUserById(userId);
 }
 
+export const PROFILE_AVATAR_MIME_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+];
+export const MAX_PROFILE_AVATAR_BYTES = 2 * 1024 * 1024;
+
+export function updateUserAvatar(userId, mimeType, buffer) {
+  if (!userId) throw new Error("User not found.");
+  if (!PROFILE_AVATAR_MIME_TYPES.includes(mimeType)) {
+    throw new Error("Unsupported image format.");
+  }
+  if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
+    throw new Error("Photo is missing.");
+  }
+  if (buffer.length > MAX_PROFILE_AVATAR_BYTES) {
+    throw new Error("Photo is too large (max 2 MB).");
+  }
+  db.prepare(
+    "UPDATE users SET avatar_mime = ?, avatar_data = ? WHERE id = ?"
+  ).run(mimeType, buffer, userId);
+  return findUserById(userId);
+}
+
+export function clearUserAvatar(userId) {
+  db.prepare(
+    "UPDATE users SET avatar_mime = NULL, avatar_data = NULL WHERE id = ?"
+  ).run(userId);
+  return findUserById(userId);
+}
+
+export function getUserAvatar(userId) {
+  if (!userId) return null;
+  return db
+    .prepare(
+      "SELECT id, avatar_mime, avatar_data FROM users WHERE id = ?"
+    )
+    .get(userId);
+}
+
 export function updateNotificationPrefs(userId, prefs) {
   const fields = [];
   const values = [];
@@ -1923,6 +1973,10 @@ export function updateNotificationPrefs(userId, prefs) {
   if (typeof prefs.notifyOrderAttention === "boolean") {
     fields.push("notify_order_attention = ?");
     values.push(prefs.notifyOrderAttention ? 1 : 0);
+  }
+  if (typeof prefs.notifyChatMessage === "boolean") {
+    fields.push("notify_chat_message = ?");
+    values.push(prefs.notifyChatMessage ? 1 : 0);
   }
 
   if (!fields.length) return findUserById(userId);
@@ -2080,6 +2134,22 @@ export function listUsersForNewOrderNotifications(excludeUserId, communityId) {
          AND u.id != ?`
     )
     .all(communityId, excludeUserId ?? "");
+}
+
+export function listUsersForChatNotifications(userIds, excludeUserId) {
+  const ids = [...new Set((userIds ?? []).filter(Boolean))].filter(
+    (id) => id !== excludeUserId
+  );
+  if (!ids.length) return [];
+  const placeholders = ids.map(() => "?").join(",");
+  return db
+    .prepare(
+      `SELECT u.id, u.email, u.name, u.username FROM users u
+       WHERE u.id IN (${placeholders})
+         AND u.notify_chat_message = 1
+         AND ${deliverableUserFilter()}`
+    )
+    .all(...ids);
 }
 
 export function listSessionMembersForNotifications(sessionId, type, excludeUserId) {
@@ -2597,7 +2667,7 @@ export function listCommunityMembers(communityId, actorUserId) {
   return db
     .prepare(
       `SELECT u.id, u.name, u.username, u.picture,
-              u.discogs_username, u.discogs_avatar_url,
+              u.discogs_username, u.discogs_avatar_url, u.avatar_mime,
               cm.role, cm.joined_at
        FROM community_members cm
        JOIN users u ON u.id = cm.user_id
@@ -2731,6 +2801,7 @@ export function publicUser(user) {
     hideMyRecords: Boolean(user.hide_my_records),
     hasRealEmail: isDeliverableEmail(user.email),
     hasPassword: Boolean(user.password_hash),
+    hasCustomAvatar: Boolean(user.avatar_mime),
     notifyNewOrder: Boolean(user.notify_new_order),
     notifyOrderNote: Boolean(user.notify_order_note),
     notifyOrderClosed: Boolean(user.notify_order_closed),
@@ -2738,6 +2809,10 @@ export function publicUser(user) {
       user.notify_order_attention == null
         ? true
         : Boolean(user.notify_order_attention),
+    notifyChatMessage:
+      user.notify_chat_message == null
+        ? true
+        : Boolean(user.notify_chat_message),
     shopDiscountPercent: Number(user.shop_discount_percent) || 0,
     shopDiscountLabel: user.shop_discount_label ?? null,
     paypalMe: user.paypal_me ?? null,
@@ -3442,6 +3517,7 @@ function mapChatUser(row) {
     picture: row.picture ?? null,
     discogsUsername: row.discogs_username ?? null,
     discogsAvatarUrl: row.discogs_avatar_url ?? null,
+    hasCustomAvatar: Boolean(row.avatar_mime),
   };
 }
 
@@ -3452,6 +3528,7 @@ function mapChatMessageRow(row) {
     roomId: row.room_id,
     body: row.body,
     createdAt: row.created_at,
+    editedAt: row.edited_at ?? null,
     sender: mapChatUser({
       id: row.sender_id,
       name: row.sender_name,
@@ -3503,7 +3580,7 @@ function hydrateChatMessageAttachments(messages) {
 export function getChatMessageForUser(messageId, userId) {
   const row = db
     .prepare(
-      `SELECT m.id, m.room_id, m.sender_id, m.body, m.created_at,
+      `SELECT m.id, m.room_id, m.sender_id, m.body, m.created_at, m.edited_at,
               u.name AS sender_name, u.username AS sender_username,
               u.picture AS sender_picture,
               u.discogs_username AS sender_discogs_username,
@@ -3543,6 +3620,7 @@ function mapChatRoomRow(row, userId) {
           picture: row.other_picture,
           discogs_username: row.other_discogs_username,
           discogs_avatar_url: row.other_discogs_avatar_url,
+          avatar_mime: row.other_avatar_mime,
         })
       : null;
   let lastMessage = null;
@@ -3586,6 +3664,7 @@ function chatRoomSelectBase() {
             ou.picture AS other_picture,
             ou.discogs_username AS other_discogs_username,
             ou.discogs_avatar_url AS other_discogs_avatar_url,
+            ou.avatar_mime AS other_avatar_mime,
             lm.id AS last_id, lm.body AS last_body,
             lm.created_at AS last_created_at, lm.sender_id AS last_sender_id,
             (
@@ -3683,7 +3762,7 @@ export function listChatMessages(roomId, userId, { after = null, limit = 100 } =
   if (after) {
     rows = db
       .prepare(
-        `SELECT m.id, m.room_id, m.sender_id, m.body, m.created_at,
+        `SELECT m.id, m.room_id, m.sender_id, m.body, m.created_at, m.edited_at,
                 u.name AS sender_name, u.username AS sender_username,
                 u.picture AS sender_picture,
                 u.discogs_username AS sender_discogs_username,
@@ -3699,7 +3778,7 @@ export function listChatMessages(roomId, userId, { after = null, limit = 100 } =
   } else {
     rows = db
       .prepare(
-        `SELECT m.id, m.room_id, m.sender_id, m.body, m.created_at,
+        `SELECT m.id, m.room_id, m.sender_id, m.body, m.created_at, m.edited_at,
                 u.name AS sender_name, u.username AS sender_username,
                 u.picture AS sender_picture,
                 u.discogs_username AS sender_discogs_username,
@@ -3743,6 +3822,39 @@ export function postChatMessage(roomId, userId, body, { allowEmpty = false } = {
   });
   insert();
   return getChatMessageForUser(id, userId);
+}
+
+export function editChatMessage(messageId, userId, body) {
+  const existing = db
+    .prepare("SELECT * FROM chat_messages WHERE id = ?")
+    .get(messageId);
+  if (!existing) throw new Error("Message not found.");
+  if (existing.sender_id !== userId) {
+    throw new Error("You can only edit your own messages.");
+  }
+  const room = db
+    .prepare("SELECT * FROM chat_rooms WHERE id = ?")
+    .get(existing.room_id);
+  if (!canAccessChatRoom(room, userId)) {
+    throw new Error("Chat not found.");
+  }
+  const text = String(body ?? "").trim();
+  const attachCount = countChatAttachments(messageId);
+  if (!text && attachCount === 0) {
+    throw new Error("Message cannot be empty.");
+  }
+  if (text.length > CHAT_MESSAGE_MAX_LEN) {
+    throw new Error(`Message must be at most ${CHAT_MESSAGE_MAX_LEN} characters.`);
+  }
+  db.prepare(
+    `UPDATE chat_messages
+     SET body = ?, edited_at = datetime('now')
+     WHERE id = ?`
+  ).run(text, messageId);
+  db.prepare(
+    `UPDATE chat_rooms SET updated_at = datetime('now') WHERE id = ?`
+  ).run(existing.room_id);
+  return getChatMessageForUser(messageId, userId);
 }
 
 export function countChatAttachments(messageId) {

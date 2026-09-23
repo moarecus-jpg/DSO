@@ -15,7 +15,8 @@ export function NotificationToggle({ className = "", variant = "sidebar" }) {
     user?.notifyNewOrder ||
       user?.notifyOrderNote ||
       user?.notifyOrderClosed ||
-      user?.notifyOrderAttention
+      user?.notifyOrderAttention ||
+      user?.notifyChatMessage
   );
 
   async function handleChange(enabled) {
@@ -30,6 +31,7 @@ export function NotificationToggle({ className = "", variant = "sidebar" }) {
           notifyOrderNote: enabled,
           notifyOrderClosed: enabled,
           notifyOrderAttention: enabled,
+          notifyChatMessage: enabled,
         }),
       });
       await refresh();

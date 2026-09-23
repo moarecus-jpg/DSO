@@ -639,6 +639,10 @@ export default {
     clearHistory: "Clear chat history",
     deleteConversation: "Delete conversation",
     deleteMessage: "Delete message",
+    editMessage: "Edit message",
+    saveEdit: "Save",
+    edited: "edited",
+    editEmpty: "Message cannot be empty.",
     clearCommunityConfirm:
       "Clear all messages in this community chat? This cannot be undone.",
     clearDmConfirm: "Clear all messages in this conversation?",
@@ -649,6 +653,13 @@ export default {
   settings: {
     title: "Settings",
     account: "Account",
+    avatarHint: "Shown in chat and across the app. JPEG, PNG, WebP, or GIF.",
+    avatarAdd: "Add photo",
+    avatarChange: "Change photo",
+    avatarRemove: "Remove photo",
+    avatarSaved: "Profile photo saved.",
+    avatarRemoved: "Profile photo removed.",
+    avatarUnsupported: "Choose an image file (JPEG, PNG, WebP, or GIF).",
     usernameLabel: "Username:",
     discogsAccount: "Discogs account",
     connectedAs: "Connected as",
@@ -714,6 +725,7 @@ export default {
     notifyOrderNote: "Note posted in an order I'm in",
     notifyOrderClosed: "Order closed",
     notifyOrderAttention: "My order needs attention (idle or past target date)",
+    notifyChatMessage: "New chat message",
   },
   admin: {
     title: "User admin",

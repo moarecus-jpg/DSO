@@ -6,6 +6,7 @@ import {
   MessagesSquare,
   MoreVertical,
   Paperclip,
+  Pencil,
   Send,
   Trash2,
   Users,
@@ -23,9 +24,16 @@ import { resolveUserAvatarUrl } from "../utils/userAvatarUrl.js";
 const FALLBACK_POLL_MS = 8000;
 
 function memberLabel(user) {
+  if (user?.name?.trim()) return user.name.trim();
   if (user?.discogsUsername) return `@${user.discogsUsername}`;
   if (user?.username) return `@${user.username}`;
-  return user?.name ?? "—";
+  return "—";
+}
+
+function memberHandle(user) {
+  if (user?.discogsUsername) return `@${user.discogsUsername}`;
+  if (user?.username) return `@${user.username}`;
+  return null;
 }
 
 function formatWhen(value, locale) {
@@ -123,6 +131,8 @@ export function Chat() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [capabilities, setCapabilities] = useState(null);
   const [busyAction, setBusyAction] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editDraft, setEditDraft] = useState("");
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const menuRef = useRef(null);
@@ -321,6 +331,8 @@ export function Chat() {
     setDragging(false);
     setMenuOpen(false);
     setCapabilities(null);
+    setEditingId(null);
+    setEditDraft("");
     dragDepthRef.current = 0;
   }, [roomId]);
 
@@ -560,7 +572,51 @@ export function Chat() {
     try {
       await api(`/api/chat/messages/${messageId}`, { method: "DELETE" });
       setMessages((prev) => prev.filter((m) => m.id !== messageId));
+      if (editingId === messageId) {
+        setEditingId(null);
+        setEditDraft("");
+      }
       await loadRooms({ silent: true });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  function startEditMessage(msg) {
+    setEditingId(msg.id);
+    setEditDraft(msg.body || "");
+    setError(null);
+  }
+
+  function cancelEditMessage() {
+    setEditingId(null);
+    setEditDraft("");
+  }
+
+  async function saveEditMessage(messageId) {
+    if (!messageId || busyAction) return;
+    const text = editDraft.trim();
+    const current = messages.find((m) => m.id === messageId);
+    const hasAttachments = Boolean(current?.attachments?.length);
+    if (!text && !hasAttachments) {
+      setError(t("chat.editEmpty"));
+      return;
+    }
+    setBusyAction(`edit:${messageId}`);
+    setError(null);
+    try {
+      const data = await api(`/api/chat/messages/${messageId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ body: text }),
+      });
+      setMessages((prev) => applyIncomingMessage(prev, data.message));
+      setRooms((prev) =>
+        applyRoomPreview(prev, roomId, data.message, roomId, user?.id, t)
+      );
+      setEditingId(null);
+      setEditDraft("");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -654,7 +710,8 @@ export function Chat() {
                     <span className="plac-inbox-thread-listing">
                       {isCommunity
                         ? t("chat.communityRoomHint")
-                        : t("chat.directMessage")}
+                        : memberHandle(room.otherUser) ||
+                          t("chat.directMessage")}
                     </span>
                     <span className="plac-inbox-thread-preview">
                       {room.lastMessage?.body || t("chat.noMessagesYet")}
@@ -702,7 +759,8 @@ export function Chat() {
                     <p className="muted plac-inbox-pane-listing">
                       {activeRoom?.kind === "community"
                         ? t("chat.communityRoomHint")
-                        : t("chat.directMessage")}
+                        : memberHandle(activeRoom?.otherUser) ||
+                          t("chat.directMessage")}
                     </p>
                   </div>
                 </div>
@@ -765,12 +823,13 @@ export function Chat() {
                     const mine = msg.sender?.id === user?.id;
                     const canDeleteMsg =
                       mine || Boolean(capabilities?.canModerateMessages);
+                    const isEditing = editingId === msg.id;
                     return (
                       <div
                         key={msg.id}
                         className={`plac-inbox-bubble${
                           mine ? " plac-inbox-bubble--mine" : ""
-                        }`}
+                        }${isEditing ? " is-editing" : ""}`}
                       >
                         <div className="chat-bubble-top">
                           {!mine && activeRoom?.kind === "community" ? (
@@ -780,50 +839,113 @@ export function Chat() {
                           ) : (
                             <span />
                           )}
-                          {canDeleteMsg ? (
-                            <button
-                              type="button"
-                              className="chat-bubble-delete"
-                              aria-label={t("chat.deleteMessage")}
-                              disabled={busyAction === `msg:${msg.id}`}
-                              onClick={() => handleDeleteMessage(msg.id)}
-                            >
-                              <Trash2 size={13} strokeWidth={2} />
-                            </button>
+                          {!isEditing && (mine || canDeleteMsg) ? (
+                            <div className="chat-bubble-actions">
+                              {mine ? (
+                                <button
+                                  type="button"
+                                  className="chat-bubble-action"
+                                  aria-label={t("chat.editMessage")}
+                                  disabled={Boolean(busyAction)}
+                                  onClick={() => startEditMessage(msg)}
+                                >
+                                  <Pencil size={13} strokeWidth={2} />
+                                </button>
+                              ) : null}
+                              {canDeleteMsg ? (
+                                <button
+                                  type="button"
+                                  className="chat-bubble-action chat-bubble-action--danger"
+                                  aria-label={t("chat.deleteMessage")}
+                                  disabled={busyAction === `msg:${msg.id}`}
+                                  onClick={() => handleDeleteMessage(msg.id)}
+                                >
+                                  <Trash2 size={13} strokeWidth={2} />
+                                </button>
+                              ) : null}
+                            </div>
                           ) : null}
                         </div>
-                        {msg.body ? <p>{msg.body}</p> : null}
-                        {msg.attachments?.length ? (
-                          <div className="chat-bubble-attachments">
-                            {msg.attachments.map((file) =>
-                              file.mimeType?.startsWith("image/") ? (
-                                <a
-                                  key={file.id}
-                                  href={file.url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="chat-bubble-image"
-                                >
-                                  <img src={file.url} alt={file.fileName} />
-                                </a>
-                              ) : (
-                                <a
-                                  key={file.id}
-                                  href={file.url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="chat-bubble-file"
-                                >
-                                  <FileText size={16} strokeWidth={2} />
-                                  <span>{file.fileName}</span>
-                                </a>
-                              )
-                            )}
+                        {isEditing ? (
+                          <div className="chat-bubble-edit">
+                            <textarea
+                              className="chat-bubble-edit-input"
+                              value={editDraft}
+                              onChange={(e) => setEditDraft(e.target.value)}
+                              maxLength={2000}
+                              rows={3}
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === "Escape") {
+                                  e.preventDefault();
+                                  cancelEditMessage();
+                                }
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                  e.preventDefault();
+                                  saveEditMessage(msg.id);
+                                }
+                              }}
+                            />
+                            <div className="chat-bubble-edit-actions">
+                              <button
+                                type="button"
+                                className="btn btn-ghost btn-small"
+                                onClick={cancelEditMessage}
+                                disabled={busyAction === `edit:${msg.id}`}
+                              >
+                                {t("common.cancel")}
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-primary btn-small"
+                                onClick={() => saveEditMessage(msg.id)}
+                                disabled={busyAction === `edit:${msg.id}`}
+                              >
+                                {busyAction === `edit:${msg.id}` ? (
+                                  <Loader2 className="spin" size={14} />
+                                ) : (
+                                  t("chat.saveEdit")
+                                )}
+                              </button>
+                            </div>
                           </div>
-                        ) : null}
-                        <time dateTime={msg.createdAt}>
-                          {formatWhen(msg.createdAt, locale)}
-                        </time>
+                        ) : (
+                          <>
+                            {msg.body ? <p>{msg.body}</p> : null}
+                            {msg.attachments?.length ? (
+                              <div className="chat-bubble-attachments">
+                                {msg.attachments.map((file) =>
+                                  file.mimeType?.startsWith("image/") ? (
+                                    <a
+                                      key={file.id}
+                                      href={file.url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="chat-bubble-image"
+                                    >
+                                      <img src={file.url} alt={file.fileName} />
+                                    </a>
+                                  ) : (
+                                    <a
+                                      key={file.id}
+                                      href={file.url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="chat-bubble-file"
+                                    >
+                                      <FileText size={16} strokeWidth={2} />
+                                      <span>{file.fileName}</span>
+                                    </a>
+                                  )
+                                )}
+                              </div>
+                            ) : null}
+                            <time dateTime={msg.editedAt || msg.createdAt}>
+                              {formatWhen(msg.createdAt, locale)}
+                              {msg.editedAt ? ` · ${t("chat.edited")}` : ""}
+                            </time>
+                          </>
+                        )}
                       </div>
                     );
                   })
@@ -974,8 +1096,8 @@ export function Chat() {
                       />
                       <span>
                         <strong>{memberLabel(member)}</strong>
-                        {member.name ? (
-                          <span className="muted">{member.name}</span>
+                        {memberHandle(member) ? (
+                          <span className="muted">{memberHandle(member)}</span>
                         ) : null}
                       </span>
                     </button>
