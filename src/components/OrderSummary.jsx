@@ -69,8 +69,6 @@ export function OrderSummary({
 
   const requestableCount = memberTotals.filter((row) => {
     if (!row.userId || row.settled) return false;
-    if (ownerUserId && row.userId === ownerUserId) return false;
-    if (currentUserId && row.userId === currentUserId) return false;
     if (Number(row.due ?? 0) <= 0) return false;
     return true;
   }).length;
@@ -244,8 +242,6 @@ export function OrderSummary({
             canRequestPayment &&
             ownerHasPaypal &&
             row.userId &&
-            (!ownerUserId || row.userId !== ownerUserId) &&
-            (!currentUserId || row.userId !== currentUserId) &&
             !settled &&
             Number(row.due ?? 0) > 0;
           const isOwnPending =

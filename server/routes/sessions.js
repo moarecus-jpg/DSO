@@ -1341,7 +1341,6 @@ router.post("/:id/payment-requests", requireUser, async (req, res) => {
   const currency = enriched.orderGrandTotal?.currency || DISPLAY_CURRENCY;
   const rows = (enriched.memberTotals ?? []).filter((row) => {
     if (!row.userId) return false;
-    if (row.userId === session.created_by) return false;
     if (row.settled) return false;
     const due = Number(row.due ?? 0);
     if (!(due > 0)) return false;

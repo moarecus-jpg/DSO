@@ -224,9 +224,6 @@ router.get("/me/payment-requests", (req, res) => {
   if (!req.session.userId) {
     return res.status(401).json({ error: "Prijavi se v aplikacijo." });
   }
-  if (useMockAuth()) {
-    return res.json({ requests: [], pendingCount: 0 });
-  }
   const requests = listPendingPaymentRequestsForUser(req.session.userId);
   res.json({
     requests,
@@ -237,9 +234,6 @@ router.get("/me/payment-requests", (req, res) => {
 router.get("/me/payment-requests/count", (req, res) => {
   if (!req.session.userId) {
     return res.status(401).json({ error: "Prijavi se v aplikacijo." });
-  }
-  if (useMockAuth()) {
-    return res.json({ pendingCount: 0 });
   }
   res.json({
     pendingCount: countPendingPaymentRequestsForUser(req.session.userId),

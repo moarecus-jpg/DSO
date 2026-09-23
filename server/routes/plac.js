@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   countActivePlacListingsByUser,
+  countPendingPaymentRequestsForUser,
   countPlacInboxUnread,
   userIsPlacSeller,
   createPlacListing,
@@ -13,6 +14,7 @@ import {
   getPlacThreadForUser,
   listActivePlacListings,
   listActivePlacListingsByUser,
+  listPendingPaymentRequestsForUser,
   listPlacInboxThreads,
   listPlacListingsByUser,
   listPlacOrdersForUser,
@@ -225,10 +227,14 @@ router.get("/mine", requireUser, requireCommunity, (req, res) => {
 
 router.get("/counts", requireUser, requireCommunity, (req, res) => {
   const userId = ensureRequestUser(req);
+  const paymentPending = countPendingPaymentRequestsForUser(userId);
+  const messageUnread = countPlacInboxUnread(userId);
   res.json({
     mine: countActivePlacListingsByUser(userId),
     isSeller: userIsPlacSeller(userId),
-    inboxUnread: countPlacInboxUnread(userId),
+    inboxUnread: messageUnread + paymentPending,
+    messageUnread,
+    paymentPending,
   });
 });
 
@@ -251,7 +257,12 @@ router.patch("/shop", requireUser, requireCommunity, (req, res) => {
 router.get("/inbox", requireUser, requireCommunity, (req, res) => {
   const userId = ensureRequestUser(req);
   const threads = listPlacInboxThreads(userId);
-  res.json({ threads, unread: countPlacInboxUnread(userId) });
+  const paymentRequests = listPendingPaymentRequestsForUser(userId);
+  res.json({
+    threads,
+    paymentRequests,
+    unread: countPlacInboxUnread(userId) + paymentRequests.length,
+  });
 });
 
 router.get("/inbox/:threadId", requireUser, requireCommunity, (req, res) => {

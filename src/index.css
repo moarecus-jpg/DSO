@@ -12719,6 +12719,52 @@ img.plac-user-avatar {
   overflow-y: auto;
 }
 
+.plac-inbox-payments {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.35rem 0.35rem 0.55rem;
+  margin-bottom: 0.25rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border, #333) 80%, transparent);
+}
+
+.plac-inbox-payments-label {
+  margin: 0 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.7rem;
+}
+
+.plac-inbox-payment {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.65rem 0.7rem;
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, #0070ba 12%, transparent);
+  border: 1px solid color-mix(in srgb, #0070ba 28%, transparent);
+}
+
+.plac-inbox-payment-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.plac-inbox-payment-main p {
+  margin: 0.15rem 0 0;
+}
+
+.plac-inbox-payment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.plac-inbox-no-threads {
+  margin: 0.5rem 0.65rem;
+}
+
 .plac-inbox-thread {
   display: grid;
   grid-template-columns: 3rem minmax(0, 1fr) auto;

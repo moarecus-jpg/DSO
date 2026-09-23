@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Inbox, Loader2, MessageCircle, Send, Store } from "lucide-react";
+import { HandCoins, Inbox, Loader2, MessageCircle, Send, Store } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { PlacPageHeader } from "../components/PlacPageHeader.jsx";
 import { PlacSellDialog } from "../components/PlacSellDialog.jsx";
 import { UserAvatar } from "../components/UserAvatar.jsx";
 import { api } from "../api.js";
+import { formatPrice } from "../../shared/orderTotals.js";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { resolveUserAvatarUrl } from "../utils/userAvatarUrl.js";
@@ -37,6 +38,7 @@ export function PlacInbox() {
   const { t, locale } = useLocale();
   const { user } = useAuth();
   const [threads, setThreads] = useState([]);
+  const [paymentRequests, setPaymentRequests] = useState([]);
   const [messages, setMessages] = useState([]);
   const [activeThread, setActiveThread] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -50,7 +52,10 @@ export function PlacInbox() {
   useEffect(() => {
     setLoading(true);
     api("/api/plac/inbox")
-      .then((data) => setThreads(data.threads ?? []))
+      .then((data) => {
+        setThreads(data.threads ?? []);
+        setPaymentRequests(data.paymentRequests ?? []);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -96,48 +101,47 @@ export function PlacInbox() {
   const subtitle = useMemo(() => {
     if (loading) return t("common.loading");
     const unread = threads.reduce((sum, row) => sum + (row.unreadCount || 0), 0);
-    if (threads.length === 0) return t("plac.inboxEmpty");
-    return unread > 0
-      ? t("plac.inboxUnread", { count: unread })
-      : t("plac.inboxThreadCount", { count: threads.length });
-  }, [loading, threads, t]);
+    const payments = paymentRequests.length;
+    if (threads.length === 0 && payments === 0) return t("plac.inboxEmpty");
+    const parts = [];
+    if (unread > 0) parts.push(t("plac.inboxUnread", { count: unread }));
+    else if (threads.length > 0) {
+      parts.push(t("plac.inboxThreadCount", { count: threads.length }));
+    }
+    if (payments > 0) parts.push(t("plac.inboxPaymentsCount", { count: payments }));
+    return parts.join(" · ");
+  }, [loading, threads, paymentRequests, t]);
 
-  async function handleSend(event) {
-    event.preventDefault();
-    if (!threadId || !draft.trim()) return;
+  async function handleSend(e) {
+    e.preventDefault();
+    if (!threadId || !draft.trim() || sending) return;
     setSending(true);
-    setError(null);
     try {
       const data = await api(`/api/plac/inbox/${threadId}/messages`, {
         method: "POST",
-        body: JSON.stringify({ body: draft }),
+        body: JSON.stringify({ body: draft.trim() }),
       });
-      setMessages(data.messages ?? []);
-      setActiveThread(data.thread ?? activeThread);
+      setMessages((prev) => [...prev, data.message]);
       setDraft("");
-      setThreads((prev) => {
-        const next = prev.map((row) =>
+      setThreads((prev) =>
+        prev.map((row) =>
           row.id === threadId
             ? {
                 ...row,
-                ...(data.thread ?? {}),
-                lastMessage: {
-                  body: draft.trim(),
-                  createdAt: new Date().toISOString(),
-                  senderId: user?.id,
-                },
-                unreadCount: 0,
+                lastMessage: data.message,
+                updatedAt: data.message?.createdAt ?? row.updatedAt,
               }
             : row
-        );
-        return [...next].sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
-      });
+        )
+      );
     } catch (err) {
       setError(err.message);
     } finally {
       setSending(false);
     }
   }
+
+  const isEmpty = !loading && threads.length === 0 && paymentRequests.length === 0;
 
   return (
     <div className="page page-orders page-plac page-plac-inbox">
@@ -151,7 +155,7 @@ export function PlacInbox() {
 
       {loading ? (
         <p className="orders-loading">{t("common.loadingItems")}</p>
-      ) : threads.length === 0 ? (
+      ) : isEmpty ? (
         <div className="orders-empty plac-empty">
           <Inbox size={40} strokeWidth={1.2} />
           <p>{t("plac.inboxEmpty")}</p>
@@ -160,6 +164,47 @@ export function PlacInbox() {
       ) : (
         <div className={`plac-inbox${threadId ? " plac-inbox--thread-open" : ""}`}>
           <aside className="plac-inbox-list card">
+            {paymentRequests.length > 0 && (
+              <div className="plac-inbox-payments">
+                <p className="plac-inbox-payments-label muted fine">
+                  {t("plac.inboxPayments")}
+                </p>
+                {paymentRequests.map((req) => (
+                  <div key={req.id} className="plac-inbox-payment">
+                    <div className="plac-inbox-payment-main">
+                      <HandCoins size={18} strokeWidth={2.1} aria-hidden />
+                      <div>
+                        <strong>
+                          {formatPrice(req.amountValue, req.amountCurrency)}
+                        </strong>
+                        <p className="muted fine">
+                          {t("payments.from", { name: req.fromUserName || "—" })}
+                          {req.orderTitle ? ` · ${req.orderTitle}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="plac-inbox-payment-actions">
+                      <a
+                        className="btn btn-primary btn-sm"
+                        href={req.paypalUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {t("payments.payPaypal")}
+                      </a>
+                      {req.orderId && (
+                        <Link
+                          className="btn btn-ghost btn-sm"
+                          to={`/session/${req.orderId}`}
+                        >
+                          {t("payments.openOrder")}
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             {threads.map((thread) => {
               const active = thread.id === threadId;
               return (
@@ -196,13 +241,27 @@ export function PlacInbox() {
                 </button>
               );
             })}
+            {threads.length === 0 && paymentRequests.length > 0 && (
+              <p className="plac-inbox-no-threads muted fine">
+                {t("plac.inboxNoThreadsYet")}
+              </p>
+            )}
           </aside>
 
           <section className="plac-inbox-pane card">
             {!threadId ? (
               <div className="plac-inbox-empty-pane">
                 <MessageCircle size={36} strokeWidth={1.2} />
-                <p>{t("plac.inboxSelect")}</p>
+                <p>
+                  {paymentRequests.length > 0
+                    ? t("plac.inboxSelectOrPay")
+                    : t("plac.inboxSelect")}
+                </p>
+                {paymentRequests.length > 0 && (
+                  <Link to="/payments" className="btn btn-ghost btn-sm">
+                    {t("nav.paymentRequests")}
+                  </Link>
+                )}
               </div>
             ) : threadLoading ? (
               <p className="orders-loading">{t("common.loading")}</p>
@@ -240,7 +299,9 @@ export function PlacInbox() {
                         className={`plac-inbox-bubble${mine ? " plac-inbox-bubble--mine" : ""}`}
                       >
                         <p>{message.body}</p>
-                        <time className="muted fine">{formatWhen(message.createdAt, locale)}</time>
+                        <span className="muted fine">
+                          {formatWhen(message.createdAt, locale)}
+                        </span>
                       </div>
                     );
                   })}
@@ -249,12 +310,10 @@ export function PlacInbox() {
 
                 <form className="plac-inbox-compose" onSubmit={handleSend}>
                   <textarea
-                    className="plac-sell-textarea"
-                    rows={2}
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
                     placeholder={t("plac.inboxComposePlaceholder")}
-                    maxLength={2000}
+                    rows={2}
                     disabled={sending}
                   />
                   <button
@@ -263,18 +322,13 @@ export function PlacInbox() {
                     disabled={sending || !draft.trim()}
                     aria-label={t("plac.sendMessage")}
                   >
-                    {sending ? <Loader2 size={16} className="spin" /> : <Send size={16} />}
-                    {t("plac.sendMessage")}
+                    {sending ? <Loader2 size={18} className="spin" /> : <Send size={18} />}
                   </button>
                 </form>
               </>
             )}
           </section>
         </div>
-      )}
-
-      {error && threads.length > 0 && !threadId && (
-        <p className="form-error">{error}</p>
       )}
 
       <PlacSellDialog open={sellOpen} onClose={() => setSellOpen(false)} />
