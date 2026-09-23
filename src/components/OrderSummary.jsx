@@ -355,7 +355,9 @@ export function OrderSummary({
               <span className="muted fine">{t("common.someWithoutPrice")}</span>
             )}
           </span>
-          <span className="order-summary-subtotal-actions">
+          <span className="order-summary-col-amount order-summary-col-empty" />
+          <span className="order-summary-col-amount order-summary-col-empty" />
+          <span className="order-summary-col-settle order-summary-subtotal-actions">
             {canRequestPayment && ownerHasPaypal && requestableCount > 0 && (
               <button
                 type="button"

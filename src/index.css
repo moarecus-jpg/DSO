@@ -2851,10 +2851,9 @@ code {
 }
 
 .order-summary-subtotal-actions {
-  grid-column: 4 / -1;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: flex-end;
   gap: 0.5rem;
   min-width: 0;
 }
@@ -9475,7 +9474,10 @@ a.order-preview-item-title:hover {
     white-space: normal;
   }
 
-  .order-summary-grid--settle .order-summary-grid-row--subtotal .order-summary-col-name,
+  .order-summary-grid--settle .order-summary-grid-row--subtotal .order-summary-col-name {
+    grid-column: 1;
+  }
+
   .order-summary-grid--settle .order-summary-grid-row--discount .order-summary-col-name,
   .order-summary-grid--settle .order-summary-grid-row--shipping .order-summary-col-name,
   .order-summary-grid--settle .order-summary-grid-row--mode .order-summary-col-name,
@@ -9485,13 +9487,14 @@ a.order-preview-item-title:hover {
   }
 
   .order-summary-grid--settle .order-summary-subtotal-actions {
-    order: 3;
-    grid-column: 1 / -1;
-    justify-content: flex-start;
+    order: 0;
+    grid-column: 2;
+    justify-content: flex-end;
   }
 
   .order-summary-grid--settle .order-summary-paypal-all {
-    width: 100%;
+    width: auto;
+    max-width: 100%;
     justify-content: center;
   }
 
