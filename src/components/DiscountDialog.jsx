@@ -160,14 +160,6 @@ export function DiscountDialog({
                   return (
                     <li key={id}>
                       <label className="discount-dialog-item">
-                        <span className="ui-check ui-check--lg">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            disabled={saving}
-                            onChange={() => toggleLink(id)}
-                          />
-                        </span>
                         <span className="discount-dialog-item-text">
                           <span className="discount-dialog-item-title">
                             {recordTitle(link)}
@@ -177,6 +169,14 @@ export function DiscountDialog({
                             {" · "}
                             {formatPrice(link.price_value, link.price_currency)}
                           </span>
+                        </span>
+                        <span className="ui-check ui-check--lg">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            disabled={saving}
+                            onChange={() => toggleLink(id)}
+                          />
                         </span>
                       </label>
                     </li>
@@ -190,18 +190,18 @@ export function DiscountDialog({
             <span className="modal-field-label">
               {t("summary.discountPercentLabel")}
             </span>
-            <span className="order-summary-field order-summary-field--compact">
+            <span className="discount-dialog-percent-field">
               <input
                 type="text"
                 inputMode="decimal"
-                className="order-summary-field-input order-summary-field-input--compact"
+                className="discount-dialog-percent-input"
                 value={draftPercent}
                 onChange={(e) => setDraftPercent(e.target.value)}
                 placeholder="0"
                 disabled={saving}
                 aria-label={t("summary.discountAria")}
               />
-              <span className="order-summary-field-suffix">%</span>
+              <span className="discount-dialog-percent-suffix">%</span>
             </span>
           </label>
         </div>
