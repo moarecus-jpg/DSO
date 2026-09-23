@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  FileText,
   Loader2,
   MessageCircle,
   MessagesSquare,
+  MoreVertical,
+  Paperclip,
   Send,
+  Trash2,
   Users,
   X,
 } from "lucide-react";
@@ -44,14 +48,28 @@ function roomTitle(room, communityName) {
 
 function applyIncomingMessage(prev, message) {
   if (!message?.id) return prev;
-  if (prev.some((m) => m.id === message.id)) return prev;
+  const index = prev.findIndex((m) => m.id === message.id);
+  if (index >= 0) {
+    const next = [...prev];
+    next[index] = { ...next[index], ...message };
+    return next;
+  }
   return [...prev, message];
 }
 
-function applyRoomPreview(prevRooms, roomId, message, activeRoomId, selfId) {
+function messagePreviewText(message, t) {
+  const body = message?.body?.trim();
+  if (body) return body;
+  const count = message?.attachments?.length ?? 0;
+  if (count > 0) return t("chat.attachmentPreview", { count });
+  return "";
+}
+
+function applyRoomPreview(prevRooms, roomId, message, activeRoomId, selfId, t) {
+  const previewBody = messagePreviewText(message, t);
   const preview = {
     id: message.id,
-    body: message.body,
+    body: previewBody || message.body,
     createdAt: message.createdAt,
     senderId: message.sender?.id,
   };
@@ -100,7 +118,15 @@ export function Chat() {
   const [members, setMembers] = useState([]);
   const [membersLoading, setMembersLoading] = useState(false);
   const [liveConnected, setLiveConnected] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState([]);
+  const [dragging, setDragging] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [capabilities, setCapabilities] = useState(null);
+  const [busyAction, setBusyAction] = useState(null);
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const menuRef = useRef(null);
+  const dragDepthRef = useRef(0);
   const roomIdRef = useRef(roomId);
   roomIdRef.current = roomId;
 
@@ -128,6 +154,39 @@ export function Chat() {
     enabled: Boolean(user),
     onStatus: setLiveConnected,
     onEvent: (event) => {
+      if (event?.type === "chat.deleted" && event.roomId) {
+        setRooms((prev) => prev.filter((r) => r.id !== event.roomId));
+        if (roomIdRef.current === event.roomId) {
+          navigate("/chat");
+        }
+        return;
+      }
+      if (event?.type === "chat.cleared" && event.roomId) {
+        if (roomIdRef.current === event.roomId) {
+          setMessages([]);
+          if (event.room) setActiveRoom(event.room);
+        }
+        setRooms((prev) =>
+          prev.map((row) =>
+            row.id === event.roomId
+              ? {
+                  ...row,
+                  ...(event.room ?? {}),
+                  lastMessage: null,
+                  unreadCount: 0,
+                }
+              : row
+          )
+        );
+        return;
+      }
+      if (event?.type === "chat.messageDeleted" && event.messageId) {
+        if (roomIdRef.current === event.roomId) {
+          setMessages((prev) => prev.filter((m) => m.id !== event.messageId));
+        }
+        loadRooms({ silent: true });
+        return;
+      }
       if (event?.type === "chat.room" && event.room) {
         setRooms((prev) => {
           const others = prev.filter((r) => r.id !== event.room.id);
@@ -158,7 +217,8 @@ export function Chat() {
           eventRoomId,
           message,
           roomIdRef.current,
-          user?.id
+          user?.id,
+          t
         );
       });
     },
@@ -250,6 +310,99 @@ export function Chat() {
     return `${t("chat.roomCount", { count: rooms.length })}${live}`;
   }, [loading, rooms, t, liveConnected]);
 
+  useEffect(() => {
+    setPendingFiles((prev) => {
+      for (const file of prev) {
+        if (file.previewUrl) URL.revokeObjectURL(file.previewUrl);
+      }
+      return [];
+    });
+    setDraft("");
+    setDragging(false);
+    setMenuOpen(false);
+    setCapabilities(null);
+    dragDepthRef.current = 0;
+  }, [roomId]);
+
+  useEffect(() => {
+    if (!roomId) return undefined;
+    let cancelled = false;
+    api(`/api/chat/rooms/${roomId}/capabilities`)
+      .then((data) => {
+        if (!cancelled) setCapabilities(data);
+      })
+      .catch(() => {
+        if (!cancelled) setCapabilities(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [roomId]);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    function onPointerDown(event) {
+      if (!menuRef.current?.contains(event.target)) setMenuOpen(false);
+    }
+    function onKeyDown(event) {
+      if (event.key === "Escape") setMenuOpen(false);
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [menuOpen]);
+
+  const MAX_FILES = 5;
+  const MAX_FILE_BYTES = 5 * 1024 * 1024;
+  const ALLOWED_TYPES = new Set([
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "application/pdf",
+  ]);
+
+  function addFiles(fileList) {
+    const incoming = Array.from(fileList || []);
+    if (!incoming.length) return;
+    setPendingFiles((prev) => {
+      const next = [...prev];
+      for (const file of incoming) {
+        if (next.length >= MAX_FILES) {
+          setError(t("chat.attachTooMany", { max: MAX_FILES }));
+          break;
+        }
+        if (!ALLOWED_TYPES.has(file.type)) {
+          setError(t("chat.attachUnsupported"));
+          continue;
+        }
+        if (file.size > MAX_FILE_BYTES) {
+          setError(t("chat.attachTooLarge"));
+          continue;
+        }
+        next.push({
+          id: `${file.name}-${file.size}-${file.lastModified}-${Math.random()}`,
+          file,
+          previewUrl: file.type.startsWith("image/")
+            ? URL.createObjectURL(file)
+            : null,
+        });
+      }
+      return next;
+    });
+  }
+
+  function removePendingFile(id) {
+    setPendingFiles((prev) => {
+      const target = prev.find((f) => f.id === id);
+      if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
+      return prev.filter((f) => f.id !== id);
+    });
+  }
+
   async function openPicker() {
     setPickerOpen(true);
     setMembersLoading(true);
@@ -280,17 +433,42 @@ export function Chat() {
 
   async function handleSend(e) {
     e.preventDefault();
-    if (!roomId || !draft.trim() || sending) return;
+    if (!roomId || sending) return;
+    const text = draft.trim();
+    if (!text && pendingFiles.length === 0) return;
     setSending(true);
+    setError(null);
     try {
       const data = await api(`/api/chat/rooms/${roomId}/messages`, {
         method: "POST",
-        body: JSON.stringify({ body: draft.trim() }),
+        body: JSON.stringify({
+          body: text,
+          hasAttachments: pendingFiles.length > 0,
+        }),
       });
-      setMessages((prev) => applyIncomingMessage(prev, data.message));
+      let message = data.message;
+      setMessages((prev) => applyIncomingMessage(prev, message));
       setDraft("");
+      const files = [...pendingFiles];
+      setPendingFiles([]);
+      for (const item of files) {
+        if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+        const uploaded = await api(
+          `/api/chat/rooms/${roomId}/messages/${message.id}/attachments`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": item.file.type || "application/octet-stream",
+              "X-File-Name": encodeURIComponent(item.file.name || "file"),
+            },
+            body: item.file,
+          }
+        );
+        message = uploaded.message;
+        setMessages((prev) => applyIncomingMessage(prev, message));
+      }
       setRooms((prev) =>
-        applyRoomPreview(prev, roomId, data.message, roomId, user?.id)
+        applyRoomPreview(prev, roomId, message, roomId, user?.id, t)
       );
     } catch (err) {
       setError(err.message);
@@ -298,6 +476,100 @@ export function Chat() {
       setSending(false);
     }
   }
+
+  function onComposeDragEnter(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepthRef.current += 1;
+    setDragging(true);
+  }
+
+  function onComposeDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) setDragging(false);
+  }
+
+  function onComposeDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  function onComposeDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepthRef.current = 0;
+    setDragging(false);
+    addFiles(e.dataTransfer?.files);
+  }
+
+  async function handleClearChat() {
+    if (!roomId || busyAction) return;
+    const ok = window.confirm(
+      activeRoom?.kind === "community"
+        ? t("chat.clearCommunityConfirm")
+        : t("chat.clearDmConfirm")
+    );
+    if (!ok) return;
+    setBusyAction("clear");
+    setMenuOpen(false);
+    setError(null);
+    try {
+      const data = await api(`/api/chat/rooms/${roomId}/clear`, {
+        method: "POST",
+      });
+      setMessages([]);
+      if (data.room) setActiveRoom(data.room);
+      setRooms((prev) =>
+        prev.map((row) =>
+          row.id === roomId
+            ? { ...row, ...(data.room ?? {}), lastMessage: null, unreadCount: 0 }
+            : row
+        )
+      );
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  async function handleDeleteChat() {
+    if (!roomId || busyAction) return;
+    if (!window.confirm(t("chat.deleteDmConfirm"))) return;
+    setBusyAction("delete");
+    setMenuOpen(false);
+    setError(null);
+    try {
+      await api(`/api/chat/rooms/${roomId}`, { method: "DELETE" });
+      setRooms((prev) => prev.filter((r) => r.id !== roomId));
+      navigate("/chat");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  async function handleDeleteMessage(messageId) {
+    if (!messageId || busyAction) return;
+    if (!window.confirm(t("chat.deleteMessageConfirm"))) return;
+    setBusyAction(`msg:${messageId}`);
+    setError(null);
+    try {
+      await api(`/api/chat/messages/${messageId}`, { method: "DELETE" });
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
+      await loadRooms({ silent: true });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  const showRoomMenu =
+    capabilities?.canClear || capabilities?.canDelete;
 
   return (
     <div
@@ -434,13 +706,55 @@ export function Chat() {
                     </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-small chat-back-mobile"
-                  onClick={() => navigate("/chat")}
-                >
-                  {t("nav.back")}
-                </button>
+                <div className="chat-pane-actions">
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-small chat-back-mobile"
+                    onClick={() => navigate("/chat")}
+                  >
+                    {t("nav.back")}
+                  </button>
+                  {showRoomMenu ? (
+                    <div className="chat-room-menu" ref={menuRef}>
+                      <button
+                        type="button"
+                        className="chat-room-menu-trigger"
+                        aria-label={t("chat.roomMenu")}
+                        aria-expanded={menuOpen}
+                        onClick={() => setMenuOpen((open) => !open)}
+                      >
+                        <MoreVertical size={18} strokeWidth={2.1} />
+                      </button>
+                      {menuOpen ? (
+                        <div className="chat-room-menu-panel" role="menu">
+                          {capabilities?.canClear ? (
+                            <button
+                              type="button"
+                              role="menuitem"
+                              disabled={Boolean(busyAction)}
+                              onClick={handleClearChat}
+                            >
+                              <Trash2 size={15} strokeWidth={2} aria-hidden />
+                              {t("chat.clearHistory")}
+                            </button>
+                          ) : null}
+                          {capabilities?.canDelete ? (
+                            <button
+                              type="button"
+                              role="menuitem"
+                              className="is-danger"
+                              disabled={Boolean(busyAction)}
+                              onClick={handleDeleteChat}
+                            >
+                              <Trash2 size={15} strokeWidth={2} aria-hidden />
+                              {t("chat.deleteConversation")}
+                            </button>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
               </header>
 
               <div className="plac-inbox-messages">
@@ -449,6 +763,8 @@ export function Chat() {
                 ) : (
                   messages.map((msg) => {
                     const mine = msg.sender?.id === user?.id;
+                    const canDeleteMsg =
+                      mine || Boolean(capabilities?.canModerateMessages);
                     return (
                       <div
                         key={msg.id}
@@ -456,12 +772,55 @@ export function Chat() {
                           mine ? " plac-inbox-bubble--mine" : ""
                         }`}
                       >
-                        {!mine && activeRoom?.kind === "community" ? (
-                          <span className="chat-bubble-sender">
-                            {memberLabel(msg.sender)}
-                          </span>
+                        <div className="chat-bubble-top">
+                          {!mine && activeRoom?.kind === "community" ? (
+                            <span className="chat-bubble-sender">
+                              {memberLabel(msg.sender)}
+                            </span>
+                          ) : (
+                            <span />
+                          )}
+                          {canDeleteMsg ? (
+                            <button
+                              type="button"
+                              className="chat-bubble-delete"
+                              aria-label={t("chat.deleteMessage")}
+                              disabled={busyAction === `msg:${msg.id}`}
+                              onClick={() => handleDeleteMessage(msg.id)}
+                            >
+                              <Trash2 size={13} strokeWidth={2} />
+                            </button>
+                          ) : null}
+                        </div>
+                        {msg.body ? <p>{msg.body}</p> : null}
+                        {msg.attachments?.length ? (
+                          <div className="chat-bubble-attachments">
+                            {msg.attachments.map((file) =>
+                              file.mimeType?.startsWith("image/") ? (
+                                <a
+                                  key={file.id}
+                                  href={file.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="chat-bubble-image"
+                                >
+                                  <img src={file.url} alt={file.fileName} />
+                                </a>
+                              ) : (
+                                <a
+                                  key={file.id}
+                                  href={file.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="chat-bubble-file"
+                                >
+                                  <FileText size={16} strokeWidth={2} />
+                                  <span>{file.fileName}</span>
+                                </a>
+                              )
+                            )}
+                          </div>
                         ) : null}
-                        <p>{msg.body}</p>
                         <time dateTime={msg.createdAt}>
                           {formatWhen(msg.createdAt, locale)}
                         </time>
@@ -472,27 +831,103 @@ export function Chat() {
                 <div ref={messagesEndRef} />
               </div>
 
-              <form className="plac-inbox-compose" onSubmit={handleSend}>
-                <input
-                  type="text"
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  placeholder={t("chat.composePlaceholder")}
-                  maxLength={2000}
-                  disabled={sending}
-                />
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={sending || !draft.trim()}
-                  aria-label={t("chat.send")}
-                >
-                  {sending ? (
-                    <Loader2 className="spin" size={18} />
-                  ) : (
-                    <Send size={18} strokeWidth={2.1} />
-                  )}
-                </button>
+              <form
+                className={`chat-compose${dragging ? " is-dragging" : ""}`}
+                onSubmit={handleSend}
+                onDragEnter={onComposeDragEnter}
+                onDragLeave={onComposeDragLeave}
+                onDragOver={onComposeDragOver}
+                onDrop={onComposeDrop}
+              >
+                {dragging ? (
+                  <div className="chat-compose-drop" aria-hidden>
+                    <Paperclip size={22} strokeWidth={2} />
+                    <span>{t("chat.dropHere")}</span>
+                  </div>
+                ) : null}
+
+                {pendingFiles.length > 0 ? (
+                  <ul className="chat-compose-files">
+                    {pendingFiles.map((item) => (
+                      <li key={item.id} className="chat-compose-file">
+                        {item.previewUrl ? (
+                          <img src={item.previewUrl} alt="" />
+                        ) : (
+                          <span className="chat-compose-file-icon" aria-hidden>
+                            <FileText size={16} />
+                          </span>
+                        )}
+                        <span className="chat-compose-file-name">
+                          {item.file.name}
+                        </span>
+                        <button
+                          type="button"
+                          className="chat-compose-file-remove"
+                          onClick={() => removePendingFile(item.id)}
+                          aria-label={t("common.close")}
+                        >
+                          <X size={14} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+
+                <div className="chat-compose-shell">
+                  <button
+                    type="button"
+                    className="chat-compose-attach"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={sending || pendingFiles.length >= MAX_FILES}
+                    aria-label={t("chat.attach")}
+                    title={t("chat.attachHint")}
+                  >
+                    <Paperclip size={18} strokeWidth={2.1} />
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="sr-only"
+                    accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+                    multiple
+                    onChange={(e) => {
+                      addFiles(e.target.files);
+                      e.target.value = "";
+                    }}
+                  />
+                  <textarea
+                    className="chat-compose-input"
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend(e);
+                      }
+                    }}
+                    placeholder={t("chat.composePlaceholder")}
+                    maxLength={2000}
+                    rows={1}
+                    disabled={sending}
+                  />
+                  <button
+                    type="submit"
+                    className="chat-compose-send"
+                    disabled={
+                      sending || (!draft.trim() && pendingFiles.length === 0)
+                    }
+                    aria-label={t("chat.send")}
+                  >
+                    {sending ? (
+                      <Loader2 className="spin" size={18} />
+                    ) : (
+                      <Send size={18} strokeWidth={2.1} />
+                    )}
+                  </button>
+                </div>
+                <p className="chat-compose-hint muted fine">
+                  {t("chat.composeHint")}
+                </p>
               </form>
             </>
           )}

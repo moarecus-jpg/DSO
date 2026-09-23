@@ -461,6 +461,20 @@ db.exec(`
     FOREIGN KEY (room_id) REFERENCES chat_rooms(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
+
+  CREATE TABLE IF NOT EXISTS chat_attachments (
+    id TEXT PRIMARY KEY,
+    message_id TEXT NOT NULL,
+    file_name TEXT NOT NULL,
+    mime_type TEXT NOT NULL,
+    byte_size INTEGER NOT NULL,
+    data BLOB NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (message_id) REFERENCES chat_messages(id) ON DELETE CASCADE
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_chat_attachments_message
+    ON chat_attachments (message_id);
 `);
 
 const SLOVENIA_COMMUNITY_SLUG = "slovenia";
@@ -3364,6 +3378,15 @@ export function countPlacInboxUnread(userId) {
 }
 
 const CHAT_MESSAGE_MAX_LEN = 2000;
+export const MAX_CHAT_ATTACHMENTS = 5;
+export const MAX_CHAT_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+export const CHAT_ATTACHMENT_MIME_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "application/pdf",
+];
 
 export function ensureCommunityChatRoom(communityId) {
   if (!communityId) return null;
@@ -3437,7 +3460,64 @@ function mapChatMessageRow(row) {
       discogs_username: row.sender_discogs_username,
       discogs_avatar_url: row.sender_discogs_avatar_url,
     }),
+    attachments: [],
   };
+}
+
+function mapChatAttachmentMeta(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    messageId: row.message_id,
+    fileName: row.file_name,
+    mimeType: row.mime_type,
+    byteSize: row.byte_size,
+    url: `/api/chat/attachments/${row.id}`,
+  };
+}
+
+function hydrateChatMessageAttachments(messages) {
+  if (!messages?.length) return messages ?? [];
+  const ids = messages.map((m) => m.id);
+  const placeholders = ids.map(() => "?").join(",");
+  const rows = db
+    .prepare(
+      `SELECT id, message_id, file_name, mime_type, byte_size
+       FROM chat_attachments
+       WHERE message_id IN (${placeholders})
+       ORDER BY created_at ASC`
+    )
+    .all(...ids);
+  const byMessage = new Map();
+  for (const row of rows) {
+    const list = byMessage.get(row.message_id) ?? [];
+    list.push(mapChatAttachmentMeta(row));
+    byMessage.set(row.message_id, list);
+  }
+  return messages.map((msg) => ({
+    ...msg,
+    attachments: byMessage.get(msg.id) ?? [],
+  }));
+}
+
+export function getChatMessageForUser(messageId, userId) {
+  const row = db
+    .prepare(
+      `SELECT m.id, m.room_id, m.sender_id, m.body, m.created_at,
+              u.name AS sender_name, u.username AS sender_username,
+              u.picture AS sender_picture,
+              u.discogs_username AS sender_discogs_username,
+              u.discogs_avatar_url AS sender_discogs_avatar_url
+       FROM chat_messages m
+       JOIN users u ON u.id = m.sender_id
+       JOIN chat_rooms r ON r.id = m.room_id
+       WHERE m.id = ?`
+    )
+    .get(messageId);
+  if (!row) return null;
+  const room = db.prepare("SELECT * FROM chat_rooms WHERE id = ?").get(row.room_id);
+  if (!canAccessChatRoom(room, userId)) return null;
+  return hydrateChatMessageAttachments([mapChatMessageRow(row)])[0];
 }
 
 function chatUnreadCountSql() {
@@ -3465,6 +3545,23 @@ function mapChatRoomRow(row, userId) {
           discogs_avatar_url: row.other_discogs_avatar_url,
         })
       : null;
+  let lastMessage = null;
+  if (row.last_id) {
+    const attachCount = Number(row.last_attach_count) || 0;
+    const body = String(row.last_body || "").trim();
+    lastMessage = {
+      id: row.last_id,
+      body:
+        body ||
+        (attachCount > 0
+          ? attachCount === 1
+            ? "1 attachment"
+            : `${attachCount} attachments`
+          : ""),
+      createdAt: row.last_created_at,
+      senderId: row.last_sender_id,
+    };
+  }
   return {
     id: row.id,
     communityId: row.community_id,
@@ -3472,14 +3569,7 @@ function mapChatRoomRow(row, userId) {
     updatedAt: row.updated_at,
     createdAt: row.created_at,
     otherUser: other,
-    lastMessage: row.last_body
-      ? {
-          id: row.last_id,
-          body: row.last_body,
-          createdAt: row.last_created_at,
-          senderId: row.last_sender_id,
-        }
-      : null,
+    lastMessage,
     unreadCount: Number(row.unread_count) || 0,
   };
 }
@@ -3498,6 +3588,10 @@ function chatRoomSelectBase() {
             ou.discogs_avatar_url AS other_discogs_avatar_url,
             lm.id AS last_id, lm.body AS last_body,
             lm.created_at AS last_created_at, lm.sender_id AS last_sender_id,
+            (
+              SELECT COUNT(*) FROM chat_attachments ca
+              WHERE ca.message_id = lm.id
+            ) AS last_attach_count,
             ${chatUnreadCountSql()} AS unread_count
      FROM chat_rooms r
      LEFT JOIN users ou ON ou.id = CASE
@@ -3619,16 +3713,16 @@ export function listChatMessages(roomId, userId, { after = null, limit = 100 } =
       .all(roomId, capped)
       .reverse();
   }
-  return rows.map(mapChatMessageRow);
+  return hydrateChatMessageAttachments(rows.map(mapChatMessageRow));
 }
 
-export function postChatMessage(roomId, userId, body) {
+export function postChatMessage(roomId, userId, body, { allowEmpty = false } = {}) {
   const room = db.prepare("SELECT * FROM chat_rooms WHERE id = ?").get(roomId);
   if (!canAccessChatRoom(room, userId)) {
     throw new Error("Chat not found.");
   }
   const text = String(body ?? "").trim();
-  if (!text) throw new Error("Message cannot be empty.");
+  if (!text && !allowEmpty) throw new Error("Message cannot be empty.");
   if (text.length > CHAT_MESSAGE_MAX_LEN) {
     throw new Error(`Message must be at most ${CHAT_MESSAGE_MAX_LEN} characters.`);
   }
@@ -3648,20 +3742,74 @@ export function postChatMessage(roomId, userId, body) {
     ).run(roomId, userId);
   });
   insert();
-  return mapChatMessageRow(
+  return getChatMessageForUser(id, userId);
+}
+
+export function countChatAttachments(messageId) {
+  return (
     db
       .prepare(
-        `SELECT m.id, m.room_id, m.sender_id, m.body, m.created_at,
-                u.name AS sender_name, u.username AS sender_username,
-                u.picture AS sender_picture,
-                u.discogs_username AS sender_discogs_username,
-                u.discogs_avatar_url AS sender_discogs_avatar_url
-         FROM chat_messages m
-         JOIN users u ON u.id = m.sender_id
-         WHERE m.id = ?`
+        "SELECT COUNT(*) AS n FROM chat_attachments WHERE message_id = ?"
       )
-      .get(id)
+      .get(messageId)?.n ?? 0
   );
+}
+
+export function addChatAttachment(messageId, userId, { fileName, mimeType, buffer }) {
+  const message = db
+    .prepare("SELECT * FROM chat_messages WHERE id = ?")
+    .get(messageId);
+  if (!message) throw new Error("Message not found.");
+  if (message.sender_id !== userId) {
+    throw new Error("Only the sender can add attachments.");
+  }
+  const room = db
+    .prepare("SELECT * FROM chat_rooms WHERE id = ?")
+    .get(message.room_id);
+  if (!canAccessChatRoom(room, userId)) {
+    throw new Error("Chat not found.");
+  }
+  if (!CHAT_ATTACHMENT_MIME_TYPES.includes(mimeType)) {
+    throw new Error("Unsupported file type.");
+  }
+  if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
+    throw new Error("File is missing.");
+  }
+  if (buffer.length > MAX_CHAT_ATTACHMENT_BYTES) {
+    throw new Error("File is too large (max 5 MB).");
+  }
+  if (countChatAttachments(messageId) >= MAX_CHAT_ATTACHMENTS) {
+    throw new Error(`You can attach up to ${MAX_CHAT_ATTACHMENTS} files.`);
+  }
+  const safeName = String(fileName || "file")
+    .replace(/[\\/:*?"<>|]+/g, "_")
+    .trim()
+    .slice(0, 180) || "file";
+  const id = randomUUID();
+  db.prepare(
+    `INSERT INTO chat_attachments (id, message_id, file_name, mime_type, byte_size, data)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).run(id, messageId, safeName, mimeType, buffer.length, buffer);
+  db.prepare(
+    `UPDATE chat_rooms SET updated_at = datetime('now') WHERE id = ?`
+  ).run(message.room_id);
+  return getChatMessageForUser(messageId, userId);
+}
+
+export function getChatAttachmentForUser(attachmentId, userId) {
+  const row = db
+    .prepare(
+      `SELECT a.id, a.message_id, a.file_name, a.mime_type, a.byte_size, a.data,
+              m.room_id
+       FROM chat_attachments a
+       JOIN chat_messages m ON m.id = a.message_id
+       WHERE a.id = ?`
+    )
+    .get(attachmentId);
+  if (!row) return null;
+  const room = db.prepare("SELECT * FROM chat_rooms WHERE id = ?").get(row.room_id);
+  if (!canAccessChatRoom(room, userId)) return null;
+  return row;
 }
 
 export function markChatRoomRead(roomId, userId) {
@@ -3683,6 +3831,88 @@ export function countChatUnread(userId, communityId) {
   ensureCommunityChatRoom(communityId);
   const rooms = listChatRoomsForUser(userId, communityId);
   return rooms.reduce((sum, room) => sum + (room.unreadCount || 0), 0);
+}
+
+function assertChatRoomAccess(roomId, userId) {
+  const room = db.prepare("SELECT * FROM chat_rooms WHERE id = ?").get(roomId);
+  if (!canAccessChatRoom(room, userId)) {
+    throw new Error("Chat not found.");
+  }
+  return room;
+}
+
+function isCommunityChatModerator(communityId, userId) {
+  const membership = getCommunityMembership(communityId, userId);
+  return membership?.role === "owner" || membership?.role === "admin";
+}
+
+export function clearChatRoom(roomId, userId) {
+  const room = assertChatRoomAccess(roomId, userId);
+  if (room.kind === "community") {
+    if (!isCommunityChatModerator(room.community_id, userId)) {
+      throw new Error("Only community owners or admins can clear this chat.");
+    }
+  }
+  const clear = db.transaction(() => {
+    db.prepare(
+      `DELETE FROM chat_attachments
+       WHERE message_id IN (SELECT id FROM chat_messages WHERE room_id = ?)`
+    ).run(roomId);
+    db.prepare("DELETE FROM chat_messages WHERE room_id = ?").run(roomId);
+    db.prepare("DELETE FROM chat_reads WHERE room_id = ?").run(roomId);
+    db.prepare(
+      `UPDATE chat_rooms SET updated_at = datetime('now') WHERE id = ?`
+    ).run(roomId);
+  });
+  clear();
+  return getChatRoomForUser(roomId, userId);
+}
+
+export function deleteChatRoom(roomId, userId) {
+  const room = assertChatRoomAccess(roomId, userId);
+  if (room.kind !== "dm") {
+    throw new Error("Only direct messages can be deleted. Clear the community chat instead.");
+  }
+  const recipients = [room.dm_user_low, room.dm_user_high].filter(Boolean);
+  db.prepare("DELETE FROM chat_rooms WHERE id = ?").run(roomId);
+  return { roomId, communityId: room.community_id, recipients };
+}
+
+export function deleteChatMessage(messageId, userId) {
+  const row = db
+    .prepare(
+      `SELECT m.*, r.kind, r.community_id, r.dm_user_low, r.dm_user_high
+       FROM chat_messages m
+       JOIN chat_rooms r ON r.id = m.room_id
+       WHERE m.id = ?`
+    )
+    .get(messageId);
+  if (!row) throw new Error("Message not found.");
+  const room = {
+    id: row.room_id,
+    kind: row.kind,
+    community_id: row.community_id,
+    dm_user_low: row.dm_user_low,
+    dm_user_high: row.dm_user_high,
+  };
+  if (!canAccessChatRoom(room, userId)) {
+    throw new Error("Chat not found.");
+  }
+  const canModerate =
+    row.kind === "community" &&
+    isCommunityChatModerator(row.community_id, userId);
+  if (row.sender_id !== userId && !canModerate) {
+    throw new Error("You can only delete your own messages.");
+  }
+  db.prepare("DELETE FROM chat_messages WHERE id = ?").run(messageId);
+  db.prepare(
+    `UPDATE chat_rooms SET updated_at = datetime('now') WHERE id = ?`
+  ).run(row.room_id);
+  return {
+    messageId,
+    roomId: row.room_id,
+    recipients: listChatRoomRecipientIds(row.room_id),
+  };
 }
 
 export function getPlacThreadForUser(threadId, userId) {
