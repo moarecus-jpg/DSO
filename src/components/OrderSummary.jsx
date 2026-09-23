@@ -69,6 +69,7 @@ export function OrderSummary({
 
   const requestableCount = memberTotals.filter((row) => {
     if (!row.userId || row.settled) return false;
+    if (ownerUserId && row.userId === ownerUserId) return false;
     if (Number(row.due ?? 0) <= 0) return false;
     return true;
   }).length;
@@ -238,16 +239,24 @@ export function OrderSummary({
           const settled = Boolean(row.settled);
           const pending = row.userId ? pendingByUser.get(row.userId) : null;
           const requesting = requestingUserId === row.userId;
+          const isOwnerRow = Boolean(ownerUserId && row.userId === ownerUserId);
           const canRequestRow =
             canRequestPayment &&
             ownerHasPaypal &&
             row.userId &&
+            !isOwnerRow &&
             !settled &&
             Number(row.due ?? 0) > 0;
+          const canSettleRow =
+            canManageSettle &&
+            Boolean(row.userId) &&
+            !isOwnerRow &&
+            Boolean(onToggleSettle);
           const isOwnPending =
             pending &&
             currentUserId &&
-            pending.toUserId === currentUserId;
+            pending.toUserId === currentUserId &&
+            !isOwnerRow;
 
           return (
             <div
@@ -258,7 +267,7 @@ export function OrderSummary({
             >
               <span className="order-summary-col-name">
                 {row.name}
-                {pending && !settled && (
+                {pending && !settled && !isOwnerRow && (
                   <span className="order-summary-requested muted fine">
                     {t("summary.paypalRequested")}
                   </span>
@@ -293,33 +302,30 @@ export function OrderSummary({
               </span>
               <span className="order-summary-col-settle">
                 <span className="order-summary-settle-actions">
-                  <button
-                    type="button"
-                    className={`order-settle-btn${
-                      settled ? " order-settle-btn--settled" : ""
-                    }`}
-                    disabled={
-                      !canManageSettle ||
-                      !row.userId ||
-                      settling ||
-                      !onToggleSettle
-                    }
-                    aria-pressed={settled}
-                    aria-label={
-                      settled
-                        ? t("summary.unsettleAria", { name: row.name })
-                        : t("summary.settleAria", { name: row.name })
-                    }
-                    title={
-                      settled ? t("summary.settled") : t("summary.markSettled")
-                    }
-                    onClick={() => onToggleSettle?.(row.userId, !settled)}
-                  >
-                    <span className="order-settle-icon" aria-hidden>
-                      <ClipboardCheck size={18} strokeWidth={2.25} />
-                      <span className="order-settle-currency">$</span>
-                    </span>
-                  </button>
+                  {!isOwnerRow && (
+                    <button
+                      type="button"
+                      className={`order-settle-btn${
+                        settled ? " order-settle-btn--settled" : ""
+                      }`}
+                      disabled={!canSettleRow || settling}
+                      aria-pressed={settled}
+                      aria-label={
+                        settled
+                          ? t("summary.unsettleAria", { name: row.name })
+                          : t("summary.settleAria", { name: row.name })
+                      }
+                      title={
+                        settled ? t("summary.settled") : t("summary.markSettled")
+                      }
+                      onClick={() => onToggleSettle?.(row.userId, !settled)}
+                    >
+                      <span className="order-settle-icon" aria-hidden>
+                        <ClipboardCheck size={18} strokeWidth={2.25} />
+                        <span className="order-settle-currency">$</span>
+                      </span>
+                    </button>
+                  )}
 
                   {canRequestRow && (
                     <button
