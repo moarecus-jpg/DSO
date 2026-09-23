@@ -9,7 +9,7 @@ import {
   resolveDecksLinksBatch,
   resolveShopRecordFromUrl,
 } from "../shops/recordMeta.js";
-import { isShopStore, normalizeStore } from "../../shared/stores.js";
+import { isShopStore, resolveOrderStore } from "../../shared/stores.js";
 import { isLinkUnavailable } from "../../shared/orderTotals.js";
 import { normalizeShopLinkUrl } from "../../shared/parseShopUrl.js";
 
@@ -45,9 +45,10 @@ function listingUnavailable(meta) {
 
 async function resolveMeta(link, session) {
   const note = link.note ?? null;
-  if (isShopStore(session.store)) {
-    const url = normalizeShopLinkUrl(link.url, session.store);
-    return resolveShopRecordFromUrl(url, note, session.store);
+  const store = resolveOrderStore(session);
+  if (isShopStore(store)) {
+    const url = normalizeShopLinkUrl(link.url, store);
+    return resolveShopRecordFromUrl(url, note, store);
   }
   return resolveRecordFromUrl(link.url, note, {
     sellerUsername: session.seller_username,
@@ -74,8 +75,9 @@ function applyMetaToLink(link, meta, wasUnavailable, becameUnavailableIds, sessi
     fields.priceCurrency = meta.priceCurrency ?? "EUR";
   }
   // Always persist the normalized shop URL (HHV → SI locale).
-  if (session && isShopStore(session.store)) {
-    const normalized = normalizeShopLinkUrl(link.url, session.store);
+  const store = session ? resolveOrderStore(session) : null;
+  if (store && isShopStore(store)) {
+    const normalized = normalizeShopLinkUrl(link.url, store);
     if (normalized) fields.url = normalized;
   }
   updateSessionLinkAvailability(link.id, fields);
@@ -132,11 +134,11 @@ async function refreshSessionLinks(session, { onlyMissingPrice = false } = {}) {
     return { session: getGroupSession(session.id), becameUnavailable: [] };
   }
 
-  const storeId = normalizeStore(session.store);
+  const storeId = resolveOrderStore(session);
   if (storeId === "decks") {
     await refreshDecksLinks(session, links, becameUnavailableIds);
   } else {
-    const concurrency = isShopStore(session.store) ? SHOP_CONCURRENCY : 1;
+    const concurrency = isShopStore(storeId) ? SHOP_CONCURRENCY : 1;
     await mapPool(links, concurrency, (link) =>
       refreshOneLink(session, link, becameUnavailableIds)
     );
@@ -175,10 +177,10 @@ export async function backfillMissingShopPrices() {
   let filled = 0;
 
   for (const summary of sessions) {
-    if (!isShopStore(summary.store)) continue;
+    if (!isShopStore(resolveOrderStore(summary))) continue;
     const session = getGroupSession(summary.id);
     if (!session) continue;
-    const storeId = normalizeStore(session.store);
+    const storeId = resolveOrderStore(session);
     const forceFull = storeId === "decks" || storeId === "hhv";
     const missingBefore = (session.links ?? []).filter(
       (link) => link.price_value == null || !Number.isFinite(Number(link.price_value))

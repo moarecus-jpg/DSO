@@ -31,9 +31,55 @@ export function stableListingId(key) {
 export const HHV_PRICE_LOCALE =
   process.env.HHV_LOCALE?.trim() || "en-SI-EUR-eu";
 
+/** German (and other) category path segments → English SI storefront. */
+const HHV_CATEGORY_MAP = {
+  schallplatten: "records",
+  records: "records",
+  cds: "cds",
+  "cds-dvds": "cds-dvds",
+  tapes: "tapes",
+  merchandise: "merchandise",
+  equipment: "equipment",
+  books: "books",
+  magazines: "magazines",
+};
+
+/** Product path segment: English `/item/` or German `/artikel/`. */
+const HHV_ITEM_SEGMENT = /^(?:item|artikel)$/i;
+const HHV_ITEM_PATH_RE = /\/(?:item|artikel)\/([^/?#]+)/i;
+
+function hhvPathParts(pathname) {
+  return pathname.replace(/\/+$/, "").split("/").filter(Boolean);
+}
+
+function hhvItemIndex(parts) {
+  return parts.findIndex((p) => HHV_ITEM_SEGMENT.test(p));
+}
+
+function normalizeHhvCategory(raw) {
+  const key = String(raw || "records").toLowerCase();
+  return HHV_CATEGORY_MAP[key] || key || "records";
+}
+
+function resolveHhvCategory(parts) {
+  if (parts[0]?.toLowerCase() === "shop") return "records";
+  const itemIdx = hhvItemIndex(parts);
+  if (itemIdx >= 2) {
+    // /{locale}/{category}/item|artikel/{slug}
+    // or /{category}/artikel/{slug} (no locale — itemIdx === 1 stays records default)
+    return normalizeHhvCategory(parts[itemIdx - 1]);
+  }
+  if (itemIdx === 1) {
+    // /records/artikel/{slug} or /schallplatten/artikel/{slug}
+    return normalizeHhvCategory(parts[0]);
+  }
+  return "records";
+}
+
 /**
  * Rewrite ANY HHV product URL to the community SI price locale.
- * Strips tracking query params; accepts /en/, /de/, /en-DE-EUR-eu/, legacy /shop/…
+ * Strips tracking query params; accepts /en/, /de/, /en-DE-EUR-eu/,
+ * German /artikel/, /schallplatten/, legacy /shop/…
  */
 export function hhvPriceLocaleUrl(url, locale = HHV_PRICE_LOCALE) {
   try {
@@ -42,20 +88,13 @@ export function hhvPriceLocaleUrl(url, locale = HHV_PRICE_LOCALE) {
     const u = new URL(href);
     if (!u.hostname.includes("hhv.de")) return href;
 
-    const itemMatch = u.pathname.match(/\/item\/([^/?#]+)/i);
+    const itemMatch = u.pathname.match(HHV_ITEM_PATH_RE);
     if (!itemMatch) return href;
     const slugFull = decodeURIComponent(itemMatch[1]).replace(/\/+$/, "");
     if (!slugFull) return href;
 
-    const parts = u.pathname.replace(/\/+$/, "").split("/").filter(Boolean);
-    let category = "records";
-    const itemIdx = parts.findIndex((p) => p.toLowerCase() === "item");
-    if (parts[0]?.toLowerCase() === "shop") {
-      category = "records";
-    } else if (itemIdx >= 2) {
-      // /{locale}/{category}/item/{slug}
-      category = parts[itemIdx - 1] || "records";
-    }
+    const parts = hhvPathParts(u.pathname);
+    const category = resolveHhvCategory(parts);
 
     return `https://www.hhv.de/${locale}/${category}/item/${slugFull}`;
   } catch {
@@ -83,7 +122,7 @@ export function parseHhvRecordUrl(url) {
     const u = new URL(href);
     if (!u.hostname.includes("hhv.de")) return { valid: false };
 
-    const itemMatch = u.pathname.match(/\/item\/([^/?#]+)/i);
+    const itemMatch = u.pathname.match(HHV_ITEM_PATH_RE);
     if (!itemMatch) return { valid: false };
 
     const slugFull = decodeURIComponent(itemMatch[1]).replace(/\/+$/, "");
@@ -92,16 +131,8 @@ export function parseHhvRecordUrl(url) {
     const slug = idMatch ? slugFull.slice(0, -idMatch[0].length) : slugFull;
     if (productId == null && !slug) return { valid: false };
 
-    const parts = u.pathname.replace(/\/+$/, "").split("/").filter(Boolean);
-    let category = "records";
-    const itemIdx = parts.findIndex((p) => p.toLowerCase() === "item");
-
-    if (parts[0]?.toLowerCase() === "shop") {
-      category = "records";
-    } else if (itemIdx >= 2) {
-      category = parts[itemIdx - 1] || "records";
-    }
-
+    const parts = hhvPathParts(u.pathname);
+    const category = resolveHhvCategory(parts);
     const canonicalUrl = hhvPriceLocaleUrl(href, HHV_PRICE_LOCALE);
 
     return {

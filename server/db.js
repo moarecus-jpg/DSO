@@ -6,7 +6,7 @@ import { fileURLToPath } from "url";
 import { formatOrderTitle } from "../shared/orderTitle.js";
 import { needsAttention } from "../shared/orderDashboard.js";
 import { formatPlacListingFormat, normalizePlacYear } from "../shared/placFormat.js";
-import { normalizeStore } from "../shared/stores.js";
+import { normalizeStore, resolveOrderStore, STORES } from "../shared/stores.js";
 import { hashPassword, verifyPassword } from "./auth/password.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -172,6 +172,21 @@ for (const sql of [
     /* column already exists */
   }
 }
+
+/** Older shop orders may still have store='discogs' while seller_username is hhv/decks/… */
+function migrateShopOrderStores() {
+  for (const config of Object.values(STORES)) {
+    if (config.kind !== "shop") continue;
+    const seller = config.sellerUsername ?? config.id;
+    db.prepare(
+      `UPDATE group_sessions
+       SET store = ?
+       WHERE lower(seller_username) = lower(?)
+         AND (store IS NULL OR lower(store) = 'discogs' OR trim(store) = '')`
+    ).run(config.id, seller);
+  }
+}
+migrateShopOrderStores();
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS payment_requests (
@@ -557,6 +572,7 @@ function withOrderTitle(session) {
     1;
   return {
     ...session,
+    store: resolveOrderStore(session),
     title: formatOrderTitle(orderNumber, session.seller_username),
   };
 }

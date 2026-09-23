@@ -334,7 +334,7 @@ export default {
     emptyBodyAfterShop:
       " to a {{domain}} product page — one or more at a time.",
     emptyBodyAfterHhv:
-      " to an HHV product page (hhv.de/…/item/…) — one or more at a time.",
+      " to an HHV product page (hhv.de/…/item/… or …/artikel/…) — one or more at a time.",
     discogsNotConnected: "Discogs not connected",
     participantAria: "Participant name",
     ordererAria: "Orderer name",
@@ -419,16 +419,21 @@ export default {
     linksHintShop:
       "Paste one or more {{store}} product links ({{domain}}) — one per line.",
     linksHintHhv:
-      "Paste one or more HHV product links (hhv.de/…/item/…) — one per line.",
+      "Paste one or more HHV product links (hhv.de/…/item/… or …/artikel/…) — one per line.",
     skip: "Skip",
     skipHint: "You can add items later with Add item.",
     validLinkOne: "1 valid link",
     validLinkMany: "{{count}} valid links",
     invalidLineOne: "1 line is not a valid Discogs link",
     invalidLineMany: "{{count}} lines are not valid Discogs links",
+    invalidLineOneShop: "1 line is not a valid {{store}} link",
+    invalidLineManyShop: "{{count}} lines are not valid {{store}} links",
     noValidLinks:
       "No valid links. Check the format (/sell/item/… or /shop/item/…).",
+    noValidLinksShop:
+      "No valid links. Use {{store}} product URLs ({{domain}}).",
     enterAtLeastOne: "Enter at least one Discogs link (one per line).",
+    enterAtLeastOneShop: "Enter at least one {{store}} link (one per line).",
     unavailable: "No longer available",
     unavailableListTitle: "No longer available",
     unavailableAfterRefresh:

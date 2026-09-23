@@ -30,7 +30,7 @@ export const STORES = {
     hostIncludes: ["hhv.de"],
     exampleUrl:
       "https://www.hhv.de/en-SI-EUR-eu/records/item/artist-album-1395420",
-    urlHint: "hhv.de/…/item/…",
+    urlHint: "hhv.de/…/item/… or …/artikel/…",
     logoDomain: "hhv.de",
     logoUrl: shopLogoUrl("hhv.de"),
     currency: "EUR",
@@ -104,6 +104,40 @@ export function normalizeStore(store) {
     .toLowerCase();
   if (STORES[value]) return value;
   return STORE_DISCOGS;
+}
+
+/** Map shop seller username (e.g. "hhv") → store id. */
+export function storeFromSellerUsername(sellerUsername) {
+  const key = String(sellerUsername ?? "")
+    .trim()
+    .toLowerCase();
+  if (!key) return null;
+  for (const config of Object.values(STORES)) {
+    if (config.kind !== "shop") continue;
+    const seller = String(config.sellerUsername ?? config.id).toLowerCase();
+    if (seller === key) return config.id;
+  }
+  return null;
+}
+
+/**
+ * Resolve the store for an order row.
+ * Prefer explicit store; if missing/discogs but seller is a known shop, use that shop
+ * (fixes older HHV/Decks/… orders created before store was set correctly).
+ */
+export function resolveOrderStore(sessionOrStore, sellerUsername) {
+  const row =
+    sessionOrStore && typeof sessionOrStore === "object"
+      ? sessionOrStore
+      : { store: sessionOrStore, seller_username: sellerUsername };
+
+  const explicit = normalizeStore(row.store);
+  if (isShopStore(explicit)) return explicit;
+
+  const inferred = storeFromSellerUsername(
+    row.seller_username ?? row.sellerUsername ?? sellerUsername
+  );
+  return inferred ?? explicit;
 }
 
 export function getStoreConfig(store) {

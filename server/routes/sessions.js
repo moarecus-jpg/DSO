@@ -62,6 +62,7 @@ import {
   getStoreConfig,
   isShopStore,
   normalizeStore,
+  resolveOrderStore,
   shopSellerUsername,
 } from "../../shared/stores.js";
 import { DISPLAY_CURRENCY, toEurAmount } from "../../shared/currency.js";
@@ -191,9 +192,9 @@ function resolveSessionSeller(sessionId) {
 function resolveSessionStore(sessionId) {
   if (useMockAuth() && sessionId.startsWith("mock")) {
     const summary = mockSessions.find((s) => s.id === sessionId);
-    return normalizeStore(summary?.store);
+    return resolveOrderStore(summary);
   }
-  return normalizeStore(getGroupSession(sessionId)?.store);
+  return resolveOrderStore(getGroupSession(sessionId));
 }
 
 async function resolveLinkMeta(trimmedUrl, note, { store, sellerUsername, useMockDiscogs }) {

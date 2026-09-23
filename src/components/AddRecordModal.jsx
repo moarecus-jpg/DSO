@@ -154,7 +154,16 @@ export function AddRecordModal({
     e.preventDefault();
     if (!validUrls.length) {
       alert(
-        invalidUrls.length ? t("items.noValidLinks") : t("items.enterAtLeastOne")
+        invalidUrls.length
+          ? isShop
+            ? t("items.noValidLinksShop", {
+                store: storeConfig.label,
+                domain: storeConfig.urlHint,
+              })
+            : t("items.noValidLinks")
+          : isShop
+            ? t("items.enterAtLeastOneShop", { store: storeConfig.label })
+            : t("items.enterAtLeastOne")
       );
       return;
     }
@@ -273,8 +282,15 @@ export function AddRecordModal({
             {invalidUrls.length > 0 && (
               <p className="form-error fine">
                 {invalidUrls.length === 1
-                  ? t("items.invalidLineOne")
-                  : t("items.invalidLineMany", { count: invalidUrls.length })}
+                  ? isShop
+                    ? t("items.invalidLineOneShop", { store: storeConfig.label })
+                    : t("items.invalidLineOne")
+                  : isShop
+                    ? t("items.invalidLineManyShop", {
+                        count: invalidUrls.length,
+                        store: storeConfig.label,
+                      })
+                    : t("items.invalidLineMany", { count: invalidUrls.length })}
               </p>
             )}
           </div>

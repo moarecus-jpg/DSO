@@ -336,7 +336,7 @@ export default {
     emptyBodyAfterShop:
       " do izdelka ({{domain}}) — eno ali več naenkrat.",
     emptyBodyAfterHhv:
-      " do HHV izdelka (hhv.de/…/item/…) — eno ali več naenkrat.",
+      " do HHV izdelka (hhv.de/…/item/… ali …/artikel/…) — eno ali več naenkrat.",
     discogsNotConnected: "Discogs ni povezan",
     participantAria: "Ime sodelujočega",
     ordererAria: "Ime naročnika",
@@ -425,16 +425,21 @@ export default {
     linksHintShop:
       "Prilepi eno ali več {{store}} povezav ({{domain}}) — ena na vrstico.",
     linksHintHhv:
-      "Prilepi eno ali več HHV povezav (hhv.de/…/item/…) — ena na vrstico.",
+      "Prilepi eno ali več HHV povezav (hhv.de/…/item/… ali …/artikel/…) — ena na vrstico.",
     skip: "Preskoči",
     skipHint: "Iteme lahko dodaš kasneje z gumbom Dodaj Item.",
     validLinkOne: "1 veljavna povezava",
     validLinkMany: "{{count}} veljavnih povezav",
     invalidLineOne: "1 vrstica ni veljavna Discogs povezava",
     invalidLineMany: "{{count}} vrstic ni veljavnih Discogs povezav",
+    invalidLineOneShop: "1 vrstica ni veljavna {{store}} povezava",
+    invalidLineManyShop: "{{count}} vrstic ni veljavnih {{store}} povezav",
     noValidLinks:
       "Nobena povezava ni veljavna. Preveri format (/sell/item/… ali /shop/item/…).",
+    noValidLinksShop:
+      "Nobena povezava ni veljavna. Uporabi {{store}} povezave ({{domain}}).",
     enterAtLeastOne: "Vnesi vsaj eno Discogs povezavo (ena na vrstico).",
+    enterAtLeastOneShop: "Vnesi vsaj eno {{store}} povezavo (ena na vrstico).",
     unavailable: "Ni več na voljo",
     unavailableListTitle: "Ni več na voljo",
     unavailableAfterRefresh:

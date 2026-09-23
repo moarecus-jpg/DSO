@@ -25,7 +25,7 @@ import { orderPageTitle } from "../../shared/orderShare.js";
 import { formatPrice } from "../../shared/orderTotals.js";
 import { APP_TITLE } from "../../shared/brand.js";
 import { canReportItemIssue } from "../../shared/orderReview.js";
-import { getStoreConfig, isShopStore, normalizeStore } from "../../shared/stores.js";
+import { getStoreConfig, isShopStore, resolveOrderStore } from "../../shared/stores.js";
 import { shopCartSupports } from "../../shared/shopCart.js";
 import {
   isArchivedSession,
@@ -126,8 +126,8 @@ export function Session() {
     if (!session || loading) return;
     if (autoPriceRefreshForId.current === session.id) return;
     if (!isOpenSession(session.status)) return;
-    if (!isShopStore(session.store)) return;
-    const storeId = normalizeStore(session.store);
+    if (!isShopStore(resolveOrderStore(session))) return;
+    const storeId = resolveOrderStore(session);
     const missingPrice = (session.links ?? []).some(
       (link) => link.price_value == null && link.priceValue == null
     );
@@ -547,8 +547,9 @@ export function Session() {
     );
   }
 
-  const storeConfig = getStoreConfig(session.store);
-  const isShop = isShopStore(session.store);
+  const orderStore = resolveOrderStore(session);
+  const storeConfig = getStoreConfig(orderStore);
+  const isShop = isShopStore(orderStore);
   const sellerUrl = isShop
     ? storeConfig.shopUrl
     : `https://www.discogs.com/seller/${session.seller_username}/profile`;
@@ -625,9 +626,9 @@ export function Session() {
           variant="outline"
           className="order-sticky-footer-action-btn order-sticky-footer-action-btn--secondary"
         />
-      ) : shopCartSupports(session.store) ? (
+      ) : shopCartSupports(orderStore) ? (
         <ShopAddAllToCartButton
-          store={session.store}
+          store={orderStore}
           links={session.links}
           disabled={isArchived}
           variant="outline"
@@ -716,7 +717,7 @@ export function Session() {
           <h1>{displayOrderTitle(session)}</h1>
           <div className="session-seller-row">
             <OrderStoreAvatar
-              store={session.store}
+              store={orderStore}
               username={session.seller_username}
               avatarUrl={session.seller_avatar_url}
               className="session-seller-avatar"
@@ -741,7 +742,7 @@ export function Session() {
               {t("session.openWantlist")}
             </a>
           )}
-          {isOpen && normalizeStore(session.store) === "decks" && (
+          {isOpen && orderStore === "decks" && (
             <DecksSyncPricesButton
               sessionId={session.id}
               disabled={recordCount === 0}
@@ -780,7 +781,7 @@ export function Session() {
         onClose={closeAddRecord}
         onSubmit={handleAddRecord}
         submitting={addingRecord}
-        store={session.store}
+        store={orderStore}
         sellerUsername={session.seller_username}
         currentUserId={user?.id}
         canAddForOthers={Boolean(canManageOrder)}
@@ -887,7 +888,7 @@ export function Session() {
           <>
             <RecordList
               links={session.links}
-              store={session.store}
+              store={orderStore}
               onRemoveLink={handleRemoveLink}
               removingLinkId={removingLinkId}
               canRemoveLink={canRemoveLink}
@@ -907,7 +908,7 @@ export function Session() {
             )}
             <RecordList
               links={session.links}
-              store={session.store}
+              store={orderStore}
               onRemoveLink={handleRemoveLink}
               removingLinkId={removingLinkId}
               canRemoveLink={canRemoveLink}
