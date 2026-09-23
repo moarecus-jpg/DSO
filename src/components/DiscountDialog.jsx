@@ -160,12 +160,14 @@ export function DiscountDialog({
                   return (
                     <li key={id}>
                       <label className="discount-dialog-item">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          disabled={saving}
-                          onChange={() => toggleLink(id)}
-                        />
+                        <span className="ui-check ui-check--lg">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            disabled={saving}
+                            onChange={() => toggleLink(id)}
+                          />
+                        </span>
                         <span className="discount-dialog-item-text">
                           <span className="discount-dialog-item-title">
                             {recordTitle(link)}

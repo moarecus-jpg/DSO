@@ -2876,12 +2876,14 @@ code {
   width: 100%;
   max-width: 10.5rem;
   margin-left: auto;
-  padding: 0.4rem 0.65rem;
+  min-height: 2.5rem;
+  padding: 0.3rem 0.45rem 0.3rem 0.35rem;
   border: 1px solid rgba(139, 92, 246, 0.35);
-  border-radius: 0.65rem;
+  border-radius: 0.75rem;
   background: rgba(255, 255, 255, 0.06);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   cursor: text;
+  box-sizing: border-box;
 }
 
 .order-summary-field:focus-within {
@@ -2893,14 +2895,17 @@ code {
 .order-summary-field-input {
   width: 100%;
   min-width: 0;
-  padding: 0;
+  min-height: 1.85rem;
+  padding: 0.28rem 0.55rem;
   border: none;
   background: transparent;
   color: var(--text);
   font: inherit;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   font-weight: 600;
+  line-height: 1.25;
   text-align: right;
+  box-sizing: border-box;
 }
 
 .order-summary-field-input:focus {
@@ -2916,6 +2921,7 @@ code {
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--muted);
+  line-height: 1;
 }
 
 .order-summary-field-icon {
@@ -2924,7 +2930,9 @@ code {
 }
 
 .order-summary-field--compact {
-  max-width: 5rem;
+  max-width: 5.5rem;
+  min-height: 2.35rem;
+  padding: 0.25rem;
 }
 
 .order-summary-split-field-wrap {
@@ -3470,28 +3478,99 @@ code {
 .order-items-table th.col-discount,
 .order-items-table td.col-discount {
   text-align: center;
-  width: 3.5rem;
+  width: 3.75rem;
   white-space: nowrap;
+  vertical-align: middle;
 }
 
-.order-item-discount-check {
+/* Shared accent checkbox used for discount eligibility */
+.ui-check {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   margin: 0;
   cursor: pointer;
+  user-select: none;
 }
 
-.order-item-discount-check input {
-  width: 1.05rem;
-  height: 1.05rem;
-  accent-color: var(--accent, #3b82f6);
+.ui-check input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.2rem;
+  height: 1.2rem;
+  margin: 0;
+  flex-shrink: 0;
+  border: 1.5px solid color-mix(in srgb, var(--border-strong) 80%, #fff 12%);
+  border-radius: 0.4rem;
+  background: color-mix(in srgb, var(--surface-2) 88%, #000 12%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.12s ease;
+}
+
+.ui-check input:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border-strong));
+  background: color-mix(in srgb, var(--surface-3) 70%, var(--accent-dim));
+}
+
+.ui-check input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.ui-check input:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%230b0b0b' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.2 6.4 11.1 12.5 4.8'/%3E%3C/svg%3E");
+  background-size: 0.78rem 0.78rem;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.ui-check input:checked:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.ui-check input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ui-check--lg input {
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 0.45rem;
+}
+
+.order-item-discount-check {
+  padding: 0.2rem;
+  border-radius: 0.5rem;
+}
+
+.order-item-discount-check:hover {
+  background: var(--accent-dim);
 }
 
 .order-item-discount-yes {
-  color: var(--accent, #3b82f6);
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 0.4rem;
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .order-items-discount-hint {
@@ -3499,7 +3578,7 @@ code {
 }
 
 .order-item-row--discount .col-price {
-  color: var(--accent, #3b82f6);
+  color: var(--accent);
 }
 
 .order-items-table td {
@@ -3805,31 +3884,41 @@ code {
 .discount-dialog-list {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0.3rem;
   overflow: auto;
   max-height: min(40vh, 16rem);
   border: 1px solid var(--border);
-  border-radius: 0.5rem;
+  border-radius: 0.7rem;
+  background: color-mix(in srgb, var(--surface-1) 80%, #000 20%);
 }
 
 .discount-dialog-list li + li {
-  border-top: 1px solid var(--border);
+  margin-top: 0.15rem;
 }
 
 .discount-dialog-item {
   display: flex;
-  align-items: flex-start;
-  gap: 0.65rem;
-  padding: 0.65rem 0.75rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.75rem;
   cursor: pointer;
   margin: 0;
+  border-radius: 0.55rem;
+  border: 1px solid transparent;
+  transition: background 0.12s ease, border-color 0.12s ease;
 }
 
-.discount-dialog-item input {
-  margin-top: 0.15rem;
-  width: 1.05rem;
-  height: 1.05rem;
-  accent-color: var(--accent, #3b82f6);
+.discount-dialog-item:hover {
+  background: color-mix(in srgb, var(--surface-3) 85%, var(--accent-dim));
+  border-color: color-mix(in srgb, var(--border) 70%, var(--accent) 30%);
+}
+
+.discount-dialog-item:has(input:checked) {
+  background: var(--accent-dim);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+.discount-dialog-item .ui-check {
   flex-shrink: 0;
 }
 
@@ -3852,9 +3941,25 @@ code {
 
 .discount-dialog-percent {
   display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  margin-top: 0.25rem;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+}
+
+.discount-dialog-percent .modal-field-label {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.discount-dialog-percent .order-summary-field {
+  width: auto;
+  max-width: 6.5rem;
+  margin-left: 0;
+  flex-shrink: 0;
 }
 
 .order-summary-discount-trigger {
@@ -4848,7 +4953,7 @@ body.modal-open .order-sticky-backdrop {
 .layout-dashboard .form-card input,
 .layout-dashboard .order-summary-field-input,
 .layout-dashboard .editable-participant-input,
-.layout-dashboard .modal input,
+.layout-dashboard .modal input:not(.ui-check input),
 .layout-dashboard .modal-urls-textarea,
 .layout-dashboard .plac-sell-textarea {
   border-radius: 0.85rem;
@@ -4861,7 +4966,7 @@ body.modal-open .order-sticky-backdrop {
 .layout-dashboard .form-card input:focus,
 .layout-dashboard .order-summary-field:focus-within,
 .layout-dashboard .editable-participant-input:focus,
-.layout-dashboard .modal input:focus,
+.layout-dashboard .modal input:not(.ui-check input):focus,
 .layout-dashboard .modal-urls-textarea:focus,
 .layout-dashboard .plac-sell-textarea:focus {
   outline: none;
@@ -4869,6 +4974,18 @@ body.modal-open .order-sticky-backdrop {
   box-shadow:
     0 0 0 1px rgba(139, 92, 246, 0.55),
     0 0 18px rgba(124, 58, 237, 0.32);
+}
+
+.layout-dashboard .order-summary-field-input {
+  min-height: 1.85rem;
+  padding: 0.28rem 0.55rem;
+  line-height: 1.25;
+  box-sizing: border-box;
+}
+
+.layout-dashboard .order-summary-field-input:focus {
+  box-shadow: none;
+  border-color: rgba(255, 255, 255, 0.16);
 }
 
 .layout-dashboard .form-error {

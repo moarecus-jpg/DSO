@@ -137,7 +137,7 @@ function ItemRow({
           {link.blurred || unavailable ? (
             <span className="muted">—</span>
           ) : canManageDiscount ? (
-            <label className="order-item-discount-check">
+            <label className="ui-check order-item-discount-check">
               <input
                 type="checkbox"
                 checked={applies}
