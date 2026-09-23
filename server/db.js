@@ -165,6 +165,7 @@ for (const sql of [
   "ALTER TABLE users ADD COLUMN shop_discount_percent REAL NOT NULL DEFAULT 0",
   "ALTER TABLE users ADD COLUMN shop_discount_label TEXT",
   "ALTER TABLE users ADD COLUMN paypal_me TEXT",
+  "ALTER TABLE group_sessions ADD COLUMN discount_percent REAL NOT NULL DEFAULT 0",
 ]) {
   try {
     db.exec(sql);
@@ -1120,10 +1121,11 @@ export function updateSessionShipping(
   shippingValue,
   shippingCurrency,
   shippingSplitCount,
-  shippingMode = "equal"
+  shippingMode = "equal",
+  discountPercent = null
 ) {
   const existing = db
-    .prepare("SELECT id FROM group_sessions WHERE id = ?")
+    .prepare("SELECT id, discount_percent FROM group_sessions WHERE id = ?")
     .get(id);
   if (!existing) return null;
 
@@ -1145,12 +1147,21 @@ export function updateSessionShipping(
 
   const mode = shippingMode === "by_items" ? "by_items" : "equal";
 
+  let discount = existing.discount_percent ?? 0;
+  if (discountPercent !== null && discountPercent !== undefined) {
+    const raw = Number(discountPercent);
+    if (Number.isNaN(raw) || raw < 0 || raw > 100) {
+      throw new Error("Neveljaven popust (%).");
+    }
+    discount = Math.round(raw * 100) / 100;
+  }
+
   db.prepare(
     `UPDATE group_sessions
      SET shipping_value = ?, shipping_currency = ?, shipping_split_count = ?,
-         shipping_mode = ?
+         shipping_mode = ?, discount_percent = ?
      WHERE id = ?`
-  ).run(value, shippingCurrency ?? null, split, mode, id);
+  ).run(value, shippingCurrency ?? null, split, mode, discount, id);
 
   return getGroupSession(id);
 }
@@ -1723,6 +1734,7 @@ export function listUserStatisticsRows(userId, status = "all", communityId) {
               gs.created_at as session_created_at,
               gs.shipping_value, gs.shipping_currency, gs.shipping_split_count,
               COALESCE(gs.shipping_mode, 'equal') as shipping_mode,
+              COALESCE(gs.discount_percent, 0) as discount_percent,
               (SELECT COUNT(*) FROM session_links WHERE session_id = gs.id) as session_item_count
        FROM session_links sl
        JOIN group_sessions gs ON gs.id = sl.session_id

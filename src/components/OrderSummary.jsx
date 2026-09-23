@@ -13,6 +13,7 @@ export function OrderSummary({
   shippingCurrency,
   shippingSplitCount,
   shippingMode = "equal",
+  discountPercent = 0,
   memberCount = 0,
   readOnly = false,
   onSaveShipping,
@@ -36,6 +37,9 @@ export function OrderSummary({
 
   const {
     itemsTotal,
+    itemsAfterDiscount,
+    discountAmount,
+    discountPercent: computedDiscount,
     shipping,
     total,
     currency,
@@ -50,6 +54,10 @@ export function OrderSummary({
   const shipCur = shippingCurrency ?? computedShipCurrency ?? currency;
   const mode = shippingMode ?? computedMode ?? "equal";
   const byItems = mode === "by_items";
+  const savedDiscount =
+    discountPercent != null && discountPercent !== ""
+      ? Number(discountPercent)
+      : computedDiscount ?? 0;
 
   const pendingByUser = new Map();
   for (const req of paymentRequests) {
@@ -70,6 +78,7 @@ export function OrderSummary({
   const [draft, setDraft] = useState("");
   const [draftSplit, setDraftSplit] = useState("");
   const [draftMode, setDraftMode] = useState(mode);
+  const [draftDiscount, setDraftDiscount] = useState("");
 
   useEffect(() => {
     const raw =
@@ -96,6 +105,13 @@ export function OrderSummary({
     setDraftMode(mode);
   }, [mode]);
 
+  useEffect(() => {
+    const value = Number(savedDiscount);
+    setDraftDiscount(
+      Number.isFinite(value) && value > 0 ? String(value) : ""
+    );
+  }, [savedDiscount]);
+
   async function commitShipping(overrides = {}) {
     if (!onSaveShipping || readOnly) return;
 
@@ -118,6 +134,17 @@ export function OrderSummary({
       return;
     }
 
+    const discountTrimmed = draftDiscount.trim();
+    const nextDiscount =
+      discountTrimmed === "" ? 0 : Number(discountTrimmed.replace(",", "."));
+    if (
+      discountTrimmed !== "" &&
+      (Number.isNaN(nextDiscount) || nextDiscount < 0 || nextDiscount > 100)
+    ) {
+      alert(t("summary.invalidDiscount"));
+      return;
+    }
+
     const current =
       shippingValue != null && shippingValue !== ""
         ? Number(shippingValue)
@@ -126,6 +153,9 @@ export function OrderSummary({
           : null;
     const currentSplit = shippingSplitCount ?? computedSplit ?? null;
     const currentMode = mode;
+    const currentDiscount = Number.isFinite(Number(savedDiscount))
+      ? Number(savedDiscount)
+      : 0;
 
     const valueUnchanged =
       next === current || (next == null && (current == null || current === 0));
@@ -133,14 +163,20 @@ export function OrderSummary({
       nextSplit === currentSplit ||
       (nextSplit == null && currentSplit == null);
     const modeUnchanged = nextMode === currentMode;
+    const discountUnchanged =
+      Math.round((nextDiscount || 0) * 100) ===
+      Math.round((currentDiscount || 0) * 100);
 
-    if (valueUnchanged && splitUnchanged && modeUnchanged) return;
+    if (valueUnchanged && splitUnchanged && modeUnchanged && discountUnchanged) {
+      return;
+    }
 
     await onSaveShipping({
       shippingValue: next,
       shippingCurrency: shipCur,
       shippingSplitCount: nextMode === "by_items" ? nextSplit : nextSplit,
       shippingMode: nextMode,
+      discountPercent: nextDiscount || 0,
     });
   }
 
@@ -351,6 +387,67 @@ export function OrderSummary({
           <span className="order-summary-col-settle order-summary-col-empty" />
         </div>
 
+        <div className="order-summary-grid-row order-summary-grid-row--discount">
+          <span className="order-summary-col-name">
+            <strong>{t("summary.discount")}</strong>
+            {!readOnly && (
+              <span className="muted fine">{t("summary.discountHint")}</span>
+            )}
+          </span>
+          <span className="order-summary-col-num order-summary-col-empty" />
+          <span className="order-summary-col-amount order-summary-col-span">
+            {readOnly ? (
+              <strong>
+                {savedDiscount > 0
+                  ? t("summary.discountApplied", {
+                      percent: savedDiscount,
+                      amount: formatPrice(discountAmount ?? 0, currency),
+                    })
+                  : t("summary.discountNone")}
+              </strong>
+            ) : (
+              <div className="order-summary-split-field-wrap">
+                <label className="order-summary-field order-summary-field--compact">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    className="order-summary-field-input order-summary-field-input--compact"
+                    value={draftDiscount}
+                    onChange={(e) => setDraftDiscount(e.target.value)}
+                    onBlur={() => commitShipping()}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        e.target.blur();
+                      }
+                    }}
+                    placeholder="0"
+                    disabled={savingShipping}
+                    aria-label={t("summary.discountAria")}
+                  />
+                  <span className="order-summary-field-suffix">%</span>
+                  <Pencil size={13} className="order-summary-field-icon" aria-hidden />
+                </label>
+                {(discountAmount > 0 || Number(draftDiscount) > 0) && (
+                  <span className="order-summary-per-person muted fine">
+                    {t("summary.discountSavings", {
+                      amount: formatPrice(
+                        discountAmount ??
+                          Math.round(
+                            ((itemsTotal || 0) * (Number(draftDiscount) || 0)) /
+                              100 *
+                              100
+                          ) / 100,
+                        currency
+                      ),
+                    })}
+                  </span>
+                )}
+              </div>
+            )}
+          </span>
+        </div>
+
         <div className="order-summary-grid-row order-summary-grid-row--shipping">
           <span className="order-summary-col-name">
             <strong>{t("summary.shipping")}</strong>
@@ -515,6 +612,14 @@ export function OrderSummary({
         <div className="order-summary-grid-row order-summary-grid-row--grand">
           <span className="order-summary-col-name">
             <strong>{t("summary.totalWithShipping")}</strong>
+            {Number(computedDiscount) > 0 && itemsAfterDiscount != null && (
+              <span className="muted fine">
+                {" "}
+                · {t("summary.afterDiscount", {
+                  amount: formatPrice(itemsAfterDiscount, currency),
+                })}
+              </span>
+            )}
           </span>
           <span className="order-summary-col-num order-summary-col-empty" />
           <span className="order-summary-col-amount order-summary-col-span">

@@ -665,6 +665,19 @@ router.patch("/:id/shipping", requireUser, (req, res) => {
     shippingMode = rawMode;
   }
 
+  let discountPercent = existingSession.discount_percent ?? 0;
+  if (
+    req.body?.discountPercent !== undefined &&
+    req.body?.discountPercent !== null
+  ) {
+    const rawDiscount =
+      req.body.discountPercent === "" ? 0 : Number(req.body.discountPercent);
+    if (Number.isNaN(rawDiscount) || rawDiscount < 0 || rawDiscount > 100) {
+      return res.status(400).json({ error: "Neveljaven popust (%). Vnesi 0–100." });
+    }
+    discountPercent = Math.round(rawDiscount * 100) / 100;
+  }
+
   const shippingEur =
     shippingValue == null
       ? null
@@ -681,6 +694,7 @@ router.patch("/:id/shipping", requireUser, (req, res) => {
       shipping_currency: shippingEur == null ? null : DISPLAY_CURRENCY,
       shipping_split_count: shippingSplitCount,
       shipping_mode: shippingMode,
+      discount_percent: discountPercent,
     };
     return res.json({
       session: withOrderPermissions(mockSessionDetail(mockSessions[idx]), req.session.userId),
@@ -695,7 +709,8 @@ router.patch("/:id/shipping", requireUser, (req, res) => {
       shippingEur,
       shippingEur == null ? null : DISPLAY_CURRENCY,
       shippingSplitCount,
-      shippingMode
+      shippingMode,
+      discountPercent
     );
     if (!updated) return res.status(404).json({ error: "Session not found" });
     res.json({ session: withOrderPermissions(updated, req.session.userId) });

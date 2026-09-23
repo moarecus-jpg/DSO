@@ -262,6 +262,7 @@ export function Session() {
     shippingCurrency,
     shippingSplitCount,
     shippingMode,
+    discountPercent,
   }) {
     setSavingShipping(true);
     setShippingError(null);
@@ -273,6 +274,7 @@ export function Session() {
           shippingCurrency,
           shippingSplitCount,
           shippingMode,
+          discountPercent,
         }),
       });
       setSession(updated);
@@ -950,6 +952,7 @@ export function Session() {
           shippingCurrency={session.shipping_currency}
           shippingSplitCount={session.shipping_split_count}
           shippingMode={session.shipping_mode ?? "equal"}
+          discountPercent={session.discount_percent ?? 0}
           memberCount={session.members?.length ?? 0}
           readOnly={
             session.status !== "open" ||

@@ -98,9 +98,14 @@ export function computeUserStatistics(rows = []) {
     const itemYear = yearKey(row.created_at ?? row.item_created_at ?? row.orderedAt);
 
     if (eur != null) {
-      itemsTotal = round2(itemsTotal + eur);
-      bumpBucket(monthBuckets, itemMonth, { items: eur, itemCount: 1 });
-      bumpBucket(yearBuckets, itemYear, { items: eur, itemCount: 1 });
+      const percent = Number(row.discount_percent ?? row.discountPercent) || 0;
+      const discounted =
+        percent > 0
+          ? round2(eur * (1 - Math.min(100, percent) / 100))
+          : eur;
+      itemsTotal = round2(itemsTotal + discounted);
+      bumpBucket(monthBuckets, itemMonth, { items: discounted, itemCount: 1 });
+      bumpBucket(yearBuckets, itemYear, { items: discounted, itemCount: 1 });
     } else {
       hasUnknownPrice = true;
       bumpBucket(monthBuckets, itemMonth, { itemCount: 1 });

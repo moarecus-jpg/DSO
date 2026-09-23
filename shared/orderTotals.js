@@ -6,6 +6,25 @@ function round2(value) {
   return Math.round(Number(value) * 100) / 100;
 }
 
+export function resolveDiscountPercent(session = {}) {
+  const raw = session.discount_percent ?? session.discountPercent;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value <= 0) return 0;
+  return Math.min(100, Math.round(value * 100) / 100);
+}
+
+function applyPercentDiscount(amount, percent) {
+  const base = Number(amount) || 0;
+  if (!(percent > 0) || !(base > 0)) {
+    return { discounted: round2(base), discountAmount: 0 };
+  }
+  const discountAmount = round2((base * percent) / 100);
+  return {
+    discounted: round2(base - discountAmount),
+    discountAmount,
+  };
+}
+
 export function formatPrice(value, currency = DISPLAY_CURRENCY) {
   if (value == null || Number.isNaN(value)) return "—";
   const sym = CURRENCY_SYMBOL[currency] ?? currency;
@@ -144,6 +163,33 @@ export function computeMemberTotals(links = [], session = {}) {
     a.name.localeCompare(b.name)
   );
 
+  const discountPercent = resolveDiscountPercent(session);
+  let allocatedDiscount = 0;
+  const discountedRows = baseRows.map((row, index) => {
+    if (!(discountPercent > 0) || !(row.total > 0)) {
+      return {
+        ...row,
+        itemsBeforeDiscount: row.total,
+        discountAmount: 0,
+      };
+    }
+    let discountAmount;
+    if (index === baseRows.length - 1) {
+      const orderItems = baseRows.reduce((sum, r) => sum + r.total, 0);
+      const orderDiscount = round2((orderItems * discountPercent) / 100);
+      discountAmount = round2(orderDiscount - allocatedDiscount);
+    } else {
+      discountAmount = round2((row.total * discountPercent) / 100);
+      allocatedDiscount = round2(allocatedDiscount + discountAmount);
+    }
+    return {
+      ...row,
+      itemsBeforeDiscount: row.total,
+      discountAmount,
+      total: round2(row.total - discountAmount),
+    };
+  });
+
   const shipping =
     toEurAmount(
       session.shipping_value ?? session.shippingValue,
@@ -152,7 +198,7 @@ export function computeMemberTotals(links = [], session = {}) {
   const mode = resolveShippingMode(session);
   const splitRaw = session.shipping_split_count ?? session.shippingSplitCount;
 
-  return allocateShippingShares(baseRows, shipping, mode, splitRaw);
+  return allocateShippingShares(discountedRows, shipping, mode, splitRaw);
 }
 
 export function computeOrderGrandTotal(links = [], session = {}) {
@@ -170,6 +216,13 @@ export function computeOrderGrandTotal(links = [], session = {}) {
       hasUnknown = true;
     }
   }
+
+  itemsTotal = round2(itemsTotal);
+  const discountPercent = resolveDiscountPercent(session);
+  const { discounted: itemsAfterDiscount, discountAmount } = applyPercentDiscount(
+    itemsTotal,
+    discountPercent
+  );
 
   const shipRaw = session.shipping_value ?? session.shippingValue;
   const shippingCurrency =
@@ -196,12 +249,15 @@ export function computeOrderGrandTotal(links = [], session = {}) {
 
   return {
     itemsTotal,
+    itemsAfterDiscount,
+    discountPercent,
+    discountAmount,
     shipping,
     shippingCurrency: DISPLAY_CURRENCY,
     shippingSplitCount: splitCount,
     shippingMode,
     shippingPerPerson,
-    total: itemsTotal + shipping,
+    total: round2(itemsAfterDiscount + shipping),
     currency: DISPLAY_CURRENCY,
     hasUnknown,
     count: countable.length,

@@ -32,6 +32,8 @@ const SERVER_ERROR_MAP = {
   "Naročila ni bilo mogoče odpreti.": "orders.createFailed",
   "Neveljavna poštnina.": "errors.invalidShipping",
   "Poštnina ne sme biti negativna.": "errors.shippingNegative",
+  "Neveljaven popust (%). Vnesi 0–100.": "errors.invalidDiscount",
+  "Neveljaven popust (%).": "errors.invalidDiscount",
   "Število oseb mora biti vsaj 1.": "errors.minPeople",
   "Neveljavno ime.": "errors.invalidName",
   "Ime je predolgo (največ 80 znakov).": "errors.nameTooLong",

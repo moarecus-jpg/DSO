@@ -12,6 +12,7 @@ export function OrderStickyFooter({
   shippingCurrency,
   shippingSplitCount,
   shippingMode = "equal",
+  discountPercent = 0,
   memberCount = 0,
   readOnly = false,
   onSaveShipping,
@@ -97,6 +98,7 @@ export function OrderStickyFooter({
                 shippingCurrency={shippingCurrency}
                 shippingSplitCount={shippingSplitCount}
                 shippingMode={shippingMode}
+                discountPercent={discountPercent}
                 memberCount={memberCount}
                 readOnly={readOnly}
                 onSaveShipping={onSaveShipping}

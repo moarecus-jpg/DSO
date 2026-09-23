@@ -2800,6 +2800,7 @@ code {
 }
 
 .order-summary-grid-row--shipping,
+.order-summary-grid-row--discount,
 .order-summary-grid-row--split {
   border-bottom: none;
   padding-top: 0.35rem;
@@ -8972,6 +8973,7 @@ a.order-preview-item-title:hover {
   }
 
   .order-summary-grid--settle .order-summary-grid-row--subtotal .order-summary-col-name,
+  .order-summary-grid--settle .order-summary-grid-row--discount .order-summary-col-name,
   .order-summary-grid--settle .order-summary-grid-row--shipping .order-summary-col-name,
   .order-summary-grid--settle .order-summary-grid-row--mode .order-summary-col-name,
   .order-summary-grid--settle .order-summary-grid-row--split .order-summary-col-name,
@@ -8979,6 +8981,7 @@ a.order-preview-item-title:hover {
     grid-column: 1 / -1;
   }
 
+  .order-summary-grid--settle .order-summary-grid-row--discount,
   .order-summary-grid--settle .order-summary-grid-row--shipping,
   .order-summary-grid--settle .order-summary-grid-row--mode,
   .order-summary-grid--settle .order-summary-grid-row--split,
