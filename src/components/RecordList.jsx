@@ -4,6 +4,7 @@ import { OrderIssueForm } from "./OrderIssueForm.jsx";
 import {
   formatPrice,
   isLinkUnavailable,
+  linkDiscountApplies,
   listingIdFor,
   recordTitle,
 } from "../../shared/orderTotals.js";
@@ -33,8 +34,16 @@ function ItemRow({
   onToggleIssueForm,
   onSubmitIssue,
   submittingIssue = false,
+  showDiscountCol = false,
+  canManageDiscount = false,
+  onToggleDiscount,
+  togglingDiscountId = null,
+  colSpan = 3,
 }) {
   const href = itemHref(link, store);
+  const applies = linkDiscountApplies(link);
+  const discountBusy = togglingDiscountId === link.id;
+
   return (
     <>
     <tr
@@ -42,6 +51,7 @@ function ItemRow({
         link.blurred ? "order-item-row--hidden" : "",
         unavailable ? "order-item-row--unavailable" : "",
         issueCount > 0 ? "order-item-row--reported" : "",
+        applies && showDiscountCol ? "order-item-row--discount" : "",
       ]
         .filter(Boolean)
         .join(" ") || undefined}
@@ -122,10 +132,33 @@ function ItemRow({
           formatPrice(link.price_value, link.price_currency)
         )}
       </td>
+      {showDiscountCol && (
+        <td className="col-discount">
+          {link.blurred || unavailable ? (
+            <span className="muted">—</span>
+          ) : canManageDiscount ? (
+            <label className="order-item-discount-check">
+              <input
+                type="checkbox"
+                checked={applies}
+                disabled={discountBusy || !onToggleDiscount}
+                onChange={() => onToggleDiscount?.(link, !applies)}
+                aria-label={t("items.discountAppliesAria")}
+              />
+            </label>
+          ) : applies ? (
+            <span className="order-item-discount-yes" title={t("items.discountApplies")}>
+              ✓
+            </span>
+          ) : (
+            <span className="muted">—</span>
+          )}
+        </td>
+      )}
     </tr>
     {issueFormOpen && (
       <tr className="order-item-issue-row">
-        <td colSpan={3}>
+        <td colSpan={colSpan}>
           <OrderIssueForm
             link={link}
             submitting={submittingIssue}
@@ -152,10 +185,15 @@ export function RecordList({
   onToggleIssueForm,
   onSubmitIssue,
   submittingIssue = false,
+  showDiscountCol = false,
+  canManageDiscount = false,
+  onToggleDiscount,
+  togglingDiscountId = null,
 }) {
   const { t } = useLocale();
   const isShop = isShopStore(store);
   const storeConfig = getStoreConfig(store);
+  const colSpan = showDiscountCol ? 4 : 3;
 
   const visible = unavailableOnly
     ? links.filter((link) => isLinkUnavailable(link) && !link.blurred)
@@ -174,6 +212,11 @@ export function RecordList({
             <th className="col-participant">{t("items.ordered")}</th>
             <th className="col-item">{t("items.id")}</th>
             <th className="col-price">{t("items.price")}</th>
+            {showDiscountCol && (
+              <th className="col-discount" title={t("items.discountHint")}>
+                {t("items.discount")}
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -193,10 +236,20 @@ export function RecordList({
               onToggleIssueForm={onToggleIssueForm}
               onSubmitIssue={onSubmitIssue}
               submittingIssue={submittingIssue}
+              showDiscountCol={showDiscountCol}
+              canManageDiscount={canManageDiscount && !unavailableOnly}
+              onToggleDiscount={onToggleDiscount}
+              togglingDiscountId={togglingDiscountId}
+              colSpan={colSpan}
             />
           ))}
         </tbody>
       </table>
+      {showDiscountCol && canManageDiscount && !unavailableOnly && (
+        <p className="muted fine order-items-discount-hint">
+          {t("items.discountHint")}
+        </p>
+      )}
       {isShop && !unavailableOnly && (
         <p className="muted fine order-items-shop-hint">
           {t("items.shopOpenHint", { store: storeConfig.label })}

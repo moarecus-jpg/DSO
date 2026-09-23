@@ -98,7 +98,14 @@ export function computeUserStatistics(rows = []) {
     const itemYear = yearKey(row.created_at ?? row.item_created_at ?? row.orderedAt);
 
     if (eur != null) {
-      const percent = Number(row.discount_percent ?? row.discountPercent) || 0;
+      const applies =
+        row.discount_applies === 1 ||
+        row.discount_applies === true ||
+        row.discountApplies === true ||
+        row.discountApplies === 1;
+      const percent = applies
+        ? Number(row.discount_percent ?? row.discountPercent) || 0
+        : 0;
       const discounted =
         percent > 0
           ? round2(eur * (1 - Math.min(100, percent) / 100))

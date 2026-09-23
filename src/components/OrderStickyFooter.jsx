@@ -17,6 +17,9 @@ export function OrderStickyFooter({
   readOnly = false,
   onSaveShipping,
   savingShipping = false,
+  links = [],
+  onSaveDiscount,
+  savingDiscount = false,
   footerActions = null,
   footerCartAction = null,
   footerLeadingActions = null,
@@ -103,6 +106,9 @@ export function OrderStickyFooter({
                 readOnly={readOnly}
                 onSaveShipping={onSaveShipping}
                 savingShipping={savingShipping}
+                links={links}
+                onSaveDiscount={onSaveDiscount}
+                savingDiscount={savingDiscount}
                 shippingError={shippingError}
                 onToggleSettle={onToggleSettle}
                 settlingUserId={settlingUserId}

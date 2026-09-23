@@ -146,6 +146,70 @@ export function Settings() {
       )}
 
       <div className="card settings-card">
+        <h2>{t("settings.account")}</h2>
+        <div className="settings-avatar-row">
+          <UserAvatar
+            name={user?.name}
+            avatarUrl={
+              (() => {
+                const url = resolveUserAvatarUrl(user);
+                if (!url) return null;
+                return `${url}${url.includes("?") ? "&" : "?"}v=${avatarBump}`;
+              })()
+            }
+            size={72}
+            className="settings-avatar"
+          />
+          <div className="settings-avatar-copy">
+            <p>
+              <strong>{user?.name}</strong>
+            </p>
+            {user?.username && (
+              <p className="muted">
+                {t("settings.usernameLabel")} <code>{user.username}</code>
+              </p>
+            )}
+            <p className="muted fine">{t("settings.avatarHint")}</p>
+            <div className="settings-avatar-actions">
+              <button
+                type="button"
+                className="btn btn-primary btn-small"
+                disabled={avatarBusy}
+                onClick={() => avatarInputRef.current?.click()}
+              >
+                <Camera size={16} strokeWidth={2.1} aria-hidden />
+                {user?.hasCustomAvatar
+                  ? t("settings.avatarChange")
+                  : t("settings.avatarAdd")}
+              </button>
+              {user?.hasCustomAvatar ? (
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-small"
+                  disabled={avatarBusy}
+                  onClick={removeAvatar}
+                >
+                  <Trash2 size={16} strokeWidth={2.1} aria-hidden />
+                  {t("settings.avatarRemove")}
+                </button>
+              ) : null}
+            </div>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              className="sr-only"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (file) uploadAvatar(file);
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="card settings-card">
         <h2>{t("settings.privacyTitle")}</h2>
         <p className="muted settings-privacy-hint">{t("settings.privacyHint")}</p>
         <label className="settings-theme-toggle">
@@ -504,70 +568,6 @@ export function Settings() {
           />
           <span className="sidebar-theme-toggle-track" aria-hidden />
         </label>
-      </div>
-
-      <div className="card settings-card">
-        <h2>{t("settings.account")}</h2>
-        <div className="settings-avatar-row">
-          <UserAvatar
-            name={user?.name}
-            avatarUrl={
-              (() => {
-                const url = resolveUserAvatarUrl(user);
-                if (!url) return null;
-                return `${url}${url.includes("?") ? "&" : "?"}v=${avatarBump}`;
-              })()
-            }
-            size={72}
-            className="settings-avatar"
-          />
-          <div className="settings-avatar-copy">
-            <p>
-              <strong>{user?.name}</strong>
-            </p>
-            {user?.username && (
-              <p className="muted">
-                {t("settings.usernameLabel")} <code>{user.username}</code>
-              </p>
-            )}
-            <p className="muted fine">{t("settings.avatarHint")}</p>
-            <div className="settings-avatar-actions">
-              <button
-                type="button"
-                className="btn btn-primary btn-small"
-                disabled={avatarBusy}
-                onClick={() => avatarInputRef.current?.click()}
-              >
-                <Camera size={16} strokeWidth={2.1} aria-hidden />
-                {user?.hasCustomAvatar
-                  ? t("settings.avatarChange")
-                  : t("settings.avatarAdd")}
-              </button>
-              {user?.hasCustomAvatar ? (
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-small"
-                  disabled={avatarBusy}
-                  onClick={removeAvatar}
-                >
-                  <Trash2 size={16} strokeWidth={2.1} aria-hidden />
-                  {t("settings.avatarRemove")}
-                </button>
-              ) : null}
-            </div>
-            <input
-              ref={avatarInputRef}
-              type="file"
-              className="sr-only"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                e.target.value = "";
-                if (file) uploadAvatar(file);
-              }}
-            />
-          </div>
-        </div>
       </div>
 
       {user?.isAdmin && (

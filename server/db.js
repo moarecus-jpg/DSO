@@ -169,6 +169,8 @@ for (const sql of [
   "ALTER TABLE users ADD COLUMN shop_discount_label TEXT",
   "ALTER TABLE users ADD COLUMN paypal_me TEXT",
   "ALTER TABLE group_sessions ADD COLUMN discount_percent REAL NOT NULL DEFAULT 0",
+  "ALTER TABLE session_links ADD COLUMN discount_percent REAL NOT NULL DEFAULT 0",
+  "ALTER TABLE session_links ADD COLUMN discount_applies INTEGER NOT NULL DEFAULT 0",
 ]) {
   try {
     db.exec(sql);
@@ -176,6 +178,65 @@ for (const sql of [
     /* column already exists */
   }
 }
+
+/**
+ * Checklist flag for which records get the order coupon %.
+ * Repairs a brief migrate that copied % onto links and cleared the session.
+ * One-time: existing discounted orders mark every link eligible.
+ */
+function migrateLinkDiscountApplies() {
+  try {
+    const damaged = db
+      .prepare(
+        `SELECT session_id AS sessionId, MAX(discount_percent) AS pct
+         FROM session_links
+         WHERE COALESCE(discount_percent, 0) > 0
+         GROUP BY session_id`
+      )
+      .all();
+    for (const row of damaged) {
+      db.prepare(
+        `UPDATE group_sessions
+         SET discount_percent = ?
+         WHERE id = ? AND COALESCE(discount_percent, 0) = 0`
+      ).run(row.pct, row.sessionId);
+      db.prepare(
+        `UPDATE session_links
+         SET discount_applies = 1, discount_percent = 0
+         WHERE session_id = ? AND COALESCE(discount_percent, 0) > 0`
+      ).run(row.sessionId);
+    }
+  } catch {
+    /* discount_percent column may be unused */
+  }
+
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS app_migrations (
+        id TEXT PRIMARY KEY,
+        applied_at TEXT DEFAULT (datetime('now'))
+      )
+    `);
+    const done = db
+      .prepare(`SELECT 1 AS ok FROM app_migrations WHERE id = ?`)
+      .get("link_discount_applies_seed_v1");
+    if (!done) {
+      db.exec(`
+        UPDATE session_links
+        SET discount_applies = 1
+        WHERE session_id IN (
+          SELECT id FROM group_sessions WHERE COALESCE(discount_percent, 0) > 0
+        )
+      `);
+      db.prepare(`INSERT INTO app_migrations (id) VALUES (?)`).run(
+        "link_discount_applies_seed_v1"
+      );
+    }
+  } catch {
+    /* ignore */
+  }
+}
+migrateLinkDiscountApplies();
 
 /** Older shop orders may still have store='discogs' while seller_username is hhv/decks/… */
 function migrateShopOrderStores() {
@@ -1235,6 +1296,42 @@ export function updateSessionShipping(
   return getGroupSession(id);
 }
 
+export function updateSessionDiscount(id, discountPercent, discountLinkIds) {
+  const existing = db
+    .prepare("SELECT id FROM group_sessions WHERE id = ?")
+    .get(id);
+  if (!existing) return null;
+
+  const raw = Number(discountPercent);
+  if (Number.isNaN(raw) || raw < 0 || raw > 100) {
+    throw new Error("Neveljaven popust (%).");
+  }
+  const discount = Math.round(raw * 100) / 100;
+  const selected = new Set(
+    (Array.isArray(discountLinkIds) ? discountLinkIds : [])
+      .map((linkId) => String(linkId))
+      .filter(Boolean)
+  );
+
+  const apply = db.transaction(() => {
+    db.prepare(
+      `UPDATE group_sessions SET discount_percent = ? WHERE id = ?`
+    ).run(discount, id);
+
+    const links = db
+      .prepare(`SELECT id FROM session_links WHERE session_id = ?`)
+      .all(id);
+    const setApplies = db.prepare(
+      `UPDATE session_links SET discount_applies = ? WHERE id = ? AND session_id = ?`
+    );
+    for (const link of links) {
+      setApplies.run(selected.has(String(link.id)) ? 1 : 0, link.id, id);
+    }
+  });
+  apply();
+  return getGroupSession(id);
+}
+
 export function updateMemberSettled(sessionId, memberUserId, settled) {
   const settledAt = settled ? new Date().toISOString() : null;
   const apply = db.transaction(() => {
@@ -1831,6 +1928,18 @@ export function updateLinkOrdererDisplayName(sessionId, linkId, ordererDisplayNa
   return getGroupSession(sessionId);
 }
 
+export function updateLinkDiscountApplies(sessionId, linkId, discountApplies) {
+  const value = discountApplies ? 1 : 0;
+  const result = db
+    .prepare(
+      `UPDATE session_links SET discount_applies = ?
+       WHERE id = ? AND session_id = ?`
+    )
+    .run(value, linkId, sessionId);
+  if (result.changes === 0) return null;
+  return getGroupSession(sessionId);
+}
+
 export function listUserOrderedItems(userId, communityId) {
   if (!communityId) return [];
   return db
@@ -1864,6 +1973,7 @@ export function listUserStatisticsRows(userId, status = "all", communityId) {
   return db
     .prepare(
       `SELECT sl.id, sl.price_value, sl.price_currency, sl.created_at,
+              COALESCE(sl.discount_applies, 0) as discount_applies,
               gs.id as session_id, gs.status as session_status,
               gs.created_at as session_created_at,
               gs.shipping_value, gs.shipping_currency, gs.shipping_split_count,

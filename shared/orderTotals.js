@@ -13,6 +13,12 @@ export function resolveDiscountPercent(session = {}) {
   return Math.min(100, Math.round(value * 100) / 100);
 }
 
+/** Whether the order coupon % applies to this record. */
+export function linkDiscountApplies(link) {
+  const value = link?.discount_applies ?? link?.discountApplies;
+  return value === true || value === 1 || value === "1";
+}
+
 function applyPercentDiscount(amount, percent) {
   const base = Number(amount) || 0;
   if (!(percent > 0) || !(base > 0)) {
@@ -139,6 +145,7 @@ export function computeMemberTotals(links = [], session = {}) {
         name: link.user_name ?? "Neznan",
         count: 0,
         total: 0,
+        discountableTotal: 0,
         currency: DISPLAY_CURRENCY,
         hasUnknownPrice: false,
         settled: Boolean(
@@ -154,6 +161,9 @@ export function computeMemberTotals(links = [], session = {}) {
     const eur = toEurAmount(link.price_value, link.price_currency);
     if (eur != null) {
       row.total += eur;
+      if (linkDiscountApplies(link)) {
+        row.discountableTotal += eur;
+      }
     } else {
       row.hasUnknownPrice = true;
     }
@@ -165,26 +175,43 @@ export function computeMemberTotals(links = [], session = {}) {
 
   const discountPercent = resolveDiscountPercent(session);
   let allocatedDiscount = 0;
+  const orderDiscountable = baseRows.reduce(
+    (sum, r) => sum + (r.discountableTotal || 0),
+    0
+  );
+  const orderDiscount =
+    discountPercent > 0 && orderDiscountable > 0
+      ? round2((orderDiscountable * discountPercent) / 100)
+      : 0;
+  let lastDiscountableIndex = -1;
+  for (let i = baseRows.length - 1; i >= 0; i -= 1) {
+    if (baseRows[i].discountableTotal > 0) {
+      lastDiscountableIndex = i;
+      break;
+    }
+  }
+
   const discountedRows = baseRows.map((row, index) => {
-    if (!(discountPercent > 0) || !(row.total > 0)) {
+    const itemsBeforeDiscount = row.total;
+    if (!(orderDiscount > 0) || !(row.discountableTotal > 0)) {
       return {
         ...row,
-        itemsBeforeDiscount: row.total,
+        itemsBeforeDiscount,
         discountAmount: 0,
       };
     }
     let discountAmount;
-    if (index === baseRows.length - 1) {
-      const orderItems = baseRows.reduce((sum, r) => sum + r.total, 0);
-      const orderDiscount = round2((orderItems * discountPercent) / 100);
+    if (index === lastDiscountableIndex) {
       discountAmount = round2(orderDiscount - allocatedDiscount);
     } else {
-      discountAmount = round2((row.total * discountPercent) / 100);
+      discountAmount = round2(
+        (row.discountableTotal * discountPercent) / 100
+      );
       allocatedDiscount = round2(allocatedDiscount + discountAmount);
     }
     return {
       ...row,
-      itemsBeforeDiscount: row.total,
+      itemsBeforeDiscount,
       discountAmount,
       total: round2(row.total - discountAmount),
     };
@@ -203,6 +230,7 @@ export function computeMemberTotals(links = [], session = {}) {
 
 export function computeOrderGrandTotal(links = [], session = {}) {
   let itemsTotal = 0;
+  let discountableTotal = 0;
   let hasUnknown = false;
   const countable = links.filter((link) => !isLinkUnavailable(link));
 
@@ -210,6 +238,9 @@ export function computeOrderGrandTotal(links = [], session = {}) {
     const eur = toEurAmount(link.price_value, link.price_currency);
     if (eur != null) {
       itemsTotal += eur;
+      if (linkDiscountApplies(link)) {
+        discountableTotal += eur;
+      }
     } else if (link.price_value != null && !Number.isNaN(Number(link.price_value))) {
       hasUnknown = true;
     } else if (link.price_value == null) {
@@ -218,11 +249,13 @@ export function computeOrderGrandTotal(links = [], session = {}) {
   }
 
   itemsTotal = round2(itemsTotal);
+  discountableTotal = round2(discountableTotal);
   const discountPercent = resolveDiscountPercent(session);
-  const { discounted: itemsAfterDiscount, discountAmount } = applyPercentDiscount(
-    itemsTotal,
+  const { discountAmount } = applyPercentDiscount(
+    discountableTotal,
     discountPercent
   );
+  const itemsAfterDiscount = round2(itemsTotal - discountAmount);
 
   const shipRaw = session.shipping_value ?? session.shippingValue;
   const shippingCurrency =
@@ -252,6 +285,7 @@ export function computeOrderGrandTotal(links = [], session = {}) {
     itemsAfterDiscount,
     discountPercent,
     discountAmount,
+    discountableTotal,
     shipping,
     shippingCurrency: DISPLAY_CURRENCY,
     shippingSplitCount: splitCount,

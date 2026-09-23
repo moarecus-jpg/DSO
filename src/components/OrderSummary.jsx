@@ -4,6 +4,7 @@ import { ClipboardCheck, HandCoins, Pencil } from "lucide-react";
 import { formatPrice } from "../../shared/orderTotals.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { isValidShippingNumber, normalizeShippingNumber } from "../utils/sanitizeError.js";
+import { DiscountDialog } from "./DiscountDialog.jsx";
 
 export function OrderSummary({
   embedded = false,
@@ -18,6 +19,9 @@ export function OrderSummary({
   readOnly = false,
   onSaveShipping,
   savingShipping = false,
+  links = [],
+  onSaveDiscount,
+  savingDiscount = false,
   shippingError = null,
   onToggleSettle,
   settlingUserId = null,
@@ -77,7 +81,7 @@ export function OrderSummary({
   const [draft, setDraft] = useState("");
   const [draftSplit, setDraftSplit] = useState("");
   const [draftMode, setDraftMode] = useState(mode);
-  const [draftDiscount, setDraftDiscount] = useState("");
+  const [discountDialogOpen, setDiscountDialogOpen] = useState(false);
 
   useEffect(() => {
     const raw =
@@ -104,13 +108,6 @@ export function OrderSummary({
     setDraftMode(mode);
   }, [mode]);
 
-  useEffect(() => {
-    const value = Number(savedDiscount);
-    setDraftDiscount(
-      Number.isFinite(value) && value > 0 ? String(value) : ""
-    );
-  }, [savedDiscount]);
-
   async function commitShipping(overrides = {}) {
     if (!onSaveShipping || readOnly) return;
 
@@ -133,17 +130,6 @@ export function OrderSummary({
       return;
     }
 
-    const discountTrimmed = draftDiscount.trim();
-    const nextDiscount =
-      discountTrimmed === "" ? 0 : Number(discountTrimmed.replace(",", "."));
-    if (
-      discountTrimmed !== "" &&
-      (Number.isNaN(nextDiscount) || nextDiscount < 0 || nextDiscount > 100)
-    ) {
-      alert(t("summary.invalidDiscount"));
-      return;
-    }
-
     const current =
       shippingValue != null && shippingValue !== ""
         ? Number(shippingValue)
@@ -152,9 +138,6 @@ export function OrderSummary({
           : null;
     const currentSplit = shippingSplitCount ?? computedSplit ?? null;
     const currentMode = mode;
-    const currentDiscount = Number.isFinite(Number(savedDiscount))
-      ? Number(savedDiscount)
-      : 0;
 
     const valueUnchanged =
       next === current || (next == null && (current == null || current === 0));
@@ -162,11 +145,8 @@ export function OrderSummary({
       nextSplit === currentSplit ||
       (nextSplit == null && currentSplit == null);
     const modeUnchanged = nextMode === currentMode;
-    const discountUnchanged =
-      Math.round((nextDiscount || 0) * 100) ===
-      Math.round((currentDiscount || 0) * 100);
 
-    if (valueUnchanged && splitUnchanged && modeUnchanged && discountUnchanged) {
+    if (valueUnchanged && splitUnchanged && modeUnchanged) {
       return;
     }
 
@@ -175,8 +155,13 @@ export function OrderSummary({
       shippingCurrency: shipCur,
       shippingSplitCount: nextMode === "by_items" ? nextSplit : nextSplit,
       shippingMode: nextMode,
-      discountPercent: nextDiscount || 0,
     });
+  }
+
+  async function handleSaveDiscount(payload) {
+    if (!onSaveDiscount || readOnly) return;
+    await onSaveDiscount(payload);
+    setDiscountDialogOpen(false);
   }
 
   async function changeMode(nextMode) {
@@ -192,6 +177,7 @@ export function OrderSummary({
       : null);
 
   return (
+    <>
     <div
       className={`order-summary${embedded ? " order-summary--embedded" : " card"}`}
     >
@@ -397,7 +383,7 @@ export function OrderSummary({
           </span>
           <span className="order-summary-col-num order-summary-col-empty" />
           <span className="order-summary-col-amount order-summary-col-span">
-            {readOnly ? (
+            {readOnly || !onSaveDiscount ? (
               <strong>
                 {savedDiscount > 0
                   ? t("summary.discountApplied", {
@@ -408,39 +394,27 @@ export function OrderSummary({
               </strong>
             ) : (
               <div className="order-summary-split-field-wrap">
-                <label className="order-summary-field order-summary-field--compact">
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    className="order-summary-field-input order-summary-field-input--compact"
-                    value={draftDiscount}
-                    onChange={(e) => setDraftDiscount(e.target.value)}
-                    onBlur={() => commitShipping()}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        e.target.blur();
-                      }
-                    }}
-                    placeholder="0"
-                    disabled={savingShipping}
-                    aria-label={t("summary.discountAria")}
-                  />
-                  <span className="order-summary-field-suffix">%</span>
+                <button
+                  type="button"
+                  className="order-summary-discount-trigger"
+                  onClick={() => setDiscountDialogOpen(true)}
+                  disabled={savingDiscount || savingShipping}
+                  aria-label={t("summary.discountOpenAria")}
+                >
+                  <span className="order-summary-discount-trigger-value">
+                    {savedDiscount > 0
+                      ? t("summary.discountApplied", {
+                          percent: savedDiscount,
+                          amount: formatPrice(discountAmount ?? 0, currency),
+                        })
+                      : t("summary.discountNone")}
+                  </span>
                   <Pencil size={13} className="order-summary-field-icon" aria-hidden />
-                </label>
-                {(discountAmount > 0 || Number(draftDiscount) > 0) && (
+                </button>
+                {discountAmount > 0 && (
                   <span className="order-summary-per-person muted fine">
                     {t("summary.discountSavings", {
-                      amount: formatPrice(
-                        discountAmount ??
-                          Math.round(
-                            ((itemsTotal || 0) * (Number(draftDiscount) || 0)) /
-                              100 *
-                              100
-                          ) / 100,
-                        currency
-                      ),
+                      amount: formatPrice(discountAmount, currency),
                     })}
                   </span>
                 )}
@@ -631,5 +605,14 @@ export function OrderSummary({
         </div>
       </div>
     </div>
+    <DiscountDialog
+      open={discountDialogOpen}
+      links={links}
+      discountPercent={savedDiscount}
+      saving={savingDiscount}
+      onClose={() => setDiscountDialogOpen(false)}
+      onSave={handleSaveDiscount}
+    />
+    </>
   );
 }

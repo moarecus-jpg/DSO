@@ -51,8 +51,10 @@ export function Session() {
   const [addRecordSkippable, setAddRecordSkippable] = useState(false);
   const [addingRecord, setAddingRecord] = useState(false);
   const [savingShipping, setSavingShipping] = useState(false);
+  const [savingDiscount, setSavingDiscount] = useState(false);
   const [savingTargetDate, setSavingTargetDate] = useState(false);
   const [removingLinkId, setRemovingLinkId] = useState(null);
+  const [togglingDiscountId, setTogglingDiscountId] = useState(null);
   const [postingNote, setPostingNote] = useState(false);
   const [loading, setLoading] = useState(true);
   const [footerExpanded, setFooterExpanded] = useState(false);
@@ -263,7 +265,6 @@ export function Session() {
     shippingCurrency,
     shippingSplitCount,
     shippingMode,
-    discountPercent,
   }) {
     setSavingShipping(true);
     setShippingError(null);
@@ -275,7 +276,6 @@ export function Session() {
           shippingCurrency,
           shippingSplitCount,
           shippingMode,
-          discountPercent,
         }),
       });
       setSession(updated);
@@ -284,6 +284,24 @@ export function Session() {
       setFooterExpanded(true);
     } finally {
       setSavingShipping(false);
+    }
+  }
+
+  async function handleSaveDiscount({ discountPercent, discountLinkIds }) {
+    setSavingDiscount(true);
+    setShippingError(null);
+    try {
+      const { session: updated } = await api(`/api/sessions/${id}/discount`, {
+        method: "PATCH",
+        body: JSON.stringify({ discountPercent, discountLinkIds }),
+      });
+      setSession(updated);
+    } catch (err) {
+      setShippingError(err.message ?? t("errors.saveDiscountFailed"));
+      setFooterExpanded(true);
+      throw err;
+    } finally {
+      setSavingDiscount(false);
     }
   }
 
@@ -432,6 +450,25 @@ export function Session() {
       alert(err.message);
     } finally {
       setRemovingLinkId(null);
+    }
+  }
+
+  async function handleToggleLinkDiscount(link, discountApplies) {
+    if (!link?.id) return;
+    setTogglingDiscountId(link.id);
+    try {
+      const { session: updated } = await api(
+        `/api/sessions/${id}/links/${link.id}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ discountApplies }),
+        }
+      );
+      setSession(updated);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setTogglingDiscountId(null);
     }
   }
 
@@ -592,6 +629,15 @@ export function Session() {
   const isReviewable = session.status === "closed";
   const recordCount = session.links?.length ?? 0;
   const canManageOrder = session.canManageOrder;
+  const showDiscountCol =
+    Boolean(canManageOrder && isOpen) ||
+    Number(session.discount_percent ?? 0) > 0 ||
+    (session.links ?? []).some(
+      (link) =>
+        link.discount_applies === 1 ||
+        link.discount_applies === true ||
+        link.discountApplies === true
+    );
   const showOrderFooter = true;
   const myPaymentRequest = (session.paymentRequests ?? []).find(
     (req) =>
@@ -943,6 +989,10 @@ export function Session() {
               onToggleIssueForm={handleToggleIssueForm}
               onSubmitIssue={handleSubmitIssueFromRow}
               submittingIssue={submittingIssue}
+              showDiscountCol={showDiscountCol}
+              canManageDiscount={Boolean(canManageOrder && isOpen)}
+              onToggleDiscount={handleToggleLinkDiscount}
+              togglingDiscountId={togglingDiscountId}
             />
             {becameUnavailable.length > 0 && (
               <p className="muted fine order-unavailable-note">
@@ -958,6 +1008,7 @@ export function Session() {
               removingLinkId={removingLinkId}
               canRemoveLink={canRemoveLink}
               unavailableOnly
+              showDiscountCol={showDiscountCol}
             />
           </>
         )}
@@ -997,6 +1048,7 @@ export function Session() {
           shippingMode={session.shipping_mode ?? "equal"}
           discountPercent={session.discount_percent ?? 0}
           memberCount={session.members?.length ?? 0}
+          links={session.links ?? []}
           readOnly={
             session.status !== "open" ||
             !(session.canManageShipping || session.canManageOrder)
@@ -1007,6 +1059,12 @@ export function Session() {
               : undefined
           }
           savingShipping={savingShipping}
+          onSaveDiscount={
+            session.canManageShipping || session.canManageOrder
+              ? handleSaveDiscount
+              : undefined
+          }
+          savingDiscount={savingDiscount}
           footerActions={footerActions}
           footerCartAction={footerCartAction}
           footerLeadingActions={footerLeadingActions}

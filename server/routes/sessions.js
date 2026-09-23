@@ -13,11 +13,13 @@ import {
   cancelGroupSession,
   findDuplicateSessionLink,
   updateSessionShipping,
+  updateSessionDiscount,
   updateSessionTargetDate,
   updateSessionSellerAvatar,
   updateMemberDisplayName,
   updateMemberSettled,
   updateLinkOrdererDisplayName,
+  updateLinkDiscountApplies,
   createGroupSession,
   createPaymentRequest,
   findUserById,
@@ -718,6 +720,80 @@ router.patch("/:id/shipping", requireUser, (req, res) => {
     console.error("Shipping update failed:", err);
     res.status(400).json({
       error: publicErrorMessage(err, "Poštnine ni bilo mogoče shraniti."),
+    });
+  }
+});
+
+router.patch("/:id/discount", requireUser, (req, res) => {
+  const sessionId = req.params.id;
+  const userId = req.session.userId;
+  const existingSession =
+    useMockAuth() && sessionId.startsWith("mock")
+      ? mockSessions.find((s) => s.id === sessionId)
+      : getGroupSession(sessionId);
+
+  if (!existingSession) {
+    return res.status(404).json({ error: "Session not found" });
+  }
+  if (isArchivedSession(existingSession.status)) {
+    return res.status(400).json({ error: "Zaključenega naročila ni mogoče urejati." });
+  }
+  if (
+    !isOrderCreator(existingSession, userId) &&
+    !isOrderAdmin(existingSession, userId)
+  ) {
+    return res.status(403).json({
+      error: "Samo odpravitelj naročila lahko ureja popust.",
+    });
+  }
+
+  const rawDiscount =
+    req.body?.discountPercent === "" || req.body?.discountPercent == null
+      ? 0
+      : Number(req.body.discountPercent);
+  if (Number.isNaN(rawDiscount) || rawDiscount < 0 || rawDiscount > 100) {
+    return res.status(400).json({ error: "Neveljaven popust (%). Vnesi 0–100." });
+  }
+  const discountPercent = Math.round(rawDiscount * 100) / 100;
+  const discountLinkIds = Array.isArray(req.body?.discountLinkIds)
+    ? req.body.discountLinkIds.map(String)
+    : [];
+
+  if (useMockAuth() && sessionId.startsWith("mock")) {
+    const idx = mockSessions.findIndex((s) => s.id === sessionId);
+    if (idx === -1) {
+      return res.status(404).json({ error: "Session not found" });
+    }
+    const selected = new Set(discountLinkIds);
+    mockSessions[idx] = {
+      ...mockSessions[idx],
+      discount_percent: discountPercent,
+    };
+    const detail = mockSessionDetail(mockSessions[idx]);
+    const links = (detail.links ?? []).map((link) => ({
+      ...link,
+      discount_applies: selected.has(String(link.id)) ? 1 : 0,
+    }));
+    return res.json({
+      session: withOrderPermissions(
+        { ...mockSessions[idx], ...detail, links },
+        userId
+      ),
+    });
+  }
+
+  try {
+    const updated = updateSessionDiscount(
+      sessionId,
+      discountPercent,
+      discountLinkIds
+    );
+    if (!updated) return res.status(404).json({ error: "Session not found" });
+    res.json({ session: withOrderPermissions(updated, userId) });
+  } catch (err) {
+    console.error("Discount update failed:", err);
+    res.status(400).json({
+      error: publicErrorMessage(err, "Popusta ni bilo mogoče shraniti."),
     });
   }
 });
@@ -1484,13 +1560,33 @@ router.patch("/:id/members/:userId", requireUser, (req, res) => {
 
 router.patch("/:id/links/:linkId", requireUser, (req, res) => {
   const { id, linkId } = req.params;
-  const raw = req.body?.ordererDisplayName;
-  if (raw != null && typeof raw !== "string") {
-    return res.status(400).json({ error: "Neveljavno ime." });
+  const hasName = Object.prototype.hasOwnProperty.call(
+    req.body ?? {},
+    "ordererDisplayName"
+  );
+  const hasDiscount = Object.prototype.hasOwnProperty.call(
+    req.body ?? {},
+    "discountApplies"
+  );
+  if (!hasName && !hasDiscount) {
+    return res.status(400).json({ error: "Ni podatkov za shranjevanje." });
   }
-  const ordererDisplayName = raw?.trim() ?? "";
-  if (ordererDisplayName.length > 80) {
-    return res.status(400).json({ error: "Ime je predolgo (največ 80 znakov)." });
+
+  let ordererDisplayName;
+  if (hasName) {
+    const raw = req.body?.ordererDisplayName;
+    if (raw != null && typeof raw !== "string") {
+      return res.status(400).json({ error: "Neveljavno ime." });
+    }
+    ordererDisplayName = raw?.trim() ?? "";
+    if (ordererDisplayName.length > 80) {
+      return res.status(400).json({ error: "Ime je predolgo (največ 80 znakov)." });
+    }
+  }
+
+  let discountApplies;
+  if (hasDiscount) {
+    discountApplies = Boolean(req.body.discountApplies);
   }
 
   if (useMockAuth() && id.startsWith("mock")) {
@@ -1499,18 +1595,21 @@ router.patch("/:id/links/:linkId", requireUser, (req, res) => {
       return res.status(404).json({ error: "Session not found" });
     }
     if (!isOrderAdmin(summary, req.session.userId)) {
-      return res.status(403).json({ error: "Samo admin lahko spreminja imena." });
+      return res.status(403).json({ error: "Samo admin lahko ureja vnose." });
     }
     const detail = mockSessionDetail(summary);
-    const links = detail.links.map((l) =>
-      l.id === linkId
-        ? {
-            ...l,
-            orderer_display_name: ordererDisplayName || null,
-            user_name: ordererDisplayName || l.member_name || l.user_name,
-          }
-        : l
-    );
+    const links = detail.links.map((l) => {
+      if (l.id !== linkId) return l;
+      const next = { ...l };
+      if (hasName) {
+        next.orderer_display_name = ordererDisplayName || null;
+        next.user_name = ordererDisplayName || l.member_name || l.user_name;
+      }
+      if (hasDiscount) {
+        next.discount_applies = discountApplies ? 1 : 0;
+      }
+      return next;
+    });
     return res.json({
       session: withOrderPermissions({ ...summary, links }, req.session.userId),
     });
@@ -1522,21 +1621,30 @@ router.patch("/:id/links/:linkId", requireUser, (req, res) => {
     return res.status(400).json({ error: "Zaključenega naročila ni mogoče urejati." });
   }
   if (!isOrderAdmin(session, req.session.userId)) {
-    return res.status(403).json({ error: "Samo admin lahko spreminja imena." });
+    return res.status(403).json({ error: "Samo admin lahko ureja vnose." });
   }
   if (!session.links?.some((l) => l.id === linkId)) {
     return res.status(404).json({ error: "Vnos ni v tem naročilu." });
   }
 
   try {
-    const updated = updateLinkOrdererDisplayName(id, linkId, ordererDisplayName);
-    if (!updated) {
-      return res.status(404).json({ error: "Vnos ni v tem naročilu." });
+    let updated = session;
+    if (hasName) {
+      updated = updateLinkOrdererDisplayName(id, linkId, ordererDisplayName);
+      if (!updated) {
+        return res.status(404).json({ error: "Vnos ni v tem naročilu." });
+      }
+    }
+    if (hasDiscount) {
+      updated = updateLinkDiscountApplies(id, linkId, discountApplies);
+      if (!updated) {
+        return res.status(404).json({ error: "Vnos ni v tem naročilu." });
+      }
     }
     res.json({ session: withOrderPermissions(updated, req.session.userId) });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message ?? "Imena ni bilo mogoče shraniti." });
+    res.status(500).json({ error: err.message ?? "Vnosa ni bilo mogoče shraniti." });
   }
 });
 
