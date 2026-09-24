@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ClipboardCheck, HandCoins, Pencil } from "lucide-react";
+import { ClipboardCheck, ExternalLink, HandCoins, Pencil } from "lucide-react";
 import { formatPrice } from "../../shared/orderTotals.js";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { isValidShippingNumber, normalizeShippingNumber } from "../utils/sanitizeError.js";
@@ -325,7 +325,10 @@ export function OrderSummary({
                       title={t("summary.payPaypal")}
                       aria-label={t("summary.payPaypal")}
                     >
-                      <HandCoins size={17} strokeWidth={2.25} aria-hidden />
+                      <ExternalLink size={16} strokeWidth={2.25} aria-hidden />
+                      <span className="order-paypal-btn-label">
+                        {t("summary.payPaypalShort")}
+                      </span>
                     </a>
                   )}
                 </span>

@@ -612,6 +612,7 @@ export default {
     requestPaypal: "Pošlji PayPal zahtevek",
     requestPaypalAria: "Pošlji PayPal zahtevek za {{name}}",
     payPaypal: "Plačaj s PayPal",
+    payPaypalShort: "Plačaj",
     paypalRequested: "Zahtevek poslan",
   },
   payments: {

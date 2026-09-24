@@ -606,6 +606,7 @@ export default {
     requestPaypal: "Send PayPal request",
     requestPaypalAria: "Send PayPal request to {{name}}",
     payPaypal: "Pay with PayPal",
+    payPaypalShort: "Pay",
     paypalRequested: "Request sent",
   },
   payments: {
