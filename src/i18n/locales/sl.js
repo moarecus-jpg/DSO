@@ -369,6 +369,14 @@ export default {
     refreshingAvailability: "Preverjam {{count}} itemov…",
     refreshAvailabilityHint:
       "Preveri, ali so listingi še naprodaj. Discogs dovoli približno en klic na sekundo, zato večja naročila trajajo dlje. Odprta naročila se avtomatsko preverijo tudi 1× na dan.",
+    remind: "Opomni",
+    reminding: "Pošiljam…",
+    remindHint:
+      "Pošlje e-pošto članom skupnosti, naj preverijo naročilo. Preskoči tiste, ki so tega prodajalca že označili kot preverjenega na nadzorni plošči.",
+    remindConfirm:
+      "Pošljem opomnik članom skupnosti, ki tega prodajalca še niso označili kot preverjenega?",
+    remindResult:
+      "Opomnik poslan {{sent}} članom. Preskočenih {{skipped}}, ki so že preverili.",
     decksSyncPrices: "Natančne Decks cene",
     decksSyncPricesPreparing: "Pripravljam…",
     decksSyncPricesHint:
@@ -859,6 +867,12 @@ export default {
     statusChangeFailed: "Statusa ni bilo mogoče spremeniti.",
     refreshOpenOnly: "Razpoložljivost je mogoče osvežiti samo na odprtem naročilu.",
     refreshFailed: "Razpoložljivosti ni bilo mogoče osvežiti.",
+    remindAdminOnly: "Samo odpravitelj naročila lahko pošlje opomnik.",
+    remindOpenOnly: "Opomnik je mogoče poslati samo za odprto naročilo.",
+    remindNoCommunity: "Naročilo ni vezano na skupnost.",
+    remindFailed: "Opomnika ni bilo mogoče poslati.",
+    sellerUsernameMissing: "Manjka uporabniško ime prodajalca.",
+    checkedFlagMissing: "Manjka checked (true/false).",
     noteRequired: "Komentar je obvezen.",
     noteTooLong: "Komentar je predolg (največ 2000 znakov).",
     notOrderParticipant: "Nisi udeleženec tega naročila.",

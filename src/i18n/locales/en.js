@@ -364,6 +364,14 @@ export default {
     refreshingAvailability: "Checking {{count}} items…",
     refreshAvailabilityHint:
       "Checks whether listings are still for sale. Discogs allows about one request per second, so larger orders take longer. Open orders are also checked once a day automatically.",
+    remind: "Remind",
+    reminding: "Sending…",
+    remindHint:
+      "Email community members to check this order. Skips people who already marked this seller as checked on the dashboard.",
+    remindConfirm:
+      "Send a reminder email to community members who have not marked this seller as checked?",
+    remindResult:
+      "Reminder sent to {{sent}} member(s). Skipped {{skipped}} who already checked.",
     decksSyncPrices: "Exact Decks prices",
     decksSyncPricesPreparing: "Preparing…",
     decksSyncPricesHint:
@@ -849,6 +857,12 @@ export default {
     statusChangeFailed: "Could not change the status.",
     refreshOpenOnly: "Availability can only be refreshed on an open order.",
     refreshFailed: "Could not refresh availability.",
+    remindAdminOnly: "Only the order owner can send a reminder.",
+    remindOpenOnly: "Reminders can only be sent for an open order.",
+    remindNoCommunity: "This order is not linked to a community.",
+    remindFailed: "Could not send the reminder.",
+    sellerUsernameMissing: "Seller username is required.",
+    checkedFlagMissing: "Missing checked (true/false).",
     noteRequired: "Comment is required.",
     noteTooLong: "Comment is too long (max 2000 characters).",
     notOrderParticipant: "You are not a participant in this order.",

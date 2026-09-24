@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Archive, Disc3, ExternalLink, Heart, Plus, RefreshCw, RotateCcw, X } from "lucide-react";
+import { ArrowLeft, Archive, Bell, Disc3, ExternalLink, Heart, Plus, RefreshCw, RotateCcw, X } from "lucide-react";
 import { AddRecordModal } from "../components/AddRecordModal.jsx";
 import { AppSelect } from "../components/AppSelect.jsx";
 import { CloseOrderDialog } from "../components/CloseOrderDialog.jsx";
@@ -70,6 +70,7 @@ export function Session() {
   const [statusId, setStatusId] = useState("");
   const [savingStatus, setSavingStatus] = useState(false);
   const [refreshingAvailability, setRefreshingAvailability] = useState(false);
+  const [sendingRemind, setSendingRemind] = useState(false);
   const [becameUnavailable, setBecameUnavailable] = useState([]);
   const [submittingIssue, setSubmittingIssue] = useState(false);
   const [deletingIssueId, setDeletingIssueId] = useState(null);
@@ -588,6 +589,24 @@ export function Session() {
     }
   }
 
+  async function handleRemindMembers() {
+    if (!window.confirm(t("session.remindConfirm"))) return;
+    setSendingRemind(true);
+    try {
+      const data = await api(`/api/sessions/${id}/remind`, { method: "POST" });
+      alert(
+        t("session.remindResult", {
+          sent: data.sent ?? 0,
+          skipped: data.skippedChecked ?? 0,
+        })
+      );
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSendingRemind(false);
+    }
+  }
+
   function canRemoveLink(link) {
     if (!isOpenSession(session?.status)) return false;
     if (session?.canManageOrder) return true;
@@ -855,6 +874,18 @@ export function Session() {
               {refreshingAvailability
                 ? t("session.refreshingAvailability", { count: recordCount })
                 : t("session.refreshAvailability")}
+            </button>
+          )}
+          {canManageOrder && isOpen && (
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={handleRemindMembers}
+              disabled={sendingRemind}
+              title={t("session.remindHint")}
+            >
+              <Bell size={18} />
+              {sendingRemind ? t("session.reminding") : t("session.remind")}
             </button>
           )}
           {isOpen && (

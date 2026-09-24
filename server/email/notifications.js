@@ -206,6 +206,36 @@ export async function notifyOrderNotePosted({
   });
 }
 
+export async function notifyOrderReminder({ baseUrl, session, users }) {
+  if (!users?.length) return { sent: 0 };
+
+  const title = displayOrderTitle(session);
+  const url = orderShareUrl(baseUrl, session.id);
+  const linkLabel = orderEmailLinkLabel(session, { locale: "en", action: "open" });
+  const seller = session.seller_username
+    ? `@${String(session.seller_username).replace(/^@/, "")}`
+    : null;
+  const sellerLine = seller
+    ? `Please check the seller ${seller} and add anything you want to this group order.`
+    : `Please check this group order and add anything you want.`;
+  const subject = `${APP_SHORT_NAME}: Reminder — check ${title}`;
+  const text = `Reminder: ${title}\n\n${sellerLine}\n\n${linkLabel}: ${url}`;
+  const { html, logoBuffer } = brandedHtml(
+    baseUrl,
+    `<p>Reminder for the group order <strong>${title}</strong>.</p>
+<p>${sellerLine}</p>
+<p><a href="${url}">${linkLabel}</a></p>`
+  );
+
+  await notifyUsers(users, {
+    subject,
+    text,
+    html,
+    attachments: withBrandAttachments(undefined, logoBuffer),
+  });
+  return { sent: users.length };
+}
+
 export async function notifyOrderClosed({
   baseUrl,
   session,

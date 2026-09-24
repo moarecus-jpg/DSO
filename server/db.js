@@ -254,6 +254,18 @@ function migrateShopOrderStores() {
 migrateShopOrderStores();
 
 db.exec(`
+  CREATE TABLE IF NOT EXISTS user_seller_checks (
+    user_id TEXT NOT NULL,
+    seller_username TEXT NOT NULL,
+    checked_at TEXT DEFAULT (datetime('now')),
+    PRIMARY KEY (user_id, seller_username),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_user_seller_checks_seller
+    ON user_seller_checks(seller_username);
+`);
+
+db.exec(`
   CREATE TABLE IF NOT EXISTS payment_requests (
     id TEXT PRIMARY KEY,
     session_id TEXT NOT NULL,
@@ -2282,6 +2294,110 @@ export function listSessionMembersForNotifications(sessionId, type, excludeUserI
          AND u.id != ?`
     )
     .all(sessionId, excludeUserId ?? "");
+}
+
+export function normalizeSellerUsername(username) {
+  return String(username ?? "")
+    .trim()
+    .replace(/^@/, "")
+    .toLowerCase();
+}
+
+export function listCheckedSellersForUser(userId) {
+  if (!userId) return [];
+  return db
+    .prepare(
+      `SELECT seller_username FROM user_seller_checks WHERE user_id = ? ORDER BY seller_username`
+    )
+    .all(userId)
+    .map((row) => row.seller_username);
+}
+
+export function setSellerChecked(userId, sellerUsername, checked) {
+  const seller = normalizeSellerUsername(sellerUsername);
+  if (!userId || !seller) return listCheckedSellersForUser(userId);
+  if (checked) {
+    db.prepare(
+      `INSERT INTO user_seller_checks (user_id, seller_username, checked_at)
+       VALUES (?, ?, datetime('now'))
+       ON CONFLICT(user_id, seller_username) DO UPDATE SET checked_at = excluded.checked_at`
+    ).run(userId, seller);
+  } else {
+    db.prepare(
+      `DELETE FROM user_seller_checks WHERE user_id = ? AND seller_username = ?`
+    ).run(userId, seller);
+  }
+  return listCheckedSellersForUser(userId);
+}
+
+export function replaceCheckedSellersForUser(userId, sellers) {
+  if (!userId) return [];
+  const normalized = [
+    ...new Set(
+      (Array.isArray(sellers) ? sellers : [])
+        .map(normalizeSellerUsername)
+        .filter(Boolean)
+    ),
+  ];
+  const tx = db.transaction(() => {
+    db.prepare(`DELETE FROM user_seller_checks WHERE user_id = ?`).run(userId);
+    const insert = db.prepare(
+      `INSERT INTO user_seller_checks (user_id, seller_username, checked_at)
+       VALUES (?, ?, datetime('now'))`
+    );
+    for (const seller of normalized) {
+      insert.run(userId, seller);
+    }
+  });
+  tx();
+  return listCheckedSellersForUser(userId);
+}
+
+/** Community members with email who have not marked this seller as checked. */
+export function listCommunityMembersForOrderReminder(
+  communityId,
+  sellerUsername,
+  excludeUserId
+) {
+  if (!communityId) return [];
+  const seller = normalizeSellerUsername(sellerUsername);
+  return db
+    .prepare(
+      `SELECT u.id, u.email, u.name, u.username
+       FROM community_members cm
+       JOIN users u ON u.id = cm.user_id
+       WHERE cm.community_id = ?
+         AND ${deliverableUserFilter()}
+         AND u.id != ?
+         AND NOT EXISTS (
+           SELECT 1 FROM user_seller_checks usc
+           WHERE usc.user_id = u.id
+             AND usc.seller_username = ?
+         )`
+    )
+    .all(communityId, excludeUserId ?? "", seller);
+}
+
+export function countCommunityMembersWhoCheckedSeller(
+  communityId,
+  sellerUsername,
+  excludeUserId
+) {
+  if (!communityId) return 0;
+  const seller = normalizeSellerUsername(sellerUsername);
+  const row = db
+    .prepare(
+      `SELECT COUNT(*) AS n
+       FROM community_members cm
+       JOIN users u ON u.id = cm.user_id
+       JOIN user_seller_checks usc
+         ON usc.user_id = u.id AND usc.seller_username = ?
+       WHERE cm.community_id = ?
+         AND ${deliverableUserFilter()}
+         AND u.id != ?`
+    )
+    .get(seller, communityId, excludeUserId ?? "");
+  return row?.n ?? 0;
 }
 
 export function listOpenSessionsNeedingAttentionNotify() {

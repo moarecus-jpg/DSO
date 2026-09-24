@@ -28,6 +28,9 @@ import {
   getUserAvatar,
   PROFILE_AVATAR_MIME_TYPES,
   MAX_PROFILE_AVATAR_BYTES,
+  listCheckedSellersForUser,
+  setSellerChecked,
+  replaceCheckedSellersForUser,
 } from "../db.js";
 import {
   normalizePaypalMe,
@@ -244,6 +247,43 @@ router.patch("/me/notifications", (req, res) => {
 
   const updated = updateNotificationPrefs(req.session.userId, prefs);
   res.json({ user: publicUserWithCommunities(updated) });
+});
+
+router.get("/me/seller-checks", (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Prijavi se v aplikacijo." });
+  }
+  res.json({ sellers: listCheckedSellersForUser(req.session.userId) });
+});
+
+router.put("/me/seller-checks", (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Prijavi se v aplikacijo." });
+  }
+  const sellers = replaceCheckedSellersForUser(
+    req.session.userId,
+    req.body?.sellers
+  );
+  res.json({ sellers });
+});
+
+router.patch("/me/seller-checks", (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Prijavi se v aplikacijo." });
+  }
+  const sellerUsername = req.body?.sellerUsername;
+  if (typeof sellerUsername !== "string" || !sellerUsername.trim()) {
+    return res.status(400).json({ error: "Manjka uporabniško ime prodajalca." });
+  }
+  if (typeof req.body?.checked !== "boolean") {
+    return res.status(400).json({ error: "Manjka checked (true/false)." });
+  }
+  const sellers = setSellerChecked(
+    req.session.userId,
+    sellerUsername,
+    req.body.checked
+  );
+  res.json({ sellers });
 });
 
 router.patch("/me/paypal", (req, res) => {

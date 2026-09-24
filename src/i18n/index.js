@@ -86,6 +86,12 @@ const SERVER_ERROR_MAP = {
   "Razpoložljivost je mogoče osvežiti samo na odprtem naročilu.":
     "errors.refreshOpenOnly",
   "Razpoložljivosti ni bilo mogoče osvežiti.": "errors.refreshFailed",
+  "Samo odpravitelj naročila lahko pošlje opomnik.": "errors.remindAdminOnly",
+  "Opomnik je mogoče poslati samo za odprto naročilo.": "errors.remindOpenOnly",
+  "Naročilo ni vezano na skupnost.": "errors.remindNoCommunity",
+  "Opomnika ni bilo mogoče poslati.": "errors.remindFailed",
+  "Manjka uporabniško ime prodajalca.": "errors.sellerUsernameMissing",
+  "Manjka checked (true/false).": "errors.checkedFlagMissing",
   "Samo lastnik naročila lahko prenese lastništvo.": "errors.ownerTransferOnly",
   "Novi lastnik mora imeti vsaj en item v tem naročilu.": "errors.ownerMustHaveItem",
   "Lastnika je mogoče spremeniti samo na odprtem naročilu.": "errors.ownerOpenOnly",

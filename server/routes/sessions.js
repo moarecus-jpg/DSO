@@ -43,6 +43,8 @@ import {
   transferGroupSessionOwner,
   updateSessionLinkAvailability,
   userHasAnyCommunity,
+  listCommunityMembersForOrderReminder,
+  countCommunityMembersWhoCheckedSeller,
 } from "../db.js";
 import {
   fetchInventoryForReleaseIds,
@@ -110,6 +112,7 @@ import {
   notifyNewOrderOpened,
   notifyOrderClosed,
   notifyOrderNotePosted,
+  notifyOrderReminder,
   notifyPaymentRequest,
 } from "../email/notifications.js";
 
@@ -1182,6 +1185,66 @@ router.post("/:id/availability/refresh", requireUser, async (req, res) => {
     console.warn("Availability refresh:", err?.message ?? err);
     return res.status(500).json({
       error: "Razpoložljivosti ni bilo mogoče osvežiti.",
+    });
+  }
+});
+
+router.post("/:id/remind", requireUser, async (req, res) => {
+  const userId = req.session.userId;
+
+  if (useMockAuth() && req.params.id.startsWith("mock")) {
+    const summary = mockSessions.find((s) => s.id === req.params.id);
+    if (!summary) {
+      return res.status(404).json({ error: "Session not found" });
+    }
+    if (!isOrderAdmin(summary, userId)) {
+      return res.status(403).json({
+        error: "Samo odpravitelj naročila lahko pošlje opomnik.",
+      });
+    }
+    return res.json({ sent: 0, skippedChecked: 0 });
+  }
+
+  const session = getGroupSession(req.params.id);
+  if (!session) return res.status(404).json({ error: "Session not found" });
+  if (!isOrderAdmin(session, userId)) {
+    return res.status(403).json({
+      error: "Samo odpravitelj naročila lahko pošlje opomnik.",
+    });
+  }
+  if (session.status !== "open") {
+    return res.status(400).json({
+      error: "Opomnik je mogoče poslati samo za odprto naročilo.",
+    });
+  }
+  if (!session.community_id) {
+    return res.status(400).json({
+      error: "Naročilo ni vezano na skupnost.",
+    });
+  }
+
+  const recipients = listCommunityMembersForOrderReminder(
+    session.community_id,
+    session.seller_username,
+    userId
+  );
+  const skippedChecked = countCommunityMembersWhoCheckedSeller(
+    session.community_id,
+    session.seller_username,
+    userId
+  );
+
+  try {
+    await notifyOrderReminder({
+      baseUrl: appBaseUrl(req),
+      session,
+      users: recipients,
+    });
+    res.json({ sent: recipients.length, skippedChecked });
+  } catch (err) {
+    console.warn("Order remind:", err?.message ?? err);
+    return res.status(500).json({
+      error: "Opomnika ni bilo mogoče poslati.",
     });
   }
 });
