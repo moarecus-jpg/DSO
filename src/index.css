@@ -7254,6 +7254,12 @@ img.header-account-avatar {
   min-width: 0;
 }
 
+.orders-search-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
 .app-select {
   position: relative;
   flex-shrink: 0;
@@ -9169,11 +9175,11 @@ a.order-preview-item-title:hover {
     width: 100%;
   }
 
-  .orders-page-header-actions {
-    padding-top: 0;
+  .orders-search-actions {
+    flex-shrink: 0;
   }
 
-  .orders-page-header-actions .orders-filter-btn {
+  .orders-search-actions .orders-filter-btn {
     white-space: nowrap;
   }
 
@@ -9195,8 +9201,9 @@ a.order-preview-item-title:hover {
     justify-self: stretch;
     width: 100%;
     max-width: none;
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
     justify-content: flex-start;
   }
 
@@ -9205,10 +9212,14 @@ a.order-preview-item-title:hover {
   }
 
   .orders-search-wrap {
-    width: 100%;
+    width: auto;
     max-width: none;
-    flex: none;
+    flex: 1 1 auto;
     min-width: 0;
+  }
+
+  .orders-search-actions {
+    flex: 0 0 auto;
   }
 
   .orders-search-filter .app-select-menu {

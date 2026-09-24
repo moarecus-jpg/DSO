@@ -48,9 +48,6 @@ export function OrdersPageHeader({
           <h1 className="orders-page-title">{title}</h1>
           {subtitle && <p className="orders-page-subtitle">{subtitle}</p>}
         </div>
-        {actions ? (
-          <div className="orders-page-header-actions">{actions}</div>
-        ) : null}
       </div>
       <div className="orders-search-bar">
         <div className="orders-search-wrap">
@@ -63,6 +60,9 @@ export function OrdersPageHeader({
             placeholder={resolvedPlaceholder}
           />
         </div>
+        {actions ? (
+          <div className="orders-search-actions">{actions}</div>
+        ) : null}
         {onSearchModeChange && (
           <AppSelect
             className="orders-search-filter"
