@@ -1440,6 +1440,14 @@ code {
   font-size: 0.88rem;
 }
 
+.add-record-listing-warning {
+  margin: 0.15rem 0 0.55rem;
+  color: #f87171;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
 .empty {
   text-align: center;
   padding: 3rem;
@@ -9445,13 +9453,126 @@ a.order-preview-item-title:hover {
     justify-content: center;
   }
 
+  /* Order items: stacked full-width cards (no horizontal slide) */
   .order-items {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow-x: visible;
+    max-width: 100%;
   }
 
   .order-items-table {
-    min-width: 32rem;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .order-items-table thead {
+    display: none;
+  }
+
+  .order-items-table tbody,
+  .order-items-table tfoot {
+    display: block;
+    width: 100%;
+  }
+
+  .order-items-table tbody tr,
+  .order-items-table tfoot tr {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 0.85rem;
+    box-sizing: border-box;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .order-items-table tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  .order-items-table td {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 0;
+    border-bottom: none;
+    box-sizing: border-box;
+  }
+
+  .order-items-table .col-participant {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .order-items-table .col-participant[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.15rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+    line-height: 1.2;
+  }
+
+  .order-items-table .order-participant,
+  .order-items-table .editable-participant {
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .order-items-table .col-item {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .order-item-cell {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .order-listing-id {
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .order-item-title-row {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.35rem 0.65rem;
+  }
+
+  .order-item-title-row .order-item-title {
+    flex: 1 1 100%;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .order-item-side {
+    margin-left: 0;
+    flex-wrap: wrap;
+  }
+
+  .discogs-cart-actions {
+    width: 100%;
+    align-self: stretch;
+  }
+
+  .order-item-issue-row td {
+    width: 100%;
   }
 
   .order-summary-grid {
@@ -14389,6 +14510,14 @@ img.plac-user-avatar {
 
 .page-communities {
   max-width: 42rem;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.page-communities .communities-card {
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .page-communities .orders-page-header {
@@ -14732,18 +14861,29 @@ img.plac-user-avatar {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.65rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .communities-invite-code {
   flex: 1 1 12rem;
   min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: block;
   padding: 0.7rem 0.85rem;
   border-radius: 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(0, 0, 0, 0.28);
   color: #f4f4f5;
-  font-size: 0.95rem;
-  letter-spacing: 0.04em;
+  font-size: 0.88rem;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  overflow: hidden;
 }
 
 .communities-card-actions,
@@ -14798,7 +14938,20 @@ img.plac-user-avatar {
     align-items: flex-start;
   }
 
+  .communities-invite-code {
+    flex: 1 1 100%;
+  }
+
   .communities-invite-row .btn {
     width: 100%;
+  }
+
+  .communities-invite-qr {
+    align-items: center;
+    width: 100%;
+  }
+
+  .communities-invite-qr img {
+    width: min(220px, 100%);
   }
 }

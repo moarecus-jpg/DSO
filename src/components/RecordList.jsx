@@ -96,7 +96,7 @@ function ItemRow({
         .filter(Boolean)
         .join(" ") || undefined}
     >
-      <td className="col-participant">
+      <td className="col-participant" data-label={t("items.ordered")}>
         <span className="order-participant">
           {link.user_name ?? t("common.unknown")}
         </span>

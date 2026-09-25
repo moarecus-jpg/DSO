@@ -432,6 +432,8 @@ export default {
     linksLabel: "Povezave do itemov",
     linksHint:
       "Prilepi eno ali več povezav do listingov pri sellerju @{{seller}} — ena na vrstico.",
+    listingLinkWarning:
+      "Uporabi listing povezave (/sell/item/ ali /shop/item/), ne release povezav (/release/).",
     linksHintShop:
       "Prilepi eno ali več {{store}} povezav ({{domain}}) — ena na vrstico.",
     linksHintHhv:

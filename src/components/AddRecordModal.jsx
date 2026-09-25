@@ -253,6 +253,11 @@ export function AddRecordModal({
                   })
                 : t("items.linksHint", { seller: sellerUsername })}
             </p>
+            {!isShop ? (
+              <p className="add-record-listing-warning" role="note">
+                {t("items.listingLinkWarning")}
+              </p>
+            ) : null}
             {skippable && (
               <p className="muted fine">{t("items.skipHint")}</p>
             )}

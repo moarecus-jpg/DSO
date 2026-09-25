@@ -426,6 +426,8 @@ export default {
     linksLabel: "Item links",
     linksHint:
       "Paste one or more listing links for seller @{{seller}} — one per line.",
+    listingLinkWarning:
+      "Use listing links (/sell/item/ or /shop/item/), not release links (/release/).",
     linksHintShop:
       "Paste one or more {{store}} product links ({{domain}}) — one per line.",
     linksHintHhv:
