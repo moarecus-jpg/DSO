@@ -5590,8 +5590,9 @@ body.modal-open .order-sticky-backdrop {
   display: flex;
   justify-content: center;
   align-items: center;
+  width: 100%;
   margin: 0 0 0.55rem;
-  padding: 0.45rem 0.15rem 0.55rem;
+  padding: 0 0 0.45rem;
   border: none;
   background: transparent;
   box-shadow: none;
@@ -5600,7 +5601,7 @@ body.modal-open .order-sticky-backdrop {
 
 .sidebar-v2 .sidebar-brand .dco-draft--sidebar {
   width: 100%;
-  max-width: min(14.5rem, calc(var(--sidebar-width, 16rem) - 1.25rem));
+  max-width: none;
 }
 
 .sidebar-v2 .sidebar-brand .brand-mark {
@@ -5735,13 +5736,14 @@ body.modal-open .order-sticky-backdrop {
 
   .sidebar-v2 .sidebar-brand {
     align-items: center;
+    width: 100%;
     margin: 0 0 0.55rem;
-    padding: 0.25rem 0.1rem 0.35rem;
+    padding: 0 0 0.45rem;
   }
 
   .sidebar-v2 .sidebar-brand .dco-draft--sidebar {
     width: 100%;
-    max-width: min(14.5rem, calc(var(--sidebar-width, 16rem) - 1.25rem));
+    max-width: none;
   }
 
   .sidebar-v2 .sidebar-brand .brand-mark--sidebar {
