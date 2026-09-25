@@ -1,6 +1,6 @@
 /*
  * Draft 1 turntable with the spinning DsoLogo.
- * Webps have transparent corners outside the chassis curve so no square plate shows.
+ * Webps have soft transparent edges so no hard square/seam against the app bg.
  */
 
 .dco-draft {
@@ -13,7 +13,6 @@
   user-select: none;
   background: transparent;
   border: none;
-  border-radius: 0;
   box-shadow: none;
   overflow: visible;
 }
@@ -29,11 +28,11 @@
   background: transparent;
 }
 
-/* Thin purple edge glow along chassis alpha — no wide boxy wash */
+/* Thin purple edge only — follows soft webp alpha */
 .dco-draft__deck {
   filter:
-    drop-shadow(0 0 0.6px rgba(216, 180, 254, 0.9))
-    drop-shadow(0 0 3px rgba(167, 139, 250, 0.55));
+    drop-shadow(0 0 0.5px rgba(216, 180, 254, 0.85))
+    drop-shadow(0 0 2.5px rgba(167, 139, 250, 0.45));
 }
 
 .dco-draft__record {
@@ -66,7 +65,7 @@
 
 .dco-draft__arm {
   z-index: 3;
-  filter: drop-shadow(0.7cqw 1.4cqw 0.9cqw rgba(0, 0, 0, 0.45));
+  filter: drop-shadow(0.5cqw 1cqw 0.7cqw rgba(0, 0, 0, 0.4));
 }
 
 .dco-draft--sidebar {
