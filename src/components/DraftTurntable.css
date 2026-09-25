@@ -1,28 +1,22 @@
 /*
- * Clean rounded turntable frame.
- * Original webps + overflow clip — no flood-fill / soft-mask artifacts.
+ * Draft 1 turntable with the spinning DsoLogo.
+ * Deck images are 1733×1470: cropped to the chassis with square corners.
+ * Record edge follows the draft's inner neon ring via RECORD_EDGE clip.
  */
 
 .dco-draft {
+  container-type: inline-size;
+  position: relative;
   width: 100%;
   max-width: 760px;
+  aspect-ratio: 1733 / 1470;
   margin-inline: auto;
+  user-select: none;
   background: transparent;
 }
 
-.dco-draft__frame {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 445 / 380;
-  /* Match chassis corner radius (~12.5% of short side) */
-  border-radius: 10.5% / 12.5%;
-  overflow: hidden;
-  background: transparent;
-  /* Clean purple rim */
-  box-shadow:
-    inset 0 0 0 1.5px rgba(216, 180, 254, 0.75),
-    0 0 0 1px rgba(139, 92, 246, 0.55),
-    0 0 14px rgba(124, 58, 237, 0.4);
+.dco-draft--sidebar {
+  max-width: none;
 }
 
 .dco-draft__deck,
@@ -33,41 +27,53 @@
   height: 100%;
   display: block;
   pointer-events: none;
-  user-select: none;
 }
 
-/* Hide baked-in center label under our spinning DsoLogo */
-.dco-draft__deck {
-  -webkit-mask-image: radial-gradient(
-    circle 36.2% at 44.494% 47.237%,
-    transparent 99.2%,
-    #000 100%
-  );
-  mask-image: radial-gradient(
-    circle 36.2% at 44.494% 47.237%,
-    transparent 99.2%,
-    #000 100%
-  );
+/*
+ * Record edge follows the draft's inner neon ring so strobe dots stay uncovered
+ * and the gap to the ring is even. Clip + rim from RECORD_EDGE in the JSX.
+ */
+.dco-draft__record-clip {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
+/*
+ * Logo matched to the ring's perspective (4.72° tilt, 0.9639 height/width)
+ * and sized so its disc reaches just past the clip.
+ */
 .dco-draft__record {
   position: absolute;
-  left: 44.494%;
-  top: 47.237%;
-  width: 95.15%;
+  left: 44.128%;
+  top: 46.824%;
+  width: 99.785%;
   aspect-ratio: 1;
   translate: -50% -50%;
-  pointer-events: none;
-  z-index: 2;
-  border-radius: 50%;
-  overflow: hidden;
+  rotate: -4.72deg;
+  scale: 1 0.9639;
+}
+
+.dco-draft__rim {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.dco-draft__rim path {
+  fill: none;
+  stroke: #c4b5fd;
+  stroke-width: 39;
+  stroke-linejoin: round;
 }
 
 .dco-draft .dco-draft__logo {
   display: block;
   width: 100%;
   height: 100%;
-  animation: dco-draft-spin 1.8s linear infinite;
+  animation: dco-draft-spin 1.8s linear infinite; /* 33⅓ RPM */
 }
 
 .dco-draft .dco-draft__logo .dso-logo-shine-spin {
@@ -76,22 +82,12 @@
 
 .dco-draft__arm {
   z-index: 3;
-}
-
-.dco-draft--sidebar {
-  max-width: none;
-}
-
-.dco-draft--sidebar .dco-draft__frame {
-  box-shadow:
-    inset 0 0 0 1.5px rgba(216, 180, 254, 0.7),
-    0 0 0 1px rgba(139, 92, 246, 0.5),
-    0 0 12px rgba(124, 58, 237, 0.35);
+  filter: drop-shadow(0.7cqw 1.4cqw 0.9cqw rgba(0, 0, 0, 0.55));
 }
 
 @keyframes dco-draft-spin {
   to {
-    transform: rotate(360deg);
+    rotate: 360deg;
   }
 }
 
