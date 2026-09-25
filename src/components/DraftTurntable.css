@@ -13,7 +13,7 @@
   aspect-ratio: 445 / 380;
   margin-inline: auto;
   user-select: none;
-  /* Clip opaque black corners of the rectangular webp outside the rounded chassis */
+  /* Clip opaque dark corners of the rectangular webp outside the rounded chassis */
   border-radius: 6.2% / 7.2%;
   overflow: hidden;
   background: transparent;
@@ -30,6 +30,23 @@
   pointer-events: none;
 }
 
+/*
+ * Hide the draft's baked-in square black label / record art under the logo.
+ * Transparent circle at the platter centre; deck shows everywhere else.
+ */
+.dco-draft__deck {
+  -webkit-mask-image: radial-gradient(
+    circle 36.2% at 44.494% 47.237%,
+    transparent 99.5%,
+    #000 100%
+  );
+  mask-image: radial-gradient(
+    circle 36.2% at 44.494% 47.237%,
+    transparent 99.5%,
+    #000 100%
+  );
+}
+
 /* DsoLogo's disc (r=84 of a 228 viewBox) is scaled to the draft's record radius */
 .dco-draft__record {
   position: absolute;
@@ -39,16 +56,21 @@
   aspect-ratio: 1;
   translate: -50% -50%;
   pointer-events: none;
-  /* Hide square SVG / webp hole corners under the circular vinyl */
+  z-index: 2;
+  /* Clip to circle so the SVG's square bounds never show */
   border-radius: 50%;
   overflow: hidden;
+  background: transparent;
 }
 
 .dco-draft .dco-draft__logo {
   display: block;
   width: 100%;
   height: 100%;
-  border-radius: 50%;
+  background: transparent;
+  /* Avoid opaque compositing square behind the spinning SVG */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   animation: dco-draft-spin 1.8s linear infinite; /* 33⅓ RPM */
 }
 
@@ -58,6 +80,7 @@
 }
 
 .dco-draft__arm {
+  z-index: 3;
   filter: drop-shadow(0.7cqw 1.4cqw 0.9cqw rgba(0, 0, 0, 0.55));
 }
 
