@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   FileText,
+  Info,
   Loader2,
   MessageCircle,
   MessagesSquare,
@@ -133,6 +135,8 @@ export function Chat() {
   const [busyAction, setBusyAction] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editDraft, setEditDraft] = useState("");
+  const [viewer, setViewer] = useState(null);
+  const [infoMessageId, setInfoMessageId] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const menuRef = useRef(null);
@@ -367,6 +371,15 @@ export function Chat() {
     };
   }, [menuOpen]);
 
+  useEffect(() => {
+    if (!viewer) return undefined;
+    function onKeyDown(event) {
+      if (event.key === "Escape") setViewer(null);
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [viewer]);
+
   const MAX_FILES = 5;
   const MAX_FILE_BYTES = 5 * 1024 * 1024;
   const ALLOWED_TYPES = new Set([
@@ -520,44 +533,50 @@ export function Chat() {
     const clipboard = e.clipboardData;
     if (!clipboard) return;
 
-    const fromFiles = Array.from(clipboard.files || []).filter((file) =>
+    // Prefer clipboard.files; items often mirror the same paste and would duplicate.
+    let raw = Array.from(clipboard.files || []).filter((file) =>
       ALLOWED_TYPES.has(file.type)
     );
-    const fromItems = [];
-    for (const item of clipboard.items || []) {
-      if (item.kind !== "file") continue;
-      const file = item.getAsFile();
-      if (!file || !ALLOWED_TYPES.has(file.type)) continue;
-      fromItems.push(file);
+    if (!raw.length) {
+      for (const item of clipboard.items || []) {
+        if (item.kind !== "file") continue;
+        const file = item.getAsFile();
+        if (file && ALLOWED_TYPES.has(file.type)) raw.push(file);
+      }
     }
+    if (!raw.length) return;
 
     const seen = new Set();
     const files = [];
-    for (const file of [...fromFiles, ...fromItems]) {
-      const key = `${file.type}:${file.size}:${file.lastModified}:${file.name}`;
+    for (const file of raw) {
+      const key = `${file.type}:${file.size}`;
       if (seen.has(key)) continue;
       seen.add(key);
-      const named =
-        file.name && file.name !== "image.png" && file.name !== "blob"
+      const ext =
+        file.type === "image/jpeg"
+          ? "jpg"
+          : file.type === "image/png"
+            ? "png"
+            : file.type === "image/webp"
+              ? "webp"
+              : file.type === "image/gif"
+                ? "gif"
+                : file.type === "application/pdf"
+                  ? "pdf"
+                  : "bin";
+      const hasRealName =
+        file.name &&
+        file.name !== "image.png" &&
+        file.name !== "blob" &&
+        file.name !== "untitled";
+      files.push(
+        hasRealName
           ? file
-          : new File(
-              [file],
-              `paste-${Date.now()}-${files.length + 1}.${
-                file.type === "image/jpeg"
-                  ? "jpg"
-                  : file.type === "image/png"
-                    ? "png"
-                    : file.type === "image/webp"
-                      ? "webp"
-                      : file.type === "image/gif"
-                        ? "gif"
-                        : file.type === "application/pdf"
-                          ? "pdf"
-                          : "bin"
-              }`,
-              { type: file.type, lastModified: file.lastModified || Date.now() }
-            );
-      files.push(named);
+          : new File([file], `paste-${Date.now()}-${files.length + 1}.${ext}`, {
+              type: file.type,
+              lastModified: file.lastModified || Date.now(),
+            })
+      );
     }
 
     if (!files.length) return;
@@ -873,6 +892,10 @@ export function Chat() {
                     const canDeleteMsg =
                       mine || Boolean(capabilities?.canModerateMessages);
                     const isEditing = editingId === msg.id;
+                    const showInfo = infoMessageId === msg.id;
+                    const showActions = !isEditing;
+                    const showSender =
+                      !mine && activeRoom?.kind === "community";
                     return (
                       <div
                         key={msg.id}
@@ -880,41 +903,60 @@ export function Chat() {
                           mine ? " plac-inbox-bubble--mine" : ""
                         }${isEditing ? " is-editing" : ""}`}
                       >
-                        <div className="chat-bubble-top">
-                          {!mine && activeRoom?.kind === "community" ? (
-                            <span className="chat-bubble-sender">
-                              {memberLabel(msg.sender)}
-                            </span>
-                          ) : (
-                            <span />
-                          )}
-                          {!isEditing && (mine || canDeleteMsg) ? (
-                            <div className="chat-bubble-actions">
-                              {mine ? (
+                        {showSender || showActions ? (
+                          <div
+                            className={`chat-bubble-top${
+                              showSender ? "" : " chat-bubble-top--actions-only"
+                            }`}
+                          >
+                            {showSender ? (
+                              <span className="chat-bubble-sender">
+                                {memberLabel(msg.sender)}
+                              </span>
+                            ) : null}
+                            {showActions ? (
+                              <div className="chat-bubble-actions">
                                 <button
                                   type="button"
-                                  className="chat-bubble-action"
-                                  aria-label={t("chat.editMessage")}
-                                  disabled={Boolean(busyAction)}
-                                  onClick={() => startEditMessage(msg)}
+                                  className={`chat-bubble-action${
+                                    showInfo ? " is-active" : ""
+                                  }`}
+                                  aria-label={t("chat.messageInfo")}
+                                  aria-pressed={showInfo}
+                                  onClick={() =>
+                                    setInfoMessageId((current) =>
+                                      current === msg.id ? null : msg.id
+                                    )
+                                  }
                                 >
-                                  <Pencil size={13} strokeWidth={2} />
+                                  <Info size={13} strokeWidth={2} />
                                 </button>
-                              ) : null}
-                              {canDeleteMsg ? (
-                                <button
-                                  type="button"
-                                  className="chat-bubble-action chat-bubble-action--danger"
-                                  aria-label={t("chat.deleteMessage")}
-                                  disabled={busyAction === `msg:${msg.id}`}
-                                  onClick={() => handleDeleteMessage(msg.id)}
-                                >
-                                  <Trash2 size={13} strokeWidth={2} />
-                                </button>
-                              ) : null}
-                            </div>
-                          ) : null}
-                        </div>
+                                {mine ? (
+                                  <button
+                                    type="button"
+                                    className="chat-bubble-action"
+                                    aria-label={t("chat.editMessage")}
+                                    disabled={Boolean(busyAction)}
+                                    onClick={() => startEditMessage(msg)}
+                                  >
+                                    <Pencil size={13} strokeWidth={2} />
+                                  </button>
+                                ) : null}
+                                {canDeleteMsg ? (
+                                  <button
+                                    type="button"
+                                    className="chat-bubble-action chat-bubble-action--danger"
+                                    aria-label={t("chat.deleteMessage")}
+                                    disabled={busyAction === `msg:${msg.id}`}
+                                    onClick={() => handleDeleteMessage(msg.id)}
+                                  >
+                                    <Trash2 size={13} strokeWidth={2} />
+                                  </button>
+                                ) : null}
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : null}
                         {isEditing ? (
                           <div className="chat-bubble-edit">
                             <textarea
@@ -965,34 +1007,35 @@ export function Chat() {
                               <div className="chat-bubble-attachments">
                                 {msg.attachments.map((file) =>
                                   file.mimeType?.startsWith("image/") ? (
-                                    <a
+                                    <button
                                       key={file.id}
-                                      href={file.url}
-                                      target="_blank"
-                                      rel="noreferrer"
+                                      type="button"
                                       className="chat-bubble-image"
+                                      onClick={() => setViewer(file)}
+                                      aria-label={file.fileName || t("chat.openAttachment")}
                                     >
-                                      <img src={file.url} alt={file.fileName} />
-                                    </a>
+                                      <img src={file.url} alt={file.fileName || ""} />
+                                    </button>
                                   ) : (
-                                    <a
+                                    <button
                                       key={file.id}
-                                      href={file.url}
-                                      target="_blank"
-                                      rel="noreferrer"
+                                      type="button"
                                       className="chat-bubble-file"
+                                      onClick={() => setViewer(file)}
                                     >
                                       <FileText size={16} strokeWidth={2} />
                                       <span>{file.fileName}</span>
-                                    </a>
+                                    </button>
                                   )
                                 )}
                               </div>
                             ) : null}
-                            <time dateTime={msg.editedAt || msg.createdAt}>
-                              {formatWhen(msg.createdAt, locale)}
-                              {msg.editedAt ? ` · ${t("chat.edited")}` : ""}
-                            </time>
+                            {showInfo ? (
+                              <time dateTime={msg.editedAt || msg.createdAt}>
+                                {formatWhen(msg.createdAt, locale)}
+                                {msg.editedAt ? ` · ${t("chat.edited")}` : ""}
+                              </time>
+                            ) : null}
                           </>
                         )}
                       </div>
@@ -1158,6 +1201,50 @@ export function Chat() {
           </div>
         </div>
       ) : null}
+
+      {viewer
+        ? createPortal(
+            <div
+              className="chat-attachment-lightbox"
+              role="presentation"
+              onClick={() => setViewer(null)}
+            >
+              <div
+                className="chat-attachment-lightbox-panel"
+                role="dialog"
+                aria-modal="true"
+                aria-label={viewer.fileName || t("chat.openAttachment")}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  className="chat-attachment-lightbox-close"
+                  onClick={() => setViewer(null)}
+                  aria-label={t("common.close")}
+                >
+                  <X size={20} />
+                </button>
+                {viewer.mimeType?.startsWith("image/") ? (
+                  <img
+                    className="chat-attachment-lightbox-image"
+                    src={viewer.url}
+                    alt={viewer.fileName || ""}
+                  />
+                ) : (
+                  <iframe
+                    className="chat-attachment-lightbox-frame"
+                    src={viewer.url}
+                    title={viewer.fileName || t("chat.openAttachment")}
+                  />
+                )}
+                {viewer.fileName ? (
+                  <p className="chat-attachment-lightbox-name">{viewer.fileName}</p>
+                ) : null}
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 }
