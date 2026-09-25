@@ -63,7 +63,9 @@ export function DraftTurntable({ className }) {
 
       <div className="dco-draft__record-clip" style={{ clipPath: RECORD_CLIP }}>
         <div className="dco-draft__record">
-          <DsoLogo className="dco-draft__logo" />
+          <div className="dco-draft__record-spin">
+            <DsoLogo className="dco-draft__logo" />
+          </div>
         </div>
         <svg
           className="dco-draft__rim"
