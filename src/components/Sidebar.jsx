@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { APP_TITLE } from "../../shared/brand.js";
 import { useLocale } from "../hooks/useLocale.jsx";
-import { BrandMark } from "./BrandMark.jsx";
+import { DraftTurntable } from "./DraftTurntable.jsx";
 import { StealthModeToggle } from "./StealthModeToggle.jsx";
 import { NotificationToggle } from "./NotificationToggle.jsx";
 import { api } from "../api.js";
@@ -140,7 +140,7 @@ export function Sidebar() {
     <aside className="sidebar sidebar-v2">
       <div className="sidebar-top">
         <Link to="/" className="sidebar-brand" title={APP_TITLE}>
-          <BrandMark variant="sidebar" />
+          <DraftTurntable className="dco-draft--sidebar" />
         </Link>
 
         <NavLink

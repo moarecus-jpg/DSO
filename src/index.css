@@ -5583,19 +5583,24 @@ body.modal-open .order-sticky-backdrop {
   position: relative;
 }
 
-/* Logo — no wrapper box; glow comes from the SVG + global vinyl bg */
+/* Logo — turntable with DsoLogo; purple glow matches login */
 .sidebar-v2 .sidebar-brand {
   position: relative;
   z-index: 1;
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 0 0 0.35rem;
-  padding: 0.35rem 0 0.45rem;
+  margin: 0 0 0.55rem;
+  padding: 0.45rem 0.15rem 0.55rem;
   border: none;
   background: transparent;
   box-shadow: none;
   overflow: visible;
+}
+
+.sidebar-v2 .sidebar-brand .dco-draft--sidebar {
+  width: 100%;
+  max-width: min(14.5rem, calc(var(--sidebar-width, 16rem) - 1.25rem));
 }
 
 .sidebar-v2 .sidebar-brand .brand-mark {
@@ -5729,9 +5734,14 @@ body.modal-open .order-sticky-backdrop {
   }
 
   .sidebar-v2 .sidebar-brand {
-    align-items: flex-start;
-    margin: calc(-1 * var(--sidebar-logo-disc-inset)) 0 0.35rem;
-    padding: 0;
+    align-items: center;
+    margin: 0 0 0.55rem;
+    padding: 0.25rem 0.1rem 0.35rem;
+  }
+
+  .sidebar-v2 .sidebar-brand .dco-draft--sidebar {
+    width: 100%;
+    max-width: min(14.5rem, calc(var(--sidebar-width, 16rem) - 1.25rem));
   }
 
   .sidebar-v2 .sidebar-brand .brand-mark--sidebar {
