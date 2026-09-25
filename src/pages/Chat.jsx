@@ -516,6 +516,55 @@ export function Chat() {
     addFiles(e.dataTransfer?.files);
   }
 
+  function onComposePaste(e) {
+    const clipboard = e.clipboardData;
+    if (!clipboard) return;
+
+    const fromFiles = Array.from(clipboard.files || []).filter((file) =>
+      ALLOWED_TYPES.has(file.type)
+    );
+    const fromItems = [];
+    for (const item of clipboard.items || []) {
+      if (item.kind !== "file") continue;
+      const file = item.getAsFile();
+      if (!file || !ALLOWED_TYPES.has(file.type)) continue;
+      fromItems.push(file);
+    }
+
+    const seen = new Set();
+    const files = [];
+    for (const file of [...fromFiles, ...fromItems]) {
+      const key = `${file.type}:${file.size}:${file.lastModified}:${file.name}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const named =
+        file.name && file.name !== "image.png" && file.name !== "blob"
+          ? file
+          : new File(
+              [file],
+              `paste-${Date.now()}-${files.length + 1}.${
+                file.type === "image/jpeg"
+                  ? "jpg"
+                  : file.type === "image/png"
+                    ? "png"
+                    : file.type === "image/webp"
+                      ? "webp"
+                      : file.type === "image/gif"
+                        ? "gif"
+                        : file.type === "application/pdf"
+                          ? "pdf"
+                          : "bin"
+              }`,
+              { type: file.type, lastModified: file.lastModified || Date.now() }
+            );
+      files.push(named);
+    }
+
+    if (!files.length) return;
+    e.preventDefault();
+    addFiles(files);
+  }
+
   async function handleClearChat() {
     if (!roomId || busyAction) return;
     const ok = window.confirm(
@@ -1021,6 +1070,7 @@ export function Chat() {
                     className="chat-compose-input"
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
+                    onPaste={onComposePaste}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
