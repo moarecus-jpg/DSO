@@ -1,7 +1,6 @@
 /*
  * Draft 1 turntable with the spinning DsoLogo.
- * Deck/arm webps use transparent rounded corners so the app background shows through.
- * Record centre: 44.49% / 47.24%; logo disc radius 35%.
+ * Webps have transparent corners outside the chassis curve so no square plate shows.
  */
 
 .dco-draft {
@@ -13,13 +12,9 @@
   margin-inline: auto;
   user-select: none;
   background: transparent;
-  border-radius: 1.15rem;
-  /* Auth-field style purple ring — soft, no opaque plate behind */
-  border: 1px solid rgba(139, 92, 246, 0.65);
-  box-shadow:
-    0 0 0 1px rgba(139, 92, 246, 0.4),
-    0 0 18px rgba(124, 58, 237, 0.35),
-    0 0 36px rgba(124, 58, 237, 0.16);
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
   overflow: visible;
 }
 
@@ -31,11 +26,18 @@
   height: 100%;
   display: block;
   pointer-events: none;
-  border-radius: inherit;
   background: transparent;
 }
 
-/* DsoLogo's disc (r=84 of a 228 viewBox) is scaled to the draft's record radius */
+/* Purple glow follows the webp alpha (rounded chassis), not a CSS square */
+.dco-draft__deck {
+  filter:
+    drop-shadow(0 0 1px rgba(196, 181, 253, 0.95))
+    drop-shadow(0 0 8px rgba(139, 92, 246, 0.75))
+    drop-shadow(0 0 18px rgba(124, 58, 237, 0.45))
+    drop-shadow(0 0 28px rgba(124, 58, 237, 0.22));
+}
+
 .dco-draft__record {
   position: absolute;
   left: 44.494%;
@@ -60,7 +62,6 @@
   animation: dco-draft-spin 1.8s linear infinite; /* 33⅓ RPM */
 }
 
-/* Keep groove shine fixed in screen space while the disc rotates */
 .dco-draft .dco-draft__logo .dso-logo-shine-spin {
   animation: dco-draft-spin 1.8s linear infinite reverse;
 }
@@ -70,16 +71,8 @@
   filter: drop-shadow(0.7cqw 1.4cqw 0.9cqw rgba(0, 0, 0, 0.45));
 }
 
-/* Sidebar: blend into striped vinyl bg — no opaque square plate */
 .dco-draft--sidebar {
   max-width: none;
-  border-color: rgba(167, 139, 250, 0.55);
-  box-shadow:
-    0 0 0 1px rgba(139, 92, 246, 0.35),
-    0 0 16px rgba(124, 58, 237, 0.32),
-    0 0 28px rgba(124, 58, 237, 0.14);
-  /* drop-shadow follows transparent webp alpha — no square halo */
-  filter: drop-shadow(0 0 10px rgba(124, 58, 237, 0.28));
 }
 
 @keyframes dco-draft-spin {
