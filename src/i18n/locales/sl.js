@@ -124,15 +124,6 @@ export default {
     resetFailed: "Gesla ni bilo mogoče ponastaviti.",
     newPassword: "Novo geslo",
   },
-  turntable: {
-    start: "START",
-    stop: "STOP",
-    startAria: "Zaženi gramofon",
-    stopAria: "Ustavi gramofon",
-    rpmGroup: "Hitrost predvajanja",
-    pitch: "Pitch",
-    pitchAria: "Pitch od minus 8 do plus 8 odstotkov",
-  },
   orders: {
     openTitle: "Odprta naročila",
     openSubtitle: "Seznam vseh trenutno odprtih naročil",

@@ -124,15 +124,6 @@ export default {
     resetFailed: "Could not reset password.",
     newPassword: "New password",
   },
-  turntable: {
-    start: "START",
-    stop: "STOP",
-    startAria: "Start turntable",
-    stopAria: "Stop turntable",
-    rpmGroup: "Playback speed",
-    pitch: "Pitch",
-    pitchAria: "Pitch control from minus 8 to plus 8 percent",
-  },
   orders: {
     openTitle: "Open orders",
     openSubtitle: "All currently open group orders",
