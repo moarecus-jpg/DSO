@@ -891,7 +891,7 @@ code {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 36rem;
+  max-width: 42rem;
   padding: 2.5rem;
   border-radius: 2rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -904,6 +904,12 @@ code {
 .login-page-v2 .login-brand {
   display: flex;
   justify-content: center;
+  width: 100%;
+  margin-bottom: 1.25rem;
+}
+
+.login-page-v2 .login-brand .dco-draft {
+  max-width: min(100%, 28rem);
 }
 
 .login-page-v2 .brand-mark {
