@@ -5,6 +5,7 @@ import { api } from "../api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { BrandMark } from "../components/BrandMark.jsx";
+import { Turntable } from "../components/Turntable.jsx";
 
 function AuthPasswordField({
   label,
@@ -101,7 +102,9 @@ export function ResetPassword() {
 
       <div className="login-card login-card-v2">
         <div className="login-brand">
-          <BrandMark variant="login" />
+          <Turntable>
+            <BrandMark variant="login" />
+          </Turntable>
         </div>
 
         <div className="login-heading">

@@ -16,6 +16,7 @@ import { api } from "../api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useLocale } from "../hooks/useLocale.jsx";
 import { BrandMark } from "../components/BrandMark.jsx";
+import { Turntable } from "../components/Turntable.jsx";
 
 const REMEMBER_USERNAME_KEY = "dso_remember_username";
 const REMEMBER_ME_KEY = "dso_remember_me";
@@ -227,7 +228,9 @@ export function Login() {
 
       <div className="login-card login-card-v2">
         <div className="login-brand">
-          <BrandMark variant="login" />
+          <Turntable>
+            <BrandMark variant="login" />
+          </Turntable>
         </div>
 
         <div className="login-heading">
