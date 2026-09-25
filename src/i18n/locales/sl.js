@@ -127,13 +127,11 @@ export default {
   turntable: {
     start: "START",
     stop: "STOP",
-    startStop: "START / STOP",
     startAria: "Zaženi gramofon",
     stopAria: "Ustavi gramofon",
     rpmGroup: "Hitrost predvajanja",
     pitch: "Pitch",
     pitchAria: "Pitch od minus 8 do plus 8 odstotkov",
-    strobeAria: "Strobe / target lučka",
   },
   orders: {
     openTitle: "Odprta naročila",
