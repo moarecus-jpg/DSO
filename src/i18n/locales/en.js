@@ -127,11 +127,13 @@ export default {
   turntable: {
     start: "START",
     stop: "STOP",
+    startStop: "START / STOP",
     startAria: "Start turntable",
     stopAria: "Stop turntable",
     rpmGroup: "Playback speed",
     pitch: "Pitch",
     pitchAria: "Pitch control from minus 8 to plus 8 percent",
+    strobeAria: "Strobe / target light",
   },
   orders: {
     openTitle: "Open orders",
