@@ -1,6 +1,7 @@
 /*
  * Draft 1 turntable with the spinning DsoLogo.
- * Webps have soft transparent edges so no hard square/seam against the app bg.
+ * Deck webp has flood-cleared transparent outer plate (no square backdrop).
+ * Glow comes from the artwork itself — no CSS drop-shadow halo.
  */
 
 .dco-draft {
@@ -11,10 +12,13 @@
   aspect-ratio: 445 / 380;
   margin-inline: auto;
   user-select: none;
-  background: transparent;
-  border: none;
-  box-shadow: none;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none;
   overflow: visible;
+  isolation: auto;
+  filter: none;
 }
 
 .dco-draft__deck,
@@ -26,13 +30,9 @@
   display: block;
   pointer-events: none;
   background: transparent;
-}
-
-/* Thin purple edge only — follows soft webp alpha */
-.dco-draft__deck {
-  filter:
-    drop-shadow(0 0 0.5px rgba(216, 180, 254, 0.85))
-    drop-shadow(0 0 2.5px rgba(167, 139, 250, 0.45));
+  border: none;
+  box-shadow: none;
+  filter: none;
 }
 
 .dco-draft__record {
@@ -65,7 +65,8 @@
 
 .dco-draft__arm {
   z-index: 3;
-  filter: drop-shadow(0.5cqw 1cqw 0.7cqw rgba(0, 0, 0, 0.4));
+  /* subtle depth only on the arm cutout */
+  filter: drop-shadow(0.4cqw 0.8cqw 0.5cqw rgba(0, 0, 0, 0.35));
 }
 
 .dco-draft--sidebar {
