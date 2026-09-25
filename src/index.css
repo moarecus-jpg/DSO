@@ -5597,11 +5597,13 @@ body.modal-open .order-sticky-backdrop {
   background: transparent;
   box-shadow: none;
   overflow: visible;
+  isolation: auto;
 }
 
 .sidebar-v2 .sidebar-brand .dco-draft--sidebar {
   width: 100%;
   max-width: none;
+  background: transparent;
 }
 
 .sidebar-v2 .sidebar-brand .brand-mark {

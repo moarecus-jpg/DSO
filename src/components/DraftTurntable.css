@@ -1,7 +1,6 @@
 /*
  * Draft 1 turntable with the spinning DsoLogo.
- * Deck images are 1780×1520 (4× AI-upscaled draft). Positions are percentages
- * of the deck, so the layers stay aligned at any size.
+ * Deck/arm webps use transparent rounded corners so the app background shows through.
  * Record centre: 44.49% / 47.24%; logo disc radius 35%.
  */
 
@@ -14,15 +13,13 @@
   margin-inline: auto;
   user-select: none;
   background: transparent;
-  isolation: isolate;
-  /* Match auth-field purple border + glow (username / password) */
   border-radius: 1.15rem;
-  border: 1px solid #8b5cf6;
+  /* Auth-field style purple ring — soft, no opaque plate behind */
+  border: 1px solid rgba(139, 92, 246, 0.65);
   box-shadow:
-    0 0 0 1px rgba(139, 92, 246, 0.55),
-    0 0 18px rgba(124, 58, 237, 0.38),
-    0 0 36px rgba(124, 58, 237, 0.18);
-  /* Keep glow visible — clip images themselves, not this box */
+    0 0 0 1px rgba(139, 92, 246, 0.4),
+    0 0 18px rgba(124, 58, 237, 0.35),
+    0 0 36px rgba(124, 58, 237, 0.16);
   overflow: visible;
 }
 
@@ -34,25 +31,8 @@
   height: 100%;
   display: block;
   pointer-events: none;
-  /* Soft-clip opaque webp corners to the rounded frame */
   border-radius: inherit;
-}
-
-/*
- * Hide the draft's baked-in square black label / record art under the logo.
- * Transparent circle at the platter centre; deck shows everywhere else.
- */
-.dco-draft__deck {
-  -webkit-mask-image: radial-gradient(
-    circle 36.2% at 44.494% 47.237%,
-    transparent 99.5%,
-    #000 100%
-  );
-  mask-image: radial-gradient(
-    circle 36.2% at 44.494% 47.237%,
-    transparent 99.5%,
-    #000 100%
-  );
+  background: transparent;
 }
 
 /* DsoLogo's disc (r=84 of a 228 viewBox) is scaled to the draft's record radius */
@@ -87,7 +67,19 @@
 
 .dco-draft__arm {
   z-index: 3;
-  filter: drop-shadow(0.7cqw 1.4cqw 0.9cqw rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(0.7cqw 1.4cqw 0.9cqw rgba(0, 0, 0, 0.45));
+}
+
+/* Sidebar: blend into striped vinyl bg — no opaque square plate */
+.dco-draft--sidebar {
+  max-width: none;
+  border-color: rgba(167, 139, 250, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.35),
+    0 0 16px rgba(124, 58, 237, 0.32),
+    0 0 28px rgba(124, 58, 237, 0.14);
+  /* drop-shadow follows transparent webp alpha — no square halo */
+  filter: drop-shadow(0 0 10px rgba(124, 58, 237, 0.28));
 }
 
 @keyframes dco-draft-spin {
